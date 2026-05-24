@@ -15,22 +15,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import routers
 try:
     from backend.app.api.races import router as races_router
     from backend.app.api.analytics import router as analytics_router
     from backend.app.api.scraping import router as scraping_router
 
-    app.include_router(races_router, prefix="/races", tags=["races"])
-    app.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
-    app.include_router(scraping_router, prefix="/scrape", tags=["scraping"])
+    app.include_router(races_router, prefix="/api/races", tags=["races"])
+    app.include_router(analytics_router, prefix="/api/analytics", tags=["analytics"])
+    app.include_router(scraping_router, prefix="/api/scrape", tags=["scraping"])
 except Exception as e:
-    @app.get("/health")
+    @app.get("/api/health")
     async def health():
         return {"status": "error", "detail": str(e)}
 
 
-@app.get("/")
+@app.get("/api/")
 async def root():
     return {"message": "Boatrace Predictor API v1.0"}
 
