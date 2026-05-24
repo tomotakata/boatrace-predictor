@@ -106,6 +106,9 @@ export interface RecentPrediction {
 }
 
 // Races API
+export const getLatestDate = () =>
+  api.get<{ date: string }>('/races/latest-date')
+
 export const getRaces = (date?: string) =>
   api.get<Race[]>('/races/', { params: date ? { target_date: date } : {} })
 

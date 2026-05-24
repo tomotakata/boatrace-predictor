@@ -44,6 +44,16 @@ def _build_race_response(race: dict, sb) -> dict:
     return race
 
 
+@router.get("/latest-date")
+async def get_latest_date():
+    """Return the latest date that has race data."""
+    sb = get_supabase()
+    resp = sb.table("races").select("date").order("date", desc=True).limit(1).execute()
+    if resp.data:
+        return {"date": resp.data[0]["date"]}
+    return {"date": date.today().isoformat()}
+
+
 @router.get("/")
 async def get_races(target_date: Optional[str] = Query(None)):
     sb = get_supabase()

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import { getRaces, scrapeRaces, type Race } from '../lib/api'
+import { getRaces, getLatestDate, scrapeRaces, type Race } from '../lib/api'
 
 const STATUS_CONFIG = {
   scheduled: { label: '発売中', cls: 'status-scheduled' },
@@ -34,6 +34,17 @@ export default function RaceList() {
   const [loading, setLoading] = useState(true)
   const [scraping, setScraping] = useState(false)
 
+  // 起動時: データがある最新日付を自動取得
+  useEffect(() => {
+    getLatestDate()
+      .then(res => {
+        const latest = res.data.date
+        setDate(latest)
+        return fetchRaces(latest)
+      })
+      .catch(() => fetchRaces(today))
+  }, [])
+
   async function fetchRaces(d: string) {
     setLoading(true)
     try {
@@ -45,8 +56,6 @@ export default function RaceList() {
       setLoading(false)
     }
   }
-
-  useEffect(() => { fetchRaces(date) }, [date])
 
   async function handleScrape() {
     setScraping(true)
@@ -69,9 +78,12 @@ export default function RaceList() {
           type="date"
           className="date-input"
           value={date}
-          onChange={e => setDate(e.target.value)}
+          onChange={e => {
+            setDate(e.target.value)
+            fetchRaces(e.target.value)
+          }}
         />
-        <span className="text-secondary" style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+        <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
           {formatDate(date)}
         </span>
         <button className="btn btn-secondary" onClick={() => fetchRaces(date)} disabled={loading}>
@@ -119,6 +131,7 @@ export default function RaceList() {
                   {venueRaces.map(race => {
                     const status = race.status || 'scheduled'
                     const sc = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.scheduled
+                    const trifecta = race.predictions?.[0]?.trifecta
                     return (
                       <tr key={race.id}>
                         <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: 'var(--accent-blue-light)' }}>
@@ -136,7 +149,7 @@ export default function RaceList() {
                           {race.predictions_count ?? 0}
                         </td>
                         <td style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--accent-yellow)' }}>
-                          {race.predictions && race.predictions[0]?.trifecta || '—'}
+                          {trifecta || '—'}
                         </td>
                         <td>
                           <Link to={`/race/${race.id}`} className="btn btn-sm btn-secondary">
