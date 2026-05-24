@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "vercel-build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "tsc -b && vite build",
+    "vercel-build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "dev:local": "node_modules/.bin/vite",
+    "build:local": "node_modules/.bin/tsc -b && node_modules/.bin/vite build"
   },
   "dependencies": {
     "axios": "^1.7.7",
