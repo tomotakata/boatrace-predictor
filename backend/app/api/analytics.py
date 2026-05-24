@@ -10,7 +10,7 @@ router = APIRouter()
 async def get_accuracy():
     sb = get_supabase()
 
-    preds_resp = sb.table("predictions").select("source, is_correct").execute()
+    preds_resp = sb.table("predictions").select("source, is_correct_trifecta").execute()
     predictions = preds_resp.data or []
 
     total = len(predictions)
@@ -22,22 +22,22 @@ async def get_accuracy():
             "by_source": []
         }
 
-    correct = sum(1 for p in predictions if p.get("is_correct") is True)
+    correct = sum(1 for p in predictions if p.get("is_correct_trifecta") is True)
     trifecta_rate = (correct / total * 100) if total > 0 else 0.0
 
-    by_source = {}
+    by_source: dict = {}
     for p in predictions:
         src = p.get("source", "unknown")
         if src not in by_source:
             by_source[src] = {"total": 0, "correct": 0}
         by_source[src]["total"] += 1
-        if p.get("is_correct") is True:
+        if p.get("is_correct_trifecta") is True:
             by_source[src]["correct"] += 1
 
     by_source_list = [
         {
             "source": src,
-            "rate": (data["correct"] / data["total"] * 100) if data["total"] > 0 else 0.0,
+            "rate": round((data["correct"] / data["total"] * 100) if data["total"] > 0 else 0.0, 1),
             "total": data["total"]
         }
         for src, data in by_source.items()
@@ -46,7 +46,7 @@ async def get_accuracy():
     return {
         "total_predictions": total,
         "trifecta_rate": round(trifecta_rate, 1),
-        "exacta_rate": round(trifecta_rate * 1.4, 1),  # approximate
+        "exacta_rate": round(trifecta_rate * 1.4, 1),
         "by_source": by_source_list
     }
 
@@ -56,7 +56,7 @@ async def get_recent_predictions(limit: int = 20):
     sb = get_supabase()
 
     preds_resp = sb.table("predictions").select(
-        "id, source, trifecta, confidence, is_correct, created_at, race_id"
+        "id, source, predicted_trifecta, trifecta, confidence, is_correct_trifecta, created_at, race_id"
     ).order("created_at", desc=True).limit(limit).execute()
 
     predictions = preds_resp.data or []
@@ -65,14 +65,15 @@ async def get_recent_predictions(limit: int = 20):
     for p in predictions:
         race_resp = sb.table("races").select("date, race_no, venue").eq("id", p["race_id"]).single().execute()
         race = race_resp.data or {}
+        trifecta = p.get("trifecta") or p.get("predicted_trifecta") or ""
         result.append({
             "id": p["id"],
             "date": race.get("date", ""),
             "race": f"{race.get('venue', '')} {race.get('race_no', '')}R",
             "source": p["source"],
-            "trifecta": p.get("trifecta", ""),
+            "trifecta": trifecta,
             "confidence": p.get("confidence"),
-            "is_correct": p.get("is_correct")
+            "is_correct": p.get("is_correct_trifecta")
         })
 
     return result
