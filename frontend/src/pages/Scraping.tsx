@@ -62,10 +62,23 @@ export default function Scraping() {
     }, 1000)
 
     try {
-      const res = await runScraping({ date, venues: selectedVenues, items: selectedItems })
-      setResults(res.data.results as ScrapeResult[])
+      const allResults: ScrapeResult[] = []
+      // 会場ごとに順番に実行（タイムアウト対策）
+      for (const venue of selectedVenues) {
+        try {
+          const res = await runScraping({ date, venues: [venue], items: selectedItems })
+          allResults.push(...(res.data.results as ScrapeResult[]))
+          setResults([...allResults])
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err)
+          allResults.push({ venue, item: 'all', status: 'error', message: msg })
+          setResults([...allResults])
+        }
+      }
       setStatus('done')
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setResults([{ venue: '全体', item: 'all', status: 'error', message: msg }])
       setStatus('error')
     } finally {
       if (timerRef.current) clearInterval(timerRef.current)
