@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getRace, predictRace, type Race, type Boat, type Prediction } from '../lib/api'
+import { getRace, predictRace, predictRaceSystem, type Race, type Boat, type Prediction, type SystemPredictionDetail } from '../lib/api'
 
 const LANE_COLORS = ['#2c2c4e', '#3a3a3a', '#7b241c', '#1a5276', '#7d6608', '#1e8449']
 
@@ -15,6 +15,7 @@ const SOURCE_CONFIG = {
   claude: { label: 'Claude', cls: 'source-claude', color: '#f59e0b' },
   gemini: { label: 'Gemini', cls: 'source-gemini', color: '#34d399' },
   ensemble: { label: 'Ensemble', cls: 'source-ensemble', color: '#a78bfa' },
+  system_v56: { label: 'システム v56.3', cls: 'source-ensemble', color: '#60a5fa' },
 }
 
 function ScoreCell({ value }: { value?: number }) {
@@ -186,11 +187,112 @@ function PredictionPanel({ prediction }: { prediction: Prediction }) {
   )
 }
 
+function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
+  const regimeColor = detail.regime === '順当' ? '#34d399' : detail.regime === '隠れ混戦' ? '#f59e0b' : '#f87171'
+  const sInColor = detail.s_in === 'イン強' ? '#60a5fa' : detail.s_in === 'イン弱' ? '#f87171' : '#a78bfa'
+
+  return (
+    <div className="prediction-card" style={{ borderColor: '#60a5fa', borderWidth: 2 }}>
+      <div className="prediction-header" style={{ borderBottom: '1px solid #1e3a5f', paddingBottom: 12, marginBottom: 12 }}>
+        <span style={{ fontWeight: 700, color: '#60a5fa', fontSize: 15 }}>システム予測 v56.3</span>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ padding: '2px 10px', borderRadius: 12, background: regimeColor + '22', color: regimeColor, fontSize: 12, border: `1px solid ${regimeColor}` }}>
+            {detail.regime}
+          </span>
+          <span style={{ padding: '2px 10px', borderRadius: 12, background: sInColor + '22', color: sInColor, fontSize: 12, border: `1px solid ${sInColor}` }}>
+            {detail.s_in}（{detail.surface_type}水面）
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            自信度: {Math.round(detail.confidence)}% / 波乱度: {Math.round(detail.wave_score)}%
+          </span>
+        </div>
+      </div>
+
+      {/* レジーム3軸 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+        <div style={{ background: '#0f1e35', padding: '8px 12px', borderRadius: 8 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>分散</div>
+          <div style={{ fontWeight: 700, color: '#e2e8f0' }}>{detail.regime_dispersion}pt</div>
+        </div>
+        <div style={{ background: '#0f1e35', padding: '8px 12px', borderRadius: 8 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>本命被弾</div>
+          <div style={{ fontWeight: 700, color: detail.regime_hit_rate >= 30 ? '#f59e0b' : '#e2e8f0' }}>{detail.regime_hit_rate}%</div>
+        </div>
+        <div style={{ background: '#0f1e35', padding: '8px 12px', borderRadius: 8 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>攻め密度</div>
+          <div style={{ fontWeight: 700, color: detail.regime_attack_density >= 2 ? '#f59e0b' : '#e2e8f0' }}>{detail.regime_attack_density}枚</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        {/* F1フォーメーション */}
+        <div>
+          <h4 style={{ margin: '0 0 8px', color: '#60a5fa', fontSize: 13 }}>
+            本線F1（頭: {detail.f1_head}号・¥{detail.budget_main.toLocaleString()}）
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {detail.trifecta_f1.length > 0 ? detail.trifecta_f1.map((t, i) => (
+              <span key={i} style={{ background: '#1e3a5f', color: '#93c5fd', padding: '3px 10px', borderRadius: 6, fontFamily: 'monospace', fontSize: 13, border: '1px solid #2d5a8e' }}>{t}</span>
+            )) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+          </div>
+        </div>
+
+        {/* F2フォーメーション */}
+        <div>
+          <h4 style={{ margin: '0 0 8px', color: detail.mech1e_active ? '#a78bfa' : 'var(--text-muted)', fontSize: 13 }}>
+            本線F2{detail.f2_head ? `（頭: ${detail.f2_head}号）` : ''}
+            {detail.mech1e_active && <span style={{ fontSize: 11, marginLeft: 6, color: '#a78bfa' }}>機構1-E発動</span>}
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {detail.trifecta_f2.length > 0 ? detail.trifecta_f2.map((t, i) => (
+              <span key={i} style={{ background: '#2d1f5e', color: '#c4b5fd', padding: '3px 10px', borderRadius: 6, fontFamily: 'monospace', fontSize: 13, border: '1px solid #4c3a9e' }}>{t}</span>
+            )) : <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>なし</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* 二連単 */}
+      <div style={{ marginBottom: 16 }}>
+        <h4 style={{ margin: '0 0 8px', color: '#34d399', fontSize: 13 }}>
+          二連単（¥{detail.budget_exacta.toLocaleString()}・上限3点）
+        </h4>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {detail.exacta.length > 0 ? detail.exacta.map((e, i) => (
+            <span key={i} style={{ background: '#0f2d23', color: '#6ee7b7', padding: '3px 10px', borderRadius: 6, fontFamily: 'monospace', fontSize: 13, border: '1px solid #1a5c40' }}>{e}</span>
+          )) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+        </div>
+      </div>
+
+      {/* 万舟 */}
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: '#f59e0b', fontSize: 13 }}>
+          万舟（全レース必須・¥{detail.budget_manshu.toLocaleString()}・各目100倍以上目標）
+        </h4>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {detail.manshu.map((m, i) => (
+            <span key={i} style={{ background: '#2d1a00', color: '#fcd34d', padding: '3px 10px', borderRadius: 6, fontFamily: 'monospace', fontSize: 12, border: '1px solid #78450a' }}>{m}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* メモ */}
+      {detail.notes.length > 0 && (
+        <div style={{ marginTop: 12, padding: '8px 12px', background: '#1a0a00', borderRadius: 8, borderLeft: '3px solid #f59e0b' }}>
+          {detail.notes.map((n, i) => (
+            <div key={i} style={{ fontSize: 12, color: '#fcd34d', marginBottom: 2 }}>⚠ {n}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function RaceDetail() {
   const { id } = useParams<{ id: string }>()
   const [race, setRace] = useState<Race | null>(null)
   const [loading, setLoading] = useState(true)
   const [predicting, setPredicting] = useState(false)
+  const [systemDetail, setSystemDetail] = useState<SystemPredictionDetail | null>(null)
   const [activePredIdx, setActivePredIdx] = useState(0)
 
   async function fetchRace() {
@@ -214,6 +316,21 @@ export default function RaceDetail() {
     try {
       const res = await predictRace(parseInt(id), source)
       setRace(res.data)
+      setActivePredIdx(0)
+    } catch {
+      // handle error
+    } finally {
+      setPredicting(false)
+    }
+  }
+
+  async function handlePredictSystem() {
+    if (!id) return
+    setPredicting(true)
+    try {
+      const res = await predictRaceSystem(parseInt(id))
+      setRace(res.data)
+      setSystemDetail(res.data.system_prediction_detail || null)
       setActivePredIdx(0)
     } catch {
       // handle error
@@ -278,11 +395,19 @@ export default function RaceDetail() {
 
         <div className="predict-actions">
           <button
+            className="btn"
+            style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)', color: '#fff', fontWeight: 700 }}
+            onClick={handlePredictSystem}
+            disabled={predicting}
+          >
+            {predicting ? '予測中…' : 'システム予測 v56.3'}
+          </button>
+          <button
             className="btn btn-warning"
             onClick={() => handlePredict('ensemble')}
             disabled={predicting}
           >
-            {predicting ? '予測中…' : 'AI予測 (Ensemble)'}
+            AI予測 (Ensemble)
           </button>
           <button
             className="btn btn-secondary btn-sm"
@@ -314,6 +439,13 @@ export default function RaceDetail() {
           </div>
         )}
       </div>
+
+      {/* System Prediction Detail */}
+      {systemDetail && (
+        <div className="prediction-panel" style={{ marginBottom: 24 }}>
+          <SystemPredictionPanel detail={systemDetail} />
+        </div>
+      )}
 
       {/* Predictions */}
       {predictions.length > 0 && (

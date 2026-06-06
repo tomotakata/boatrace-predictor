@@ -3,6 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Query, HTTPException
 from backend.app.config import get_supabase
 from backend.app.llm.predictor import run_prediction
+from backend.app.prediction.engine import run_system_prediction
 
 router = APIRouter()
 
@@ -124,6 +125,43 @@ async def predict_race(race_id: int, source: str = Query("ensemble")):
 
     # Return updated race
     return await get_race(race_id)
+
+
+@router.post("/{race_id}/predict-system")
+async def predict_race_system(race_id: int):
+    """
+    競艇予想AI v56.3 システム予測
+    PDFのロジックをPythonコードとして実装した予測エンジンを使用
+    """
+    sb = get_supabase()
+
+    race_resp = sb.table("races").select("*").eq("id", race_id).single().execute()
+    if not race_resp.data:
+        raise HTTPException(status_code=404, detail="Race not found")
+
+    race = _build_race_response(race_resp.data, sb)
+
+    # v56.3 システム予測実行
+    prediction = run_system_prediction(race)
+
+    # DB保存
+    db_pred = {
+        "race_id": race_id,
+        "source": "system_v56",
+        "predicted_trifecta": prediction.get("predicted_trifecta"),
+        "predicted_exacta": prediction.get("predicted_exacta"),
+        "confidence": prediction.get("confidence"),
+        "reasoning": prediction.get("reasoning", ""),
+        "pattern": prediction.get("pattern"),
+        "main_attack": prediction.get("main_attack"),
+        "classification": prediction.get("classification", ""),
+    }
+    sb.table("predictions").insert(db_pred).execute()
+
+    # 詳細レスポンス（予測詳細 + レース情報）
+    updated = await get_race(race_id)
+    updated["system_prediction_detail"] = prediction.get("detail", {})
+    return updated
 
 
 @router.post("/scrape")

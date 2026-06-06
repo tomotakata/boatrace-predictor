@@ -44,10 +44,35 @@ export interface Boat {
   created_at?: string
 }
 
+export interface SystemPredictionDetail {
+  regime: string
+  s_in: string
+  surface_type: string
+  head_boats: number[]
+  head_type: string
+  mech1e_active: boolean
+  f1_head: number
+  f2_head?: number
+  benefit_2nd: Record<string, number[]>
+  trifecta_f1: string[]
+  trifecta_f2: string[]
+  exacta: string[]
+  manshu: string[]
+  budget_main: number
+  budget_exacta: number
+  budget_manshu: number
+  confidence: number
+  wave_score: number
+  regime_dispersion: number
+  regime_hit_rate: number
+  regime_attack_density: number
+  notes: string[]
+}
+
 export interface Prediction {
   id?: number
   race_id?: number
-  source: 'claude' | 'gemini' | 'ensemble'
+  source: 'claude' | 'gemini' | 'ensemble' | 'system_v56'
   created_at?: string
   ei?: number[]
   ti?: number[]
@@ -117,6 +142,9 @@ export const getRace = (id: number) =>
 
 export const predictRace = (id: number, source: 'ensemble' | 'claude' | 'gemini' = 'ensemble') =>
   api.post<Race>(`/races/${id}/predict`, null, { params: { source } })
+
+export const predictRaceSystem = (id: number) =>
+  api.post<Race & { system_prediction_detail?: SystemPredictionDetail }>(`/races/${id}/predict-system`)
 
 export const scrapeRaces = (date?: string) =>
   api.post('/races/scrape', null, { params: date ? { target_date: date } : {} })
