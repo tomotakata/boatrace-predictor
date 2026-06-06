@@ -37,7 +37,14 @@ async def _login(client: httpx.AsyncClient) -> bool:
             "password": BOATFRONTIER_PASSWORD,
         }, follow_redirects=True)
 
-        return login_resp.status_code == 200 and "logout" in login_resp.text.lower()
+        # ログイン成功: logout linkあり or /loginページから離脱
+        success = (
+            "logout" in login_resp.text.lower()
+            or "/login" not in str(login_resp.url)
+            or login_resp.status_code in (200, 302)
+            and "ログイン" not in login_resp.text[:500]
+        )
+        return success
     except Exception:
         return False
 
