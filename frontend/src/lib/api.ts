@@ -174,3 +174,52 @@ export const getVenues = () =>
 
 export const runScraping = (data: { date: string; venues: string[]; items: string[] }) =>
   api.post<{ results: Array<{ venue: string; item: string; status: string; message?: string }> }>('/scrape/run', data)
+
+// Venue Config API
+export interface VenueConfig {
+  id?: number
+  venue_name: string
+  prompt_version?: string
+  water_type?: string
+  has_tide_correction?: boolean
+  tide_max_m?: number
+  altitude_m?: number
+  back_width_m?: number
+  home_width_m?: number
+  c1_rate_default?: number
+  c2_rate?: number; c3_rate?: number; c4_rate?: number; c5_rate?: number; c6_rate?: number
+  c1_rate_spring?: number; c1_rate_summer?: number; c1_rate_autumn?: number; c1_rate_winter?: number
+  surface_type?: string
+  pattern_a_threshold?: number
+  main_attack_description?: string
+  main_attack_patterns?: string[]
+  kad_c2?: number; kad_c3?: number; kad_c4?: number; kad_c5?: number; kad_c6?: number
+  home_branch?: string; home_n_upper?: number; home_n_lower?: number; home_min_races?: number
+  motor_exchange_months?: number[]
+  motor_exchange_f_weight?: number; motor_exchange_n_upper?: number
+  scheduled_races?: Array<{ race_no: number; name: string; c1_rate?: number; c2_rate?: number }>
+  body_weight_correction?: boolean; exhibit_public?: boolean
+  is_nighter?: boolean; is_morning?: boolean; is_midnight?: boolean
+  tide_effects?: Record<string, string>
+  wind_effects?: Record<string, string>
+  seasonal_notes?: Record<string, string>
+  race_no_corrections?: Array<{ race_no: number; c1_multiplier?: number }>
+  notes?: string
+  raw_prompt_text?: string
+  created_at?: string; updated_at?: string
+}
+
+export const listVenueConfigs = () =>
+  api.get<VenueConfig[]>('/venues/')
+
+export const getVenueConfig = (venueName: string) =>
+  api.get<VenueConfig>(`/venues/${encodeURIComponent(venueName)}`)
+
+export const createVenueConfig = (data: VenueConfig) =>
+  api.post<VenueConfig>('/venues/', data)
+
+export const updateVenueConfig = (venueName: string, data: VenueConfig) =>
+  api.put<VenueConfig>(`/venues/${encodeURIComponent(venueName)}`, data)
+
+export const deleteVenueConfig = (venueName: string) =>
+  api.delete(`/venues/${encodeURIComponent(venueName)}`)

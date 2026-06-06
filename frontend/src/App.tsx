@@ -4,12 +4,14 @@ import RaceDetail from './pages/RaceDetail'
 import Analytics from './pages/Analytics'
 import Scraping from './pages/Scraping'
 import Import from './pages/Import'
+import Venues from './pages/Venues'
 
 const NAV_LINKS = [
   { to: '/', label: 'レース一覧' },
   { to: '/analytics', label: '的中分析' },
   { to: '/scraping', label: 'データ取得' },
   { to: '/import', label: 'データ取込' },
+  { to: '/venues', label: '会場設定' },
 ]
 
 function AppLayout() {
@@ -42,6 +44,7 @@ function AppLayout() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/scraping" element={<Scraping />} />
           <Route path="/import" element={<Import />} />
+          <Route path="/venues" element={<Venues />} />
         </Routes>
       </main>
     </div>

@@ -19,10 +19,12 @@ try:
     from backend.app.api.races import router as races_router
     from backend.app.api.analytics import router as analytics_router
     from backend.app.api.scraping import router as scraping_router
+    from backend.app.api.venues import router as venues_router
 
     app.include_router(races_router, prefix="/api/races", tags=["races"])
     app.include_router(analytics_router, prefix="/api/analytics", tags=["analytics"])
     app.include_router(scraping_router, prefix="/api/scrape", tags=["scraping"])
+    app.include_router(venues_router, prefix="/api/venues", tags=["venues"])
 except Exception as e:
     @app.get("/api/health")
     async def health():
