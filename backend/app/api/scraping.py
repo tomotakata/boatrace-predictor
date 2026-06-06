@@ -2,10 +2,15 @@ from typing import List, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 from backend.app.scrapers.boaters import scrape_venues, scrape_race_entry
-from backend.app.scrapers.boatfrontier import scrape_motor_data
 from backend.app.scrapers.exhibition import scrape_exhibition_data
+import httpx
+import os
 
 router = APIRouter()
+
+# さくらサーバーのスクレイピングAPI
+SAKURA_SCRAPER_URL = os.getenv("SAKURA_SCRAPER_URL", "http://153.121.51.74:8080")
+SAKURA_SCRAPER_SECRET = os.getenv("SAKURA_SCRAPER_SECRET", "boatrace-sakura-secret-2024")
 
 VENUE_LIST = [
     "桐生", "戸田", "江戸川", "平和島", "多摩川", "浜名湖",
@@ -37,8 +42,20 @@ async def run_scraping(req: ScrapeRequest):
                     await scrape_race_entry(venue, req.date)
                     results.append({"venue": venue, "item": item, "status": "ok"})
                 elif item == "motor":
-                    await scrape_motor_data(venue, req.date)
-                    results.append({"venue": venue, "item": item, "status": "ok"})
+                    # さくらサーバー経由でスクレイピング
+                    async with httpx.AsyncClient(timeout=60) as client:
+                        resp = await client.post(f"{SAKURA_SCRAPER_URL}/scrape", json={
+                            "date": req.date,
+                            "venues": [venue],
+                            "source": "boatfrontier",
+                            "secret": SAKURA_SCRAPER_SECRET,
+                        })
+                        data = resp.json()
+                        r = data.get("results", [{}])[0]
+                        if r.get("status") == "success":
+                            results.append({"venue": venue, "item": item, "status": "ok"})
+                        else:
+                            raise Exception(r.get("message", "sakura scraper error"))
                 elif item == "exhibition":
                     await scrape_exhibition_data(venue, req.date)
                     results.append({"venue": venue, "item": item, "status": "ok"})
