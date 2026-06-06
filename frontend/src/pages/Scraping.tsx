@@ -63,16 +63,18 @@ export default function Scraping() {
 
     try {
       const allResults: ScrapeResult[] = []
-      // 会場ごとに順番に実行（タイムアウト対策）
+      // 会場×項目ごとに1つずつ実行（Vercel 60秒タイムアウト対策）
       for (const venue of selectedVenues) {
-        try {
-          const res = await runScraping({ date, venues: [venue], items: selectedItems })
-          allResults.push(...(res.data.results as ScrapeResult[]))
-          setResults([...allResults])
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err)
-          allResults.push({ venue, item: 'all', status: 'error', message: msg })
-          setResults([...allResults])
+        for (const item of selectedItems) {
+          try {
+            const res = await runScraping({ date, venues: [venue], items: [item] })
+            allResults.push(...(res.data.results as ScrapeResult[]))
+            setResults([...allResults])
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err)
+            allResults.push({ venue, item, status: 'error', message: msg })
+            setResults([...allResults])
+          }
         }
       }
       setStatus('done')
