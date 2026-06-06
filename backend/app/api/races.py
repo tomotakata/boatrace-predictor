@@ -63,18 +63,32 @@ async def get_races(target_date: Optional[str] = Query(None)):
     resp = sb.table("races").select("*").eq("date", query_date).order("venue").order("race_no").execute()
     races = resp.data or []
 
-    # Lightweight: only attach prediction count and latest trifecta
+    if not races:
+        return races
+
+    # 全race_idをまとめて1回のクエリでpredictionsを取得（N+1問題解消）
+    race_ids = [r["id"] for r in races]
+    pred_resp = sb.table("predictions").select("race_id, predicted_trifecta, trifecta, created_at") \
+        .in_("race_id", race_ids).order("created_at", desc=True).execute()
+    preds_all = pred_resp.data or []
+
+    # race_idでグループ化（最新の1件のみ使用）
+    preds_by_race: dict = {}
+    for p in preds_all:
+        rid = p["race_id"]
+        if rid not in preds_by_race:
+            preds_by_race[rid] = p
+
     for race in races:
-        pred_resp = sb.table("predictions").select("id, predicted_trifecta, trifecta, created_at").eq("race_id", race["id"]).order("created_at", desc=True).limit(1).execute()
-        preds = pred_resp.data or []
-        race["predictions_count"] = len(preds)
         race["boats"] = []
-        if preds:
-            p = preds[0]
+        p = preds_by_race.get(race["id"])
+        if p:
             trifecta = p.get("trifecta") or p.get("predicted_trifecta") or ""
             race["predictions"] = [{"trifecta": trifecta}]
+            race["predictions_count"] = 1
         else:
             race["predictions"] = []
+            race["predictions_count"] = 0
 
     return races
 
