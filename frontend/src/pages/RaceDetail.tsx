@@ -417,14 +417,7 @@ export default function RaceDetail() {
           >
             Claude
           </button>
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => handlePredict('gemini')}
-            disabled={predicting}
-            style={{ color: '#34d399', borderColor: '#34d399' }}
-          >
-            Gemini
-          </button>
+
         </div>
       </div>
 
