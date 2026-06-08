@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
-app = FastAPI(title="Boatrace Predictor API")
+app = FastAPI(title="Boatrace Predictor API", version="1.1")
 
 app.add_middleware(
     CORSMiddleware,
