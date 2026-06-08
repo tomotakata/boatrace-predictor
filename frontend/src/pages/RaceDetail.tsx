@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getRace, predictRace, predictRaceSystem, type Race, type Boat, type Prediction, type SystemPredictionDetail } from '../lib/api'
+import { getRace, predictRace, predictRaceSystem, getVenueConfig, type Race, type Boat, type Prediction, type SystemPredictionDetail, type VenueConfig } from '../lib/api'
 
 // 進入順ラベルの色
 const LANE_BG: Record<number, string> = {
@@ -648,6 +648,7 @@ export default function RaceDetail() {
   const [predicting, setPredicting] = useState(false)
   const [systemDetail, setSystemDetail] = useState<SystemPredictionDetail | null>(null)
   const [activePredIdx, setActivePredIdx] = useState(0)
+  const [venueConfig, setVenueConfig] = useState<VenueConfig | null>(null)
 
   async function fetchRace() {
     if (!id) return
@@ -655,6 +656,13 @@ export default function RaceDetail() {
     try {
       const res = await getRace(parseInt(id))
       setRace(res.data)
+      // 会場設定を取得
+      if (res.data?.venue) {
+        try {
+          const vc = await getVenueConfig(res.data.venue)
+          setVenueConfig(vc.data)
+        } catch { /* ignore */ }
+      }
     } catch {
       setRace(null)
     } finally {
@@ -718,10 +726,6 @@ export default function RaceDetail() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{ fontSize: 13, color: '#94a3b8' }}>{race.date}</span>
               <span style={{ padding: '2px 10px', borderRadius: 8, border: `1px solid ${scCls}`, color: scCls, fontSize: 12 }}>{sc}</span>
-              {race.weather && <span style={{ fontSize: 12, color: '#64748b' }}>天候: {race.weather}</span>}
-              {race.wind_speed && <span style={{ fontSize: 12, color: '#64748b' }}>風速: {race.wind_speed}m</span>}
-              {race.wind_direction && <span style={{ fontSize: 12, color: '#64748b' }}>風向: {race.wind_direction}</span>}
-              {race.wave_height && <span style={{ fontSize: 12, color: '#64748b' }}>波高: {race.wave_height}cm</span>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -739,6 +743,41 @@ export default function RaceDetail() {
             </button>
           </div>
         </div>
+
+        {/* 会場特性バナー */}
+        {venueConfig && (
+          <div style={{ marginTop: 10, background: 'linear-gradient(90deg, #064e3b, #065f46)', borderRadius: 6, padding: '8px 12px', border: '1px solid #10b981' }}>
+            <div style={{ fontSize: 12, color: '#6ee7b7', lineHeight: 1.7, display: 'flex', flexWrap: 'wrap', gap: '0 8px' }}>
+              {[
+                `ボートレース${venueConfig.venue_name}専用`,
+                venueConfig.water_type && `${venueConfig.water_type}`,
+                venueConfig.back_width_m && `バック${venueConfig.back_width_m}m幅`,
+                venueConfig.surface_type && `${venueConfig.surface_type}水面`,
+                venueConfig.c2_rate != null && `2C差し率${venueConfig.c2_rate}%`,
+                venueConfig.has_tide_correction != null && (venueConfig.has_tide_correction ? '潮汐補正あり' : '潮汐適用なし'),
+                venueConfig.prompt_version && `${venueConfig.prompt_version}`,
+              ].filter(Boolean).map((item, i, arr) => (
+                <span key={i}>{item}{i < arr.length - 1 ? ' /' : ''}</span>
+              ))}
+            </div>
+            {venueConfig.notes && (
+              <div style={{ fontSize: 11, color: '#a7f3d0', marginTop: 4, borderTop: '1px solid #065f46', paddingTop: 4 }}>
+                {venueConfig.notes}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 天候情報 */}
+        {(race.weather || race.wind_speed || race.temperature || race.wave_height) && (
+          <div style={{ marginTop: 8, display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: '#94a3b8' }}>
+            {race.weather && <span>天候: <span style={{ color: '#e2e8f0' }}>{race.weather}</span></span>}
+            {race.wind_speed != null && <span>風速: <span style={{ color: '#e2e8f0' }}>{race.wind_speed}m/s</span></span>}
+            {race.wind_direction && <span>風向: <span style={{ color: '#e2e8f0' }}>{race.wind_direction}</span></span>}
+            {race.temperature != null && <span>気温: <span style={{ color: '#e2e8f0' }}>{race.temperature}℃</span></span>}
+            {race.wave_height != null && <span>波高: <span style={{ color: '#e2e8f0' }}>{race.wave_height}cm</span></span>}
+          </div>
+        )}
       </div>
 
       {/* データセクション */}
