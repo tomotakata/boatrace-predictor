@@ -24,7 +24,11 @@ VENUE_LIST = [
 class ScrapeRequest(BaseModel):
     date: str
     venues: List[str]
-    items: List[str]  # "entry", "motor", "exhibition", "profile"
+    items: List[str]  # "entry", "motor", "exhibition", "profile", "raceinfo_time"
+
+
+class CookieSetRequest(BaseModel):
+    cookies: str  # "name=value; name2=value2" 形式
 
 
 @router.get("/venues")
@@ -59,3 +63,28 @@ async def run_scraping(req: ScrapeRequest):
             return {"results": results}
     except Exception as e:
         return {"results": [{"venue": "全体", "item": "all", "status": "error", "message": str(e)}]}
+
+
+@router.post("/set_teleboat_cookies")
+async def set_teleboat_cookies(req: CookieSetRequest):
+    """boatrace.jpのセッションCookieをさくらサーバーに保存する"""
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                f"{SAKURA_SCRAPER_URL}/set_teleboat_cookies",
+                json={"secret": SAKURA_SCRAPER_SECRET, "cookies": req.cookies}
+            )
+            return resp.json()
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@router.get("/check_teleboat_cookies")
+async def check_teleboat_cookies():
+    """保存済みCookieの状態を確認"""
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(f"{SAKURA_SCRAPER_URL}/check_teleboat_cookies")
+            return resp.json()
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
