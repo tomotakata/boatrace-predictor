@@ -19,12 +19,9 @@ export interface Boat {
   motor_no?: number
   motor_dashfoot?: number
   motor_extfoot?: number
-  motor_stretch?: number
   motor_eval?: string
   motor_rank_letter?: string
   motor_place2_rate?: number
-  boat_no?: number
-  boat_place2_rate?: number
   avg_st?: number
   today_st?: number
   today_st_rank?: number
@@ -44,6 +41,17 @@ export interface Boat {
   local5y_races?: number
   local5y_win_rate?: number
   local5y_tricast_rate?: number
+  // コース別決まり手（boatrace.jp scrape_profile）
+  c1_nige?: number; c1_sashi?: number; c1_makuri?: number; c1_makurizashi?: number; c1_place2_rate?: number
+  c2_nige?: number; c2_sashi?: number; c2_makuri?: number; c2_makurizashi?: number; c2_place2_rate?: number
+  c3_nige?: number; c3_sashi?: number; c3_makuri?: number; c3_makurizashi?: number; c3_place2_rate?: number
+  c4_nige?: number; c4_sashi?: number; c4_makuri?: number; c4_makurizashi?: number; c4_place2_rate?: number
+  c5_nige?: number; c5_sashi?: number; c5_makuri?: number; c5_makurizashi?: number; c5_place2_rate?: number
+  c6_nige?: number; c6_sashi?: number; c6_makuri?: number; c6_makurizashi?: number; c6_place2_rate?: number
+  // 握り・抜き
+  nigiri_rate?: number
+  nigiri_occurrence?: number
+  nige_count?: number; sashi_count?: number; makuri_count?: number; makurisashi_count?: number
   created_at?: string
 }
 

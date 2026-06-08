@@ -24,7 +24,7 @@ VENUE_LIST = [
 class ScrapeRequest(BaseModel):
     date: str
     venues: List[str]
-    items: List[str]  # "entry", "motor", "exhibition"
+    items: List[str]  # "entry", "motor", "exhibition", "profile"
 
 
 @router.get("/venues")

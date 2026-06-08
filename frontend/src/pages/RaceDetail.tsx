@@ -281,6 +281,164 @@ function Section5aCourse({ boats }: { boats: Boat[] }) {
   return <SectionTable title="⑤a コース別・勝率" sub="(自コース直近)" lanes={lanes} rows={rows} />
 }
 
+// ───── ⑤b コース別決まり手 ─────
+function Section5bKimete({ boats }: { boats: Boat[] }) {
+  const lanes = [1, 2, 3, 4, 5, 6]
+  const get = (lane: number) => boats.find(b => b.lane === lane)
+
+  // 各艇の「自コース」での決まり手データ
+  const getKimete = (lane: number, key: string) => {
+    const b = get(lane)
+    if (!b) return null
+    const c = b.lane
+    return (b as any)[`c${c}_${key}`] as number | undefined
+  }
+
+  // 逃げ/差し/まくり/まくり差し の合計で割合を計算
+  const pctOfTotal = (lane: number, key: string): string => {
+    const b = get(lane)
+    if (!b) return '—'
+    const c = b.lane
+    const nige = (b as any)[`c${c}_nige`] || 0
+    const sashi = (b as any)[`c${c}_sashi`] || 0
+    const makuri = (b as any)[`c${c}_makuri`] || 0
+    const makurizashi = (b as any)[`c${c}_makurizashi`] || 0
+    const total = nige + sashi + makuri + makurizashi
+    if (!total) return '—'
+    const val = (b as any)[`c${c}_${key}`] || 0
+    return Math.round((val / total) * 100) + '%'
+  }
+
+  const countColor = (v: string | undefined) => {
+    const n = parseInt(v ?? '0')
+    return isNaN(n) || v === '—' ? '#94a3b8' : n > 0 ? '#e2e8f0' : '#64748b'
+  }
+  const pctColor = (v: string | undefined) => {
+    const n = parseInt(v ?? '0')
+    if (isNaN(n) || v === '—') return '#94a3b8'
+    return n >= 60 ? '#fcd34d' : n >= 40 ? '#f59e0b' : n > 0 ? '#e2e8f0' : '#64748b'
+  }
+
+  const rows = [
+    {
+      label: '2連対率',
+      values: lanes.map(l => {
+        const b = get(l); if (!b) return '—'
+        const r = (b as any)[`c${b.lane}_place2_rate`]
+        return r != null ? fmtPct(r) : '—'
+      }),
+      colorFn: pctColor
+    },
+    {
+      label: '逃げ数',
+      values: lanes.map(l => { const v = getKimete(l, 'nige'); return v != null ? String(v) : '—' }),
+      colorFn: countColor
+    },
+    {
+      label: '逃げ率',
+      values: lanes.map(l => pctOfTotal(l, 'nige')),
+      colorFn: pctColor
+    },
+    {
+      label: '差し数',
+      values: lanes.map(l => { const v = getKimete(l, 'sashi'); return v != null ? String(v) : '—' }),
+      colorFn: countColor
+    },
+    {
+      label: '差し率',
+      values: lanes.map(l => pctOfTotal(l, 'sashi')),
+      colorFn: pctColor
+    },
+    {
+      label: 'まくり数',
+      values: lanes.map(l => { const v = getKimete(l, 'makuri'); return v != null ? String(v) : '—' }),
+      colorFn: countColor
+    },
+    {
+      label: 'まくり率',
+      values: lanes.map(l => pctOfTotal(l, 'makuri')),
+      colorFn: pctColor
+    },
+    {
+      label: 'まくり差し数',
+      values: lanes.map(l => { const v = getKimete(l, 'makurizashi'); return v != null ? String(v) : '—' }),
+      colorFn: countColor
+    },
+    {
+      label: 'まくり差し率',
+      values: lanes.map(l => pctOfTotal(l, 'makurizashi')),
+      colorFn: pctColor
+    },
+  ]
+
+  return <SectionTable title="⑤b コース別決まり手" sub="(自コース)" lanes={lanes} rows={rows} />
+}
+
+// ───── ⑤c 握り率 ─────
+function Section5cNigiri({ boats }: { boats: Boat[] }) {
+  const lanes = [1, 2, 3, 4, 5, 6]
+  const get = (lane: number) => boats.find(b => b.lane === lane)
+
+  const pctColor = (v: string | undefined) => {
+    const n = parseFloat(v ?? '0')
+    if (isNaN(n) || v === '—') return '#94a3b8'
+    return n >= 70 ? '#fcd34d' : n >= 50 ? '#f59e0b' : n > 0 ? '#e2e8f0' : '#64748b'
+  }
+
+  const rows = [
+    {
+      label: '握り率',
+      values: lanes.map(l => {
+        const b = get(l); if (!b) return '—'
+        return b.nigiri_rate != null ? fmtPct(b.nigiri_rate) : '—'
+      }),
+      colorFn: pctColor
+    },
+    {
+      label: '握り発生数',
+      values: lanes.map(l => {
+        const b = get(l); if (!b) return '—'
+        return b.nigiri_occurrence != null ? String(b.nigiri_occurrence) : '—'
+      }),
+      colorFn: () => '#94a3b8' as string
+    },
+    {
+      label: '全国逃げ数',
+      values: lanes.map(l => {
+        const b = get(l); if (!b) return '—'
+        return b.nige_count != null ? String(b.nige_count) : '—'
+      }),
+      colorFn: () => '#94a3b8' as string
+    },
+    {
+      label: '全国差し数',
+      values: lanes.map(l => {
+        const b = get(l); if (!b) return '—'
+        return b.sashi_count != null ? String(b.sashi_count) : '—'
+      }),
+      colorFn: () => '#94a3b8' as string
+    },
+    {
+      label: '全国まくり数',
+      values: lanes.map(l => {
+        const b = get(l); if (!b) return '—'
+        return b.makuri_count != null ? String(b.makuri_count) : '—'
+      }),
+      colorFn: () => '#94a3b8' as string
+    },
+    {
+      label: '全国まくり差し数',
+      values: lanes.map(l => {
+        const b = get(l); if (!b) return '—'
+        return b.makurisashi_count != null ? String(b.makurisashi_count) : '—'
+      }),
+      colorFn: () => '#94a3b8' as string
+    },
+  ]
+
+  return <SectionTable title="⑤c 握り率・決まり手" sub="(全国)" lanes={lanes} rows={rows} />
+}
+
 // ───── ⑤e 当地別（直近5年） ─────
 function Section5eLocal({ boats }: { boats: Boat[] }) {
   const lanes = [1, 2, 3, 4, 5, 6]
@@ -591,6 +749,8 @@ export default function RaceDetail() {
           <Section3Start boats={boats} />
           <SectionExhibit boats={boats} />
           <Section5aCourse boats={boats} />
+          <Section5bKimete boats={boats} />
+          <Section5cNigiri boats={boats} />
           <Section5eLocal boats={boats} />
         </div>
       ) : (

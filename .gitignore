@@ -12,3 +12,4 @@ dist/
 *.log
 venv/
 .venv/
+.env*.local

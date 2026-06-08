@@ -5,6 +5,7 @@ const SCRAPE_ITEMS = [
   { key: 'entry', label: '出走表・選手データ', note: 'boaters.com | 前日〜当日朝' },
   { key: 'motor', label: '出足・伸び足・ランク', note: 'boatfrontier.jp | 前日〜当日朝' },
   { key: 'exhibition', label: '展示タイム・ST・1周・回り足', note: 'boatrace.jp + boaters | レース15分前以降' },
+  { key: 'profile', label: 'コース別決まり手・2連対率', note: 'boatrace.jp | 前日〜当日朝' },
 ]
 
 interface ScrapeResult {
