@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { getVenues, runScraping } from '../lib/api'
+import { getVenues, runScraping, setTeleboadCookies, checkTeleboadCookies } from '../lib/api'
 
 const SCRAPE_ITEMS = [
-  { key: 'entry', label: '出走表・選手データ', note: 'boaters.com | 前日〜当日朝' },
-  { key: 'motor', label: '出足・伸び足・ランク', note: 'boatfrontier.jp | 前日〜当日朝' },
-  { key: 'exhibition', label: '展示タイム・ST・1周・回り足', note: 'boatrace.jp + boaters | レース15分前以降' },
-  { key: 'profile', label: 'コース別決まり手・2連対率', note: 'boatrace.jp | 前日〜当日朝' },
+  { key: 'entry',         label: '出走表・選手データ',             note: 'boaters.com | 前日〜当日朝' },
+  { key: 'motor',         label: '出足・伸び足・ランク',           note: 'boatfrontier.jp | 前日〜当日朝' },
+  { key: 'exhibition',    label: '展示タイム・ST・天候',           note: 'boatrace.jp | レース15分前以降' },
+  { key: 'profile',       label: 'コース別決まり手・2連対率',      note: 'boatrace.jp | 前日〜当日朝' },
+  { key: 'raceinfo_time', label: '今節ST・1周T・回り足・出足・伸び足', note: 'boatrace.jp（テレボート認証必須）' },
 ]
 
 interface ScrapeResult {
@@ -26,8 +27,14 @@ export default function Scraping() {
   const [elapsed, setElapsed] = useState(0)
   const timerRef = useRef<number | null>(null)
 
+  // テレボートCookie設定
+  const [cookieInput, setCookieInput] = useState('')
+  const [cookieStatus, setCookieStatus] = useState<string | null>(null)
+  const [cookieInfo, setCookieInfo] = useState<{ status: string; cookie_count?: number } | null>(null)
+
   useEffect(() => {
     getVenues().then(res => setAllVenues(res.data.venues || [])).catch(() => {})
+    checkTeleboadCookies().then(res => setCookieInfo(res.data)).catch(() => {})
   }, [])
 
   function toggleVenue(v: string) {
@@ -40,6 +47,23 @@ export default function Scraping() {
     setSelectedItems(prev =>
       prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key]
     )
+  }
+
+  async function handleSetCookies() {
+    if (!cookieInput.trim()) return
+    setCookieStatus('保存中…')
+    try {
+      const res = await setTeleboadCookies(cookieInput.trim())
+      if (res.data.status === 'ok') {
+        setCookieStatus(`保存完了 (${res.data.cookie_count}件)`)
+        checkTeleboadCookies().then(r => setCookieInfo(r.data)).catch(() => {})
+        setCookieInput('')
+      } else {
+        setCookieStatus(`エラー: ${res.data.message}`)
+      }
+    } catch (e) {
+      setCookieStatus('保存失敗')
+    }
   }
 
   function toggleAllVenues() {
@@ -195,6 +219,51 @@ export default function Scraping() {
           </div>
         </div>
       )}
+
+      {/* テレボートCookie設定パネル */}
+      <div className="card" style={{ marginTop: 24, borderColor: '#ca8a04' }}>
+        <div className="card-title" style={{ color: '#92400e' }}>
+          🔑 テレボートCookie設定（今節ST・1周T・回り足・出足・伸び足 取得に必要）
+        </div>
+        <div style={{ marginBottom: 8, fontSize: 12, color: '#78350f' }}>
+          <strong>設定方法:</strong><br />
+          1. PCブラウザで <a href="https://www.boatrace.jp" target="_blank" rel="noreferrer" style={{ color: '#b45309', textDecoration: 'underline' }}>boatrace.jp</a> にテレボートログイン<br />
+          2. DevTools (F12) → Network タブ → 任意のリクエストを選択<br />
+          3. Request Headers の <code>Cookie:</code> 行の値をすべてコピーして貼り付け
+        </div>
+        {cookieInfo && (
+          <div style={{ marginBottom: 8, fontSize: 12, padding: '4px 8px', borderRadius: 4,
+            background: cookieInfo.status === 'ok' ? '#d1fae5' : '#fef3c7',
+            color: cookieInfo.status === 'ok' ? '#065f46' : '#92400e' }}>
+            {cookieInfo.status === 'ok'
+              ? `✅ Cookie保存済み (${cookieInfo.cookie_count}件)`
+              : '⚠ Cookieが未設定です'}
+          </div>
+        )}
+        <textarea
+          value={cookieInput}
+          onChange={e => setCookieInput(e.target.value)}
+          style={{ width: '100%', height: 80, fontSize: 11, fontFamily: 'monospace',
+            border: '1px solid #d97706', borderRadius: 4, padding: 8, boxSizing: 'border-box' }}
+          placeholder="JSESSIONID=xxx; BRS_BRS=yyy; _abck=zzz; ..."
+        />
+        <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+          <button
+            onClick={handleSetCookies}
+            disabled={!cookieInput.trim()}
+            style={{ background: '#b45309', color: 'white', border: 'none', borderRadius: 4,
+              padding: '6px 16px', fontSize: 13, cursor: cookieInput.trim() ? 'pointer' : 'not-allowed',
+              opacity: cookieInput.trim() ? 1 : 0.5 }}
+          >
+            Cookieを保存
+          </button>
+          {cookieStatus && (
+            <span style={{ fontSize: 12, color: cookieStatus.includes('完了') ? '#065f46' : '#b91c1c' }}>
+              {cookieStatus}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
