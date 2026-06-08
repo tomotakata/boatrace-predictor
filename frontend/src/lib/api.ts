@@ -52,6 +52,12 @@ export interface Boat {
   nigiri_rate?: number
   nigiri_occurrence?: number
   nige_count?: number; sashi_count?: number; makuri_count?: number; makurisashi_count?: number
+  // raceinfo_time (今節ST・1周T・回り足・出足・伸び足)
+  season_st?: number
+  lap1_time?: number
+  turn_time?: number
+  deashi?: number
+  nobashi?: number
   created_at?: string
 }
 
@@ -185,6 +191,12 @@ export const getVenues = () =>
 
 export const runScraping = (data: { date: string; venues: string[]; items: string[] }) =>
   api.post<{ results: Array<{ venue: string; item: string; status: string; message?: string }> }>('/scrape/run', data)
+
+export const setTeleboadCookies = (cookies: string) =>
+  api.post<{ status: string; cookie_count?: number; message?: string }>('/scrape/set_teleboat_cookies', { cookies })
+
+export const checkTeleboadCookies = () =>
+  api.get<{ status: string; cookie_count?: number; names?: string[]; message?: string }>('/scrape/check_teleboat_cookies')
 
 // Venue Config API
 export interface VenueConfig {

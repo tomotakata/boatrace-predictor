@@ -168,6 +168,50 @@ function Section2Motor({ boats }: { boats: Boat[] }) {
       }
     },
     {
+      label: '1周T',
+      values: lanes.map(l => fmt(get(l)?.lap1_time, 2)),
+      colorFn: (_v: string | undefined, i: number) => {
+        const b = get(lanes[i]); const val = b?.lap1_time
+        if (val == null) return '#94a3b8'
+        const vals = boats.map(b2 => b2.lap1_time).filter((v): v is number => v != null)
+        if (!vals.length) return '#e2e8f0'
+        const sorted = [...vals].sort((a, b2) => a - b2)
+        return val <= sorted[1] ? '#fcd34d' : val >= sorted[sorted.length - 2] ? '#f87171' : '#e2e8f0'
+      }
+    },
+    {
+      label: '回り足',
+      values: lanes.map(l => fmt(get(l)?.turn_time, 2)),
+      colorFn: (_v: string | undefined, i: number) => {
+        const b = get(lanes[i]); const val = b?.turn_time
+        if (val == null) return '#94a3b8'
+        const vals = boats.map(b2 => b2.turn_time).filter((v): v is number => v != null)
+        if (!vals.length) return '#e2e8f0'
+        const sorted = [...vals].sort((a, b2) => a - b2)
+        return val <= sorted[1] ? '#fcd34d' : val >= sorted[sorted.length - 2] ? '#f87171' : '#e2e8f0'
+      }
+    },
+    {
+      label: '出足',
+      values: lanes.map(l => fmt(get(l)?.deashi, 2)),
+      colorFn: (_v: string | undefined, i: number) => {
+        const b = get(lanes[i]); const val = b?.deashi
+        if (val == null) return '#94a3b8'
+        const sorted = boats.map(b2 => b2.deashi ?? 0).sort((a, b2) => b2 - a)
+        return val >= sorted[1] ? '#fcd34d' : val <= sorted[3] ? '#f87171' : '#e2e8f0'
+      }
+    },
+    {
+      label: '伸び足',
+      values: lanes.map(l => fmt(get(l)?.nobashi, 2)),
+      colorFn: (_v: string | undefined, i: number) => {
+        const b = get(lanes[i]); const val = b?.nobashi
+        if (val == null) return '#94a3b8'
+        const sorted = boats.map(b2 => b2.nobashi ?? 0).sort((a, b2) => b2 - a)
+        return val >= sorted[1] ? '#fcd34d' : val <= sorted[3] ? '#f87171' : '#e2e8f0'
+      }
+    },
+    {
       label: 'モーターNo',
       values: lanes.map(l => get(l)?.motor_no ? `#${get(l)!.motor_no}` : '—'),
       colorFn: () => '#94a3b8'
@@ -198,6 +242,11 @@ function Section3Start({ boats }: { boats: Boat[] }) {
     {
       label: '今節ST',
       values: lanes.map(l => fmt(get(l)?.today_st, 2)),
+      colorFn: stColorFn
+    },
+    {
+      label: '今節ST(公式)',
+      values: lanes.map(l => fmt(get(l)?.season_st, 2)),
       colorFn: stColorFn
     },
     {
