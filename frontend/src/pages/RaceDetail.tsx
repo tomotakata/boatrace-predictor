@@ -140,7 +140,7 @@ function Section2Motor({ boats }: { boats: Boat[] }) {
 
   const rows = [
     {
-      label: '出足',
+      label: 'M出足',
       values: lanes.map(l => fmt(get(l)?.motor_dashfoot, 1)),
       colorFn: (_v: string | undefined, i: number) => {
         const b = get(lanes[i]); const val = b?.motor_dashfoot
@@ -151,7 +151,7 @@ function Section2Motor({ boats }: { boats: Boat[] }) {
       }
     },
     {
-      label: '伸び足',
+      label: 'M伸び足',
       values: lanes.map(l => fmt(get(l)?.motor_extfoot, 1)),
       colorFn: (_v: string | undefined, i: number) => {
         const b = get(lanes[i]); const val = b?.motor_extfoot
