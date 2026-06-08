@@ -33,7 +33,9 @@ except Exception as e:
 
 @app.get("/api/")
 async def root():
-    return {"message": "Boatrace Predictor API v1.0"}
+    routes = [r.path for r in app.routes if hasattr(r, 'path')]
+    scrape_routes = [r for r in routes if 'scrape' in r]
+    return {"message": "Boatrace Predictor API v1.1", "scrape_routes": scrape_routes}
 
 
 handler = Mangum(app, lifespan="off")
