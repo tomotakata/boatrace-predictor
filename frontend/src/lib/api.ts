@@ -19,9 +19,12 @@ export interface Boat {
   motor_no?: number
   motor_dashfoot?: number
   motor_extfoot?: number
+  motor_stretch?: number
   motor_eval?: string
   motor_rank_letter?: string
   motor_place2_rate?: number
+  boat_no?: number
+  boat_place2_rate?: number
   avg_st?: number
   today_st?: number
   today_st_rank?: number
