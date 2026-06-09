@@ -5,7 +5,7 @@ const SCRAPE_ITEMS = [
   { key: 'entry',         label: '出走表・選手データ',             note: 'boaters.com | 前日〜当日朝' },
   { key: 'motor',         label: '出足・伸び足・ランク',           note: 'boatfrontier.jp | 前日〜当日朝' },
   { key: 'exhibition',    label: '展示タイム・ST・天候',           note: 'boatrace.jp | レース15分前以降' },
-  { key: 'profile',       label: 'コース別決まり手・2連対率',      note: 'boatrace.jp | 前日〜当日朝' },
+  { key: 'profile',       label: 'コース別決まり手・2連対率',      note: 'boatfrontier.jp | 前日〜当日朝' },
   { key: 'raceinfo_time', label: '今節ST(公式)', note: 'boatrace.jp（テレボート認証必須）' },
 ]
 
