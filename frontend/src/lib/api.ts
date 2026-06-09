@@ -84,6 +84,16 @@ export interface SystemPredictionDetail {
   regime_hit_rate: number
   regime_attack_density: number
   notes: string[]
+  boat_evals?: BoatEval[]
+}
+
+export interface BoatEval {
+  lane: number
+  name: string
+  ei: number | null
+  st_rank: number | null
+  ei_rank: number | null
+  role: string
 }
 
 export interface Prediction {

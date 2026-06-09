@@ -685,6 +685,25 @@ function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
           </div>
         )}
       </div>
+      {detail.boat_evals && detail.boat_evals.length > 0 && (
+        <div style={{ padding: '0 14px 14px' }}>
+          <div style={{ fontSize: 11, color: '#60a5fa', marginBottom: 6, fontWeight: 600 }}>各艇評価（全6艇）</div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {detail.boat_evals.map((b) => {
+              const roleColor = b.role === '頭' ? '#fcd34d' : b.role === '2着候補' ? '#60a5fa' : '#64748b'
+              return (
+                <div key={b.lane} style={{ flex: 1, textAlign: 'center', background: LANE_BG[b.lane] || '#0a1520', borderRadius: 6, padding: 6, border: '1px solid #1e3a5f' }}>
+                  <div style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 700 }}>{b.lane}号</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: roleColor }}>{b.role}</div>
+                  <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>EI:{b.ei ?? '—'}</div>
+                  <div style={{ fontSize: 10, color: '#94a3b8' }}>優勢:{b.ei_rank ?? '—'}位</div>
+                  <div style={{ fontSize: 10, color: '#94a3b8' }}>基準ST:{b.st_rank ?? '—'}位</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

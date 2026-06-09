@@ -155,6 +155,9 @@ class PredictionOutput:
     # 警告・メモ
     notes: List[str] = field(default_factory=list)
 
+    # 各艇評価（1〜6号艇すべて）
+    boat_evals: List[Dict] = field(default_factory=list)
+
     # 最終的な買い目サマリ
     main_trifecta: str = ""
     sub_trifecta: str = ""
@@ -909,6 +912,38 @@ class BoatracePredictor:
         if self.out.notes:
             self.out.reasoning += " | " + " / ".join(self.out.notes)
 
+        # ── 各艇評価（1〜6号艇すべて）──
+        benefit_set = set()
+        for cands in self.out.benefit_2nd.values():
+            benefit_set.update(cands)
+        ei_sorted = sorted((b.ei for b in self.boats), reverse=True)
+        evals = []
+        for lane in range(1, 7):
+            b = self._get_boat_by_lane(lane)
+            if not b:
+                evals.append({"lane": lane, "name": "", "ei": None, "st_rank": None,
+                              "ei_rank": None, "role": "—"})
+                continue
+            if b.lane in self.out.head_boats:
+                role = "頭"
+            elif b.lane in benefit_set:
+                role = "2着候補"
+            else:
+                role = "—"
+            try:
+                ei_rank = ei_sorted.index(b.ei) + 1
+            except ValueError:
+                ei_rank = None
+            evals.append({
+                "lane": b.lane,
+                "name": b.name,
+                "ei": round(b.ei, 1),
+                "st_rank": b.st_rank,
+                "ei_rank": ei_rank,
+                "role": role,
+            })
+        self.out.boat_evals = evals
+
     # ────────────────────────────────────
     # ユーティリティ
     # ────────────────────────────────────
@@ -1033,6 +1068,7 @@ def output_to_prediction_dict(out: PredictionOutput) -> dict:
             "regime_hit_rate": out.regime_hit_rate,
             "regime_attack_density": out.regime_attack_density,
             "notes": out.notes,
+            "boat_evals": out.boat_evals,
         }
     }
 

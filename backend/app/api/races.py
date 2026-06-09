@@ -158,12 +158,18 @@ async def predict_race_system(race_id: int):
     # v56.3 システム予測実行
     prediction = run_system_prediction(race)
 
-    # DB保存
+    # DB保存（predicted_trifecta/exacta カラムは varchar(20) のため主要1点のみ保存。
+    # 全フォーメーションは detail で返却しフロントに表示する）
+    def _primary(v):
+        if not v:
+            return v
+        return str(v).split(",")[0].strip()
+
     db_pred = {
         "race_id": race_id,
         "source": "system_v56",
-        "predicted_trifecta": prediction.get("predicted_trifecta"),
-        "predicted_exacta": prediction.get("predicted_exacta"),
+        "predicted_trifecta": _primary(prediction.get("predicted_trifecta")),
+        "predicted_exacta": _primary(prediction.get("predicted_exacta")),
         "confidence": prediction.get("confidence"),
         "reasoning": prediction.get("reasoning", ""),
         "pattern": prediction.get("pattern"),
