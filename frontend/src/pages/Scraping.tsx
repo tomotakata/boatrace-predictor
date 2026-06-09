@@ -6,7 +6,7 @@ const SCRAPE_ITEMS = [
   { key: 'motor',         label: '出足・伸び足・ランク',           note: 'boatfrontier.jp | 前日〜当日朝' },
   { key: 'exhibition',    label: '展示タイム・ST・天候',           note: 'boatrace.jp | レース15分前以降' },
   { key: 'profile',       label: 'コース別決まり手・2連対率',      note: 'boatrace.jp | 前日〜当日朝' },
-  { key: 'raceinfo_time', label: '今節ST・1周T・回り足・出足・伸び足', note: 'boatrace.jp（テレボート認証必須）' },
+  { key: 'raceinfo_time', label: '今節ST(公式)', note: 'boatrace.jp（テレボート認証必須）' },
 ]
 
 interface ScrapeResult {
@@ -223,7 +223,7 @@ export default function Scraping() {
       {/* テレボートCookie設定パネル */}
       <div className="card" style={{ marginTop: 24, borderColor: '#ca8a04' }}>
         <div className="card-title" style={{ color: '#92400e' }}>
-          🔑 テレボートCookie設定（今節ST・1周T・回り足・出足・伸び足 取得に必要）
+          🔑 テレボートCookie設定（今節ST(公式) 取得に必要）
         </div>
         <div style={{ marginBottom: 8, fontSize: 12, color: '#78350f' }}>
           <strong>設定方法:</strong><br />
