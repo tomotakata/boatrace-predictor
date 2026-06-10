@@ -211,6 +211,16 @@ function Section3Start({ boats }: { boats: Boat[] }) {
       colorFn: (v: string | undefined) => v === '1' ? '#fcd34d' : v === '2' ? '#f59e0b' : '#e2e8f0'
     },
     {
+      label: 'コースST(1年)',
+      values: lanes.map(l => fmt(get(l)?.course1y_st, 2)),
+      colorFn: stColorFn
+    },
+    {
+      label: 'ST順(1年)',
+      values: lanes.map(l => { const r = get(l)?.course1y_st_rank; return r != null ? String(r) : '—' }),
+      colorFn: (v: string | undefined) => v === '1' ? '#fcd34d' : v === '2' ? '#f59e0b' : '#e2e8f0'
+    },
+    {
       label: '基準ST',
       values: lanes.map(l => fmt(get(l)?.standard_st, 3)),
       colorFn: stColorFn
@@ -467,13 +477,82 @@ function Section5eLocal({ boats }: { boats: Boat[] }) {
       colorFn: pctColor
     },
     {
+      label: '2連率',
+      values: lanes.map(l => fmtPct(get(l)?.local5y_place2_rate)),
+      colorFn: pctColor
+    },
+    {
       label: '3連率',
       values: lanes.map(l => fmtPct(get(l)?.local5y_tricast_rate)),
       colorFn: pctColor
     },
+    {
+      label: '差/捲/捲差',
+      values: lanes.map(l => {
+        const b = get(l)
+        if (!b) return '—'
+        const s = b.local5y_sashi, mk = b.local5y_makuri, mz = b.local5y_makurizashi
+        if (s == null && mk == null && mz == null) return '—'
+        return `${s ?? 0}/${mk ?? 0}/${mz ?? 0}`
+      }),
+      colorFn: () => '#cbd5e1' as string
+    },
   ]
 
   return <SectionTable title="⑤e 当地別" sub="(直近5年)" lanes={lanes} rows={rows} />
+}
+
+// ───── ⑤f 一般戦(G2,G3含む) 直近1年 ─────
+function Section5fGeneral({ boats }: { boats: Boat[] }) {
+  const lanes = [1, 2, 3, 4, 5, 6]
+  const get = (lane: number) => boats.find(b => b.lane === lane)
+  const hasData = boats.some(b => b.general1y_win_rate != null || b.general1y_place2_rate != null || b.general1y_races != null)
+  if (!hasData) return null
+
+  const pctColor = (v: string | undefined) => {
+    const n = parseFloat(v ?? '0')
+    if (isNaN(n) || v === '—') return '#94a3b8'
+    return n >= 30 ? '#fcd34d' : n >= 15 ? '#f59e0b' : '#e2e8f0'
+  }
+
+  const rows = [
+    { label: '出走数', values: lanes.map(l => get(l)?.general1y_races != null ? String(get(l)!.general1y_races) : '—'), colorFn: () => '#94a3b8' as string },
+    { label: '勝率', values: lanes.map(l => fmtPct(get(l)?.general1y_win_rate)), colorFn: pctColor },
+    { label: '2連率', values: lanes.map(l => fmtPct(get(l)?.general1y_place2_rate)), colorFn: pctColor },
+    { label: '3連率', values: lanes.map(l => fmtPct(get(l)?.general1y_tricast_rate)), colorFn: pctColor },
+    {
+      label: '差/捲/捲差',
+      values: lanes.map(l => {
+        const b = get(l)
+        if (!b) return '—'
+        const s = b.general1y_sashi, mk = b.general1y_makuri, mz = b.general1y_makurizashi
+        if (s == null && mk == null && mz == null) return '—'
+        return `${s ?? 0}/${mk ?? 0}/${mz ?? 0}`
+      }),
+      colorFn: () => '#cbd5e1' as string
+    },
+  ]
+  return <SectionTable title="⑤f 一般戦(G2,G3含む)" sub="(直近1年)" lanes={lanes} rows={rows} />
+}
+
+// ───── ⑤g イン逃げ時 直近1年 ─────
+function Section5gEscape({ boats }: { boats: Boat[] }) {
+  const lanes = [1, 2, 3, 4, 5, 6]
+  const get = (lane: number) => boats.find(b => b.lane === lane)
+  const hasData = boats.some(b => b.escape1y_place2_rate != null || b.escape1y_tricast_rate != null)
+  if (!hasData) return null
+
+  const pctColor = (v: string | undefined) => {
+    const n = parseFloat(v ?? '0')
+    if (isNaN(n) || v === '—') return '#94a3b8'
+    return n >= 30 ? '#fcd34d' : n >= 15 ? '#f59e0b' : '#e2e8f0'
+  }
+
+  const rows = [
+    { label: '2連率', values: lanes.map(l => fmtPct(get(l)?.escape1y_place2_rate)), colorFn: pctColor },
+    { label: '3連率', values: lanes.map(l => fmtPct(get(l)?.escape1y_tricast_rate)), colorFn: pctColor },
+  ]
+  return <SectionTable title="⑤g イン逃げ時" sub="(直近1年)" lanes={lanes} rows={rows} />
 }
 
 // ───── 展示タイム ─────
@@ -896,6 +975,8 @@ export default function RaceDetail() {
           <Section5bKimete boats={boats} />
           <Section5cNigiri boats={boats} />
           <Section5eLocal boats={boats} />
+          <Section5fGeneral boats={boats} />
+          <Section5gEscape boats={boats} />
         </div>
       ) : (
         <div style={{ textAlign: 'center', padding: 40, color: '#64748b', background: '#0d1b2e', borderRadius: 10, marginBottom: 18 }}>

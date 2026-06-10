@@ -41,6 +41,20 @@ export interface Boat {
   local5y_races?: number
   local5y_win_rate?: number
   local5y_tricast_rate?: number
+  local5y_place2_rate?: number
+  local5y_sashi?: number; local5y_makuri?: number; local5y_makurizashi?: number
+  // 直近1年コース別 平均ST/平均ST順（自コース・boatfrontier）
+  course1y_st?: number
+  course1y_st_rank?: number
+  // 一般戦(G2,G3含む)直近1年（自コース・boatfrontier プレミアム）
+  general1y_races?: number
+  general1y_win_rate?: number
+  general1y_place2_rate?: number
+  general1y_tricast_rate?: number
+  general1y_sashi?: number; general1y_makuri?: number; general1y_makurizashi?: number
+  // イン逃げ時直近1年（自コース・boatfrontier プレミアム）
+  escape1y_place2_rate?: number
+  escape1y_tricast_rate?: number
   // コース別決まり手（boatrace.jp scrape_profile）
   c1_nige?: number; c1_sashi?: number; c1_makuri?: number; c1_makurizashi?: number; c1_place2_rate?: number
   c2_nige?: number; c2_sashi?: number; c2_makuri?: number; c2_makurizashi?: number; c2_place2_rate?: number
