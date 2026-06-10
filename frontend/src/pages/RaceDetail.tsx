@@ -664,6 +664,87 @@ function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
   )
 }
 
+// ───── オッズセクション ─────
+function OddsSection({ race }: { race: Race }) {
+  const odds3t = race.odds_3t || {}
+  const odds2t = race.odds_2t || {}
+  const oddsWin = race.odds_win || {}
+  const has = Object.keys(odds3t).length > 0 || Object.keys(oddsWin).length > 0
+  if (!has) return null
+
+  const top3t = Object.entries(odds3t)
+    .filter(([, v]) => v && v > 0)
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, 12)
+  const top2t = Object.entries(odds2t)
+    .filter(([, v]) => v && v > 0)
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, 8)
+  const winRows = [1, 2, 3, 4, 5, 6]
+
+  const updated = race.odds_updated_at
+    ? new Date(race.odds_updated_at).toLocaleString('ja-JP', { hour: '2-digit', minute: '2-digit', month: 'numeric', day: 'numeric' })
+    : null
+
+  const cell: React.CSSProperties = { padding: '4px 8px', fontSize: 13, border: '1px solid #1e3a5f', textAlign: 'center' }
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <SectionHeader title="オッズ" sub={updated ? `更新 ${updated}` : 'boaters.com'} />
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', background: '#0d1b2e', padding: 12, borderRadius: '0 0 6px 6px' }}>
+        {top3t.length > 0 && (
+          <div style={{ flex: '1 1 200px', minWidth: 180 }}>
+            <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 6, fontWeight: 700 }}>3連単 人気順</div>
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+              <tbody>
+                {top3t.map(([k, v]) => (
+                  <tr key={k}>
+                    <td style={{ ...cell, color: '#e2e8f0', fontWeight: 600, width: '55%' }}>{k}</td>
+                    <td style={{ ...cell, color: v < 10 ? '#fcd34d' : v < 50 ? '#e2e8f0' : '#94a3b8', fontWeight: 700 }}>{v.toFixed(1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {top2t.length > 0 && (
+          <div style={{ flex: '1 1 160px', minWidth: 140 }}>
+            <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 6, fontWeight: 700 }}>2連単 人気順</div>
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+              <tbody>
+                {top2t.map(([k, v]) => (
+                  <tr key={k}>
+                    <td style={{ ...cell, color: '#e2e8f0', fontWeight: 600, width: '55%' }}>{k}</td>
+                    <td style={{ ...cell, color: v < 10 ? '#fcd34d' : '#e2e8f0', fontWeight: 700 }}>{v.toFixed(1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {Object.keys(oddsWin).length > 0 && (
+          <div style={{ flex: '1 1 140px', minWidth: 120 }}>
+            <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 6, fontWeight: 700 }}>単勝</div>
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+              <tbody>
+                {winRows.map(l => {
+                  const v = oddsWin[String(l)]
+                  return (
+                    <tr key={l}>
+                      <td style={{ ...cell, background: LANE_BG[l], color: LANE_TEXT[l], fontWeight: 700, width: 40 }}>{l}</td>
+                      <td style={{ ...cell, color: v && v < 3 ? '#fcd34d' : '#e2e8f0', fontWeight: 700 }}>{v != null ? v.toFixed(1) : '—'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ───── メインページ ─────
 export default function RaceDetail() {
   const { id } = useParams<{ id: string }>()
@@ -821,6 +902,9 @@ export default function RaceDetail() {
           出走表データがありません。スクレイピングを実行してください。
         </div>
       )}
+
+      {/* オッズ */}
+      <OddsSection race={race} />
 
       {/* 予測結果 */}
       {(systemDetail || predictions.length > 0) && (

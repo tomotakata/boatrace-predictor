@@ -138,6 +138,10 @@ export interface Race {
   predictions_count?: number
   result?: { trifecta: string }
   created_at?: string
+  odds_3t?: Record<string, number> | null
+  odds_2t?: Record<string, number> | null
+  odds_win?: Record<string, number> | null
+  odds_updated_at?: string | null
 }
 
 export interface AccuracyData {

@@ -7,6 +7,7 @@ const SCRAPE_ITEMS = [
   { key: 'exhibition',    label: '展示タイム・ST・天候',           note: 'boatrace.jp | レース15分前以降' },
   { key: 'profile',       label: 'コース別決まり手・2連対率',      note: 'boatfrontier.jp | 前日〜当日朝' },
   { key: 'raceinfo_time', label: '今節ST(公式)', note: 'boatrace.jp（テレボート認証必須）' },
+  { key: 'odds',          label: 'オッズ(3連単・2連単・単勝)',    note: 'boaters.com | 締切直前が最新' },
 ]
 
 interface ScrapeResult {
