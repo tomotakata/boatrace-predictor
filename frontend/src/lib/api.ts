@@ -76,6 +76,7 @@ export interface Boat {
 }
 
 export interface SystemPredictionDetail {
+  version?: string
   regime: string
   s_in: string
   surface_type: string
@@ -99,15 +100,34 @@ export interface SystemPredictionDetail {
   regime_attack_density: number
   notes: string[]
   boat_evals?: BoatEval[]
+  // v58.7
+  main_attack_course?: number
+  attack_type?: string
+  race_verdict?: string
+  odds_available?: boolean
+  synthetic_odds?: number
+  payout?: number
+  payout_grade?: string
+  fire_boat_lane?: number
+  fire_boat_gen?: number
+  dkan_counts?: Record<string, number>
 }
 
 export interface BoatEval {
   lane: number
+  course?: number
   name: string
+  rank?: string
   ei: number | null
   st_rank: number | null
   ei_rank: number | null
   role: string
+  attack_type?: string
+  completion_power?: number
+  dkan?: number
+  gen_rate?: number
+  hit_rate?: number
+  is_fire?: boolean
 }
 
 export interface Prediction {

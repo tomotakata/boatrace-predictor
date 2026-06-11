@@ -606,6 +606,7 @@ const SOURCE_CONFIG = {
   gemini: { label: 'Gemini', color: '#34d399' },
   ensemble: { label: 'Ensemble', color: '#a78bfa' },
   system_v56: { label: 'システム v56.3', color: '#60a5fa' },
+  system_v58: { label: 'システム v58.5', color: '#60a5fa' },
 }
 
 function PredictionPanel({ prediction }: { prediction: Prediction }) {
@@ -684,11 +685,41 @@ function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
   return (
     <div style={{ border: '2px solid #3b82f644', borderRadius: 10, marginBottom: 16, overflow: 'hidden' }}>
       <div style={{ background: '#1e3a5f44', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #1e3a5f', flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: 700, color: '#60a5fa', fontSize: 14 }}>システム予測 v56.3</span>
+        <span style={{ fontWeight: 700, color: '#60a5fa', fontSize: 14 }}>システム予測 {detail.version || 'v58.7'}</span>
         <span style={{ padding: '2px 10px', borderRadius: 10, background: '#1e3a5f', color: '#94a3b8', fontSize: 12 }}>{detail.regime}</span>
         <span style={{ padding: '2px 10px', borderRadius: 10, background: '#1e3a5f', color: '#94a3b8', fontSize: 12 }}>{detail.s_in}（{detail.surface_type}）</span>
         <span style={{ fontSize: 12, color: '#64748b' }}>自信度: {Math.round(detail.confidence)}% / 波乱度: {Math.round(detail.wave_score)}%</span>
       </div>
+      {/* v58.7 改正60：戻り額ゲート＋発動艇 */}
+      {(() => {
+        const v = detail.race_verdict || detail.payout_grade || '—'
+        const vColor = v === '勝負' ? '#22c55e' : v === '通常' ? '#3b82f6' : '#ef4444'
+        const vBg = v === '勝負' ? '#0f2d1a' : v === '通常' ? '#0d1b3e' : '#2d0f0f'
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', padding: '10px 14px', background: vBg, borderBottom: '1px solid #1e3a5f' }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: vColor, padding: '2px 12px', border: `1px solid ${vColor}`, borderRadius: 8 }}>判定: {v}</span>
+            {detail.odds_available ? (
+              <>
+                <span style={{ fontSize: 12, color: '#cbd5e1' }}>合成オッズ <b style={{ color: '#fcd34d' }}>{(detail.synthetic_odds ?? 0).toFixed(1)}倍</b></span>
+                <span style={{ fontSize: 12, color: '#cbd5e1' }}>戻り額 <b style={{ color: '#6ee7b7' }}>¥{Math.round(detail.payout ?? 0).toLocaleString()}</b></span>
+                <span style={{ fontSize: 10, color: '#64748b' }}>（≤3万=見送り / 3万〜5万=通常 / ≥5万=勝負）</span>
+              </>
+            ) : (
+              <span style={{ fontSize: 12, color: '#f87171' }}>オッズ未取得のため戻り額判定不能（全枝見送り）</span>
+            )}
+            {detail.fire_boat_lane ? (
+              <span style={{ fontSize: 12, color: '#fb923c', fontWeight: 700, padding: '2px 10px', background: '#2d1500', borderRadius: 8 }}>
+                発動艇 {detail.fire_boat_lane}号（発生率{Math.round((detail.fire_boat_gen ?? 0) * 100)}%）
+              </span>
+            ) : (
+              <span style={{ fontSize: 12, color: '#64748b' }}>発動艇なし（1逃げ主体）</span>
+            )}
+            {detail.main_attack_course && (
+              <span style={{ fontSize: 12, color: '#94a3b8' }}>攻め主体 {detail.main_attack_course}号（{detail.attack_type}）</span>
+            )}
+          </div>
+        )
+      })()}
       <div style={{ padding: 14, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
         <div>
           <div style={{ fontSize: 11, color: '#60a5fa', marginBottom: 6, fontWeight: 600 }}>本線F1（頭:{detail.f1_head}号・¥{detail.budget_main.toLocaleString()}）</div>
@@ -727,12 +758,19 @@ function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
             {detail.boat_evals.map((b) => {
               const roleColor = b.role === '頭' ? '#fcd34d' : b.role === '2着候補' ? '#60a5fa' : '#64748b'
               return (
-                <div key={b.lane} style={{ flex: 1, textAlign: 'center', background: LANE_BG[b.lane] || '#0a1520', borderRadius: 6, padding: 6, border: '1px solid #1e3a5f' }}>
-                  <div style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 700 }}>{b.lane}号</div>
+                <div key={b.lane} style={{ flex: 1, textAlign: 'center', background: LANE_BG[b.lane] || '#0a1520', borderRadius: 6, padding: 6, border: b.is_fire ? '1px solid #fb923c' : '1px solid #1e3a5f' }}>
+                  <div style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 700 }}>{b.lane}号{b.is_fire ? ' 🔥' : ''}</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: roleColor }}>{b.role}</div>
                   <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>EI:{b.ei ?? '—'}</div>
                   <div style={{ fontSize: 10, color: '#94a3b8' }}>優勢:{b.ei_rank ?? '—'}位</div>
                   <div style={{ fontSize: 10, color: '#94a3b8' }}>基準ST:{b.st_rank ?? '—'}位</div>
+                  <div style={{ fontSize: 10, color: '#a5b4fc' }}>D-KAN:{(b.dkan ?? b.completion_power) ?? '—'}/5</div>
+                  {b.gen_rate != null && b.gen_rate > 0 && (
+                    <div style={{ fontSize: 10, color: '#fb923c' }}>発生率:{Math.round(b.gen_rate * 100)}%</div>
+                  )}
+                  {b.lane === 1 && b.hit_rate != null && b.hit_rate > 0 && (
+                    <div style={{ fontSize: 10, color: '#f87171' }}>被弾:{Math.round(b.hit_rate * 100)}%</div>
+                  )}
                 </div>
               )
             })}
@@ -915,7 +953,7 @@ export default function RaceDetail() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={handlePredictSystem} disabled={predicting}
               style={{ padding: '8px 16px', background: 'linear-gradient(135deg,#1e40af,#3b82f6)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-              {predicting ? '予測中…' : 'システム予測 v56.3'}
+              {predicting ? '予測中…' : 'システム予測 v58.5'}
             </button>
             <button onClick={() => handlePredict('ensemble')} disabled={predicting}
               style={{ padding: '8px 14px', background: '#1e2a40', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>

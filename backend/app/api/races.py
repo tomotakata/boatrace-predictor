@@ -8,6 +8,32 @@ from backend.app.prediction.engine import run_system_prediction
 router = APIRouter()
 
 
+def _compute_escape_calibration(race: dict, sb) -> dict:
+    """逃げ成立度の当節較正データ（改正46/48）を算出。
+    同場直近の確定レースの実1号頭率Rと標本数Nを返す。
+    race_winner_logテーブルが空/未整備ならN=0（priorを据え置く＝改正48）。
+    """
+    venue = race.get("venue")
+    if not venue:
+        return {"r": None, "n": 0}
+    try:
+        # 同場の着順確定レースを最大60件（直近2節＋当節相当）取得
+        resp = (sb.table("race_winner_log")
+                .select("winner_course")
+                .eq("venue", venue)
+                .order("date", desc=True)
+                .limit(60)
+                .execute())
+        rows = resp.data or []
+    except Exception:
+        return {"r": None, "n": 0}
+    n = len(rows)
+    if n == 0:
+        return {"r": None, "n": 0}
+    in_head = sum(1 for r in rows if int(r.get("winner_course") or 0) == 1)
+    return {"r": in_head / n, "n": n}
+
+
 def _build_race_response(race: dict, sb) -> dict:
     """Attach boats (with player info) and predictions to a race dict."""
     race_id = race["id"]
@@ -144,8 +170,9 @@ async def predict_race(race_id: int, source: str = Query("ensemble")):
 @router.post("/{race_id}/predict-system")
 async def predict_race_system(race_id: int):
     """
-    競艇予想AI v56.3 システム予測
-    PDFのロジックをPythonコードとして実装した予測エンジンを使用
+    競艇予想AI v58.7 完全版 システム予測
+    戻り額ゲート（合成オッズ反比例配分）/発動艇認定・D-KAN5項目/受益マップ・
+    テンプレ優先・捲り屋降格則/被弾率A型禁止 をPythonの計算式として実装。
     """
     sb = get_supabase()
 
@@ -155,7 +182,11 @@ async def predict_race_system(race_id: int):
 
     race = _build_race_response(race_resp.data, sb)
 
-    # v56.3 システム予測実行
+    # 逃げ成立度の当節較正（改正46/48）：同場の実1号頭率Rと標本数Nを供給。
+    # race_winner_logが空/未整備の場合はN=0となりpriorを据え置く（改正48に合致）。
+    race["escape_calibration"] = _compute_escape_calibration(race, sb)
+
+    # v58.7 システム予測実行
     prediction = run_system_prediction(race)
 
     # DB保存（predicted_trifecta/exacta カラムは varchar(20) のため主要1点のみ保存。
@@ -167,7 +198,7 @@ async def predict_race_system(race_id: int):
 
     db_pred = {
         "race_id": race_id,
-        "source": "system_v56",
+        "source": "system_v58",
         "predicted_trifecta": _primary(prediction.get("predicted_trifecta")),
         "predicted_exacta": _primary(prediction.get("predicted_exacta")),
         "confidence": prediction.get("confidence"),
