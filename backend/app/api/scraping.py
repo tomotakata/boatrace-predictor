@@ -31,6 +31,17 @@ class CookieSetRequest(BaseModel):
     cookies: str  # "name=value; name2=value2" 形式
 
 
+class EvaluateRequest(BaseModel):
+    from_date: str = ""
+    to_date: str = ""
+
+
+class HistoryRequest(BaseModel):
+    from_date: str = ""
+    to_date: str = ""
+    venues: List[str] = []
+
+
 @router.get("/venues")
 async def get_venues():
     return {"venues": VENUE_LIST}
@@ -51,7 +62,6 @@ async def run_scraping(req: ScrapeRequest):
                 }
             )
             data = resp.json()
-            # Vercel側のレスポンス形式に変換
             results = []
             for r in data.get("results", []):
                 results.append({
@@ -63,6 +73,43 @@ async def run_scraping(req: ScrapeRequest):
             return {"results": results}
     except Exception as e:
         return {"results": [{"venue": "全体", "item": "all", "status": "error", "message": str(e)}]}
+
+
+@router.post("/evaluate")
+async def evaluate_predictions(req: EvaluateRequest):
+    """予測 vs 実結果を突合してis_correct_trifecta/exactaを自動更新"""
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                f"{SAKURA_SCRAPER_URL}/evaluate",
+                json={
+                    "secret": SAKURA_SCRAPER_SECRET,
+                    "from_date": req.from_date,
+                    "to_date": req.to_date,
+                }
+            )
+            return resp.json()
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/scrape_history")
+async def scrape_history(req: HistoryRequest):
+    """過去日付の確定着順を一括取得"""
+    try:
+        async with httpx.AsyncClient(timeout=600) as client:
+            resp = await client.post(
+                f"{SAKURA_SCRAPER_URL}/scrape_history",
+                json={
+                    "secret": SAKURA_SCRAPER_SECRET,
+                    "from_date": req.from_date,
+                    "to_date": req.to_date,
+                    "venues": req.venues or list(range(1, 25)),
+                }
+            )
+            return resp.json()
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 @router.post("/set_teleboat_cookies")
@@ -88,3 +135,4 @@ async def check_teleboat_cookies():
             return resp.json()
     except Exception as e:
         return {"status": "error", "message": str(e)}
+

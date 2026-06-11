@@ -881,9 +881,7 @@ async def scrape_odds(date, venues):
 
 async def scrape_results(date, venues):
     """boaters-boatrace.com から確定着順を取得して race_winner_log に保存。
-    各レースページは当該レースの6艇を完全に埋め込むため 1R〜12R を巡回し、
-    chakuPosition=="1" の艇の startSinnyu(進入コース)を実1号頭率
-    (逃げ成立度較正・改正46/48)の標本として蓄積する。
+    1〜3着の艇番・進入コースを完全記録し trifecta_result/exacta_result を導出。
     URL: https://boaters-boatrace.com/race/{slug}/{YYYY-MM-DD}/{n}R
     """
     import json as _json
@@ -912,7 +910,7 @@ async def scrape_results(date, venues):
                     if not m:
                         continue
                     apollo = _json.loads(m.group(1)).get("props", {}).get("pageProps", {}).get("initialApolloState", {})
-                    # この節の各レースについて 着順->(進入コース,艇番)
+                    # 着順→(進入コース,艇番) をグループ化
                     groups = {}
                     for k, val in apollo.items():
                         if not k.startswith("CrawledRaceResultRacer:") or not isinstance(val, dict):
@@ -922,13 +920,15 @@ async def scrape_results(date, venues):
                             continue
                         rid = ref.split(":", 1)[1]
                         chaku = str(val.get("chakuPosition") or "")
+                        if not chaku or chaku == "None":
+                            continue
                         groups.setdefault(rid, {})[chaku] = (
                             val.get("startSinnyu"), val.get("boatNumber"))
                     for rid, chmap in groups.items():
                         if len(rid) != 12 or "1" not in chmap:
                             continue
-                        course, lane = chmap["1"]
-                        if course is None and lane is None:
+                        course1, lane1 = chmap["1"]
+                        if course1 is None and lane1 is None:
                             continue
                         r_date = f"{rid[0:4]}-{rid[4:6]}-{rid[6:8]}"
                         r_vname = VENUE_NAME_MAP.get(rid[8:10], vname)
@@ -936,19 +936,48 @@ async def scrape_results(date, venues):
                             r_no = int(rid[10:12])
                         except ValueError:
                             continue
+                        # 全着順の艇番リスト(result_all)
+                        result_all = []
+                        for pos in range(1, 7):
+                            if str(pos) in chmap:
+                                c, l = chmap[str(pos)]
+                                result_all.append({"pos": pos, "lane": int(l) if l is not None else None,
+                                                   "course": int(c) if c is not None else None})
+                        # 3連単・2連単結果文字列
+                        place2_lane = int(chmap["2"][1]) if "2" in chmap and chmap["2"][1] is not None else None
+                        place3_lane = int(chmap["3"][1]) if "3" in chmap and chmap["3"][1] is not None else None
+                        trifecta_result = None
+                        exacta_result = None
+                        if lane1 is not None and place2_lane is not None and place3_lane is not None:
+                            trifecta_result = f"{int(lane1)}-{place2_lane}-{place3_lane}"
+                        if lane1 is not None and place2_lane is not None:
+                            exacta_result = f"{int(lane1)}-{place2_lane}"
                         row = {
                             "race_key": rid,
                             "venue": r_vname,
                             "date": r_date,
                             "race_no": r_no,
-                            "winner_course": int(course) if course is not None else None,
-                            "winner_lane": int(lane) if lane is not None else None,
+                            "winner_course": int(course1) if course1 is not None else None,
+                            "winner_lane": int(lane1) if lane1 is not None else None,
+                            "place2_lane": place2_lane,
+                            "place3_lane": place3_lane,
+                            "trifecta_result": trifecta_result,
+                            "exacta_result": exacta_result,
+                            "result_all": _json.dumps(result_all, ensure_ascii=False),
                         }
                         try:
                             sb.table("race_winner_log").upsert(row, on_conflict="race_key").execute()
                             saved += 1
                         except Exception as ue:
-                            print(f"results upsert {rid} err: {ue}")
+                            # 新列未追加の場合は旧列のみで保存
+                            err_s = str(ue)
+                            if any(c in err_s for c in ["place2_lane","place3_lane","trifecta_result","exacta_result","result_all"]):
+                                old_row = {k: v for k, v in row.items()
+                                           if k in ("race_key","venue","date","race_no","winner_course","winner_lane")}
+                                sb.table("race_winner_log").upsert(old_row, on_conflict="race_key").execute()
+                                saved += 1
+                            else:
+                                print(f"results upsert {rid} err: {ue}")
                 except Exception as e:
                     errs += 1
                     print(f"results {vname} {rno}R err: {e}")
@@ -1232,6 +1261,183 @@ async def scrape(req: ScrapeRequest):
     s = sum(1 for r in all_results if r.get("status")=="ok")
     e = sum(1 for r in all_results if r.get("status")=="error")
     return {"date":date,"results":all_results,"summary":f"成功:{s} エラー:{e}"}
+
+class EvaluateRequest(BaseModel):
+    secret: str = ""
+    from_date: str = ""  # YYYYMMDD or YYYY-MM-DD
+    to_date: str = ""
+
+class HistoryRequest(BaseModel):
+    secret: str = ""
+    from_date: str = ""   # YYYYMMDD
+    to_date: str = ""     # YYYYMMDD
+    venues: list = []
+
+@app.post("/evaluate")
+async def evaluate_predictions(req: EvaluateRequest):
+    """予測 vs 実結果を突合して predictions.is_correct_trifecta/exacta を自動更新。
+    race_winner_log の trifecta_result が predicted_trifecta の候補リストに含まれているか判定。
+    """
+    if req.secret != API_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    sb = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+    # 日付範囲パース
+    def _norm(d: str) -> str:
+        d = d.strip()
+        if len(d) == 8 and d.isdigit():
+            return f"{d[:4]}-{d[4:6]}-{d[6:8]}"
+        return d
+
+    from_d = _norm(req.from_date) if req.from_date else None
+    to_d   = _norm(req.to_date)   if req.to_date   else None
+
+    # predictions を取得（日付フィルタはrace経由で行うためまず全件取得）
+    pq = sb.table("predictions").select(
+        "id, race_id, predicted_trifecta, predicted_exacta, is_correct_trifecta, is_correct_exacta, detail"
+    )
+    preds = pq.execute().data or []
+
+    # race_winner_log を取得
+    wq = sb.table("race_winner_log").select(
+        "race_key, venue, date, race_no, trifecta_result, exacta_result, winner_lane"
+    )
+    if from_d:
+        wq = wq.gte("date", from_d)
+    if to_d:
+        wq = wq.lte("date", to_d)
+    winner_rows = wq.execute().data or []
+
+    # races テーブルで race_id → (date, venue, race_no) のマッピング
+    race_ids = list({p["race_id"] for p in preds if p.get("race_id")})
+    races_data = {}
+    if race_ids:
+        chunk = 200
+        for i in range(0, len(race_ids), chunk):
+            rsp = sb.table("races").select("id, date, venue, race_no").in_("id", race_ids[i:i+chunk]).execute()
+            for r in (rsp.data or []):
+                races_data[r["id"]] = r
+
+    # winner_log を (date, venue, race_no) キーで索引
+    winner_map = {}
+    for w in winner_rows:
+        key = (w["date"], w["venue"], w["race_no"])
+        winner_map[key] = w
+
+    updated = 0
+    skipped = 0
+    for pred in preds:
+        race = races_data.get(pred.get("race_id"))
+        if not race:
+            skipped += 1
+            continue
+        # 日付フィルタ（races経由）
+        if from_d and race.get("date","") < from_d:
+            skipped += 1
+            continue
+        if to_d and race.get("date","") > to_d:
+            skipped += 1
+            continue
+
+        key = (race["date"], race["venue"], race["race_no"])
+        winner = winner_map.get(key)
+        if not winner:
+            skipped += 1
+            continue
+
+        actual_tri = winner.get("trifecta_result")
+        actual_ex  = winner.get("exacta_result")
+        if not actual_tri:
+            skipped += 1
+            continue
+
+        # predicted_trifecta はカンマ区切り候補リスト "1-2-3,1-3-2,..."
+        # detail JSON内の honsen_adopted も確認
+        pred_tri_str = pred.get("predicted_trifecta") or ""
+        pred_ex_str  = pred.get("predicted_exacta") or ""
+
+        # detail から honsen_adopted も取り出して補完
+        detail = pred.get("detail") or {}
+        if isinstance(detail, str):
+            try:
+                import json as _j
+                detail = _j.loads(detail)
+            except Exception:
+                detail = {}
+        honsen_adopted = detail.get("honsen_adopted", []) if isinstance(detail, dict) else []
+
+        all_tri_combos = set(filter(None, pred_tri_str.split(","))) | set(honsen_adopted)
+        all_ex_combos  = set(filter(None, pred_ex_str.split(",")))
+
+        is_tri = actual_tri in all_tri_combos if all_tri_combos else None
+        is_ex  = actual_ex  in all_ex_combos  if all_ex_combos  else None
+
+        # payout_grade を detail から取得
+        payout_grade = detail.get("payout_grade") if isinstance(detail, dict) else None
+
+        update_body: dict = {
+            "is_correct_trifecta": is_tri,
+            "actual_trifecta": actual_tri,
+        }
+        if is_ex is not None:
+            update_body["is_correct_exacta"] = is_ex
+        if payout_grade:
+            update_body["payout_grade"] = payout_grade
+
+        try:
+            sb.table("predictions").update(update_body).eq("id", pred["id"]).execute()
+            updated += 1
+        except Exception as ue:
+            print(f"evaluate update {pred['id']} err: {ue}")
+
+    return {
+        "status": "ok",
+        "updated": updated,
+        "skipped": skipped,
+        "total": len(preds),
+    }
+
+
+@app.post("/scrape_history")
+async def scrape_history(req: HistoryRequest):
+    """過去日付の確定着順を一括取得。from_date〜to_date の全日付に対して results スクレイプを実行。"""
+    if req.secret != API_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    from datetime import date as _date, timedelta
+
+    def _parse(d: str) -> _date:
+        d = d.strip()
+        if len(d) == 8 and d.isdigit():
+            return _date(int(d[:4]), int(d[4:6]), int(d[6:8]))
+        return _date.fromisoformat(d)
+
+    today = _date.today()
+    from_d = _parse(req.from_date) if req.from_date else (today - timedelta(days=7))
+    to_d   = _parse(req.to_date)   if req.to_date   else (today - timedelta(days=1))
+    venues = req.venues or list(VENUE_CODE_MAP.keys())
+
+    # 最大30日に制限
+    if (to_d - from_d).days > 30:
+        to_d = from_d + timedelta(days=30)
+
+    all_results = []
+    cur = from_d
+    while cur <= to_d:
+        date_str = cur.strftime("%Y%m%d")
+        day_results = await scrape_results(date_str, venues)
+        all_results.extend(day_results)
+        cur += timedelta(days=1)
+
+    s = sum(1 for r in all_results if r.get("status") == "ok")
+    e = sum(1 for r in all_results if r.get("status") == "error")
+    total_saved = sum(r.get("saved", 0) for r in all_results)
+    return {
+        "from_date": from_d.isoformat(),
+        "to_date": to_d.isoformat(),
+        "results": all_results,
+        "summary": f"成功:{s} エラー:{e} 保存:{total_saved}件",
+    }
+
 
 if __name__ == "__main__":
     import uvicorn

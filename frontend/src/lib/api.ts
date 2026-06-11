@@ -178,21 +178,49 @@ export interface Race {
   odds_updated_at?: string | null
 }
 
-export interface AccuracyData {
-  total_predictions: number
+export interface GradeStats {
+  grade: string
+  total: number
   trifecta_rate: number
   exacta_rate: number
-  by_source: Array<{ source: string; rate: number; total: number }>
+}
+
+export interface VenueStats {
+  venue: string
+  total: number
+  evaluated: number
+  trifecta_rate: number
+  exacta_rate: number
+}
+
+export interface AccuracyData {
+  total_predictions: number
+  evaluated: number
+  trifecta_rate: number
+  exacta_rate: number
+  by_source: Array<{ source: string; total: number; trifecta_rate: number; exacta_rate: number }>
+  by_grade: GradeStats[]
 }
 
 export interface RecentPrediction {
   id: number
   date: string
   race: string
-  source: 'claude' | 'gemini' | 'ensemble'
+  venue: string
+  race_no: number | null
+  source: string
   trifecta: string
   confidence: number | null
   is_correct: boolean | null
+  is_correct_exacta: boolean | null
+  actual_trifecta: string | null
+  payout_grade: string | null
+}
+
+export interface TimelinePoint {
+  date: string
+  total: number
+  trifecta_rate: number | null
 }
 
 // Races API
@@ -215,11 +243,29 @@ export const scrapeRaces = (date?: string) =>
   api.post('/races/scrape', null, { params: date ? { target_date: date } : {} })
 
 // Analytics API
-export const getAccuracy = () =>
-  api.get<AccuracyData>('/analytics/accuracy')
+export const getAccuracy = (params?: { from_date?: string; to_date?: string }) =>
+  api.get<AccuracyData>('/analytics/accuracy', { params })
 
-export const getRecentPredictions = (limit = 20) =>
+export const getAccuracyByVenue = (params?: { from_date?: string; to_date?: string }) =>
+  api.get<VenueStats[]>('/analytics/accuracy/by_venue', { params })
+
+export const getAccuracyTimeline = (days = 30) =>
+  api.get<TimelinePoint[]>('/analytics/accuracy/timeline', { params: { days } })
+
+export const getRecentPredictions = (limit = 30) =>
   api.get<RecentPrediction[]>('/analytics/recent', { params: { limit } })
+
+export const triggerEvaluate = (fromDate: string, toDate: string) =>
+  api.post<{ status: string; updated: number; skipped: number; total: number }>(
+    '/scrape/evaluate',
+    { from_date: fromDate, to_date: toDate }
+  )
+
+export const triggerScrapeHistory = (fromDate: string, toDate: string, venues?: string[]) =>
+  api.post<{ summary: string; from_date: string; to_date: string }>(
+    '/scrape/scrape_history',
+    { from_date: fromDate, to_date: toDate, venues: venues || [] }
+  )
 
 export const importClaudeChat = (file: File) => {
   const formData = new FormData()
