@@ -10,7 +10,9 @@ app = FastAPI()
 
 SUPABASE_URL = "https://zotskrheypxrfsiyvwtl.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvdHNrcmhleXB4cmZzaXl2d3RsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Nzk2MzE2MCwiZXhwIjoyMDkzNTM5MTYwfQ.vPAauv7POeWLAgab1kfgLv5arRgGAlNFE6JsohNM__o"
-SUPABASE_DB_URL = "postgresql://postgres:BoatRace2024%21Secure@db.zotskrheypxrfsiyvwtl.supabase.co:5432/postgres"
+SUPABASE_DB_URL  = "postgresql://postgres:BoatRace2024%21Secure@db.zotskrheypxrfsiyvwtl.supabase.co:5432/postgres"
+# IPv6直結が失敗するサーバー向けプーラーDSN（Transaction mode: IPv4 port 6543）
+SUPABASE_POOLER_URL = "postgresql://postgres.zotskrheypxrfsiyvwtl:BoatRace2024%21Secure@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres"
 BOATFRONTIER_EMAIL = "shishido0109@gmail.com"
 BOATFRONTIER_PASSWORD = "ksg441054"
 API_SECRET = "boatrace-sakura-secret-2024"
@@ -1062,7 +1064,17 @@ async def scrape_profile(date, venues):
                     else:
                         stats["hit_rate"] = 0.0
 
-                    sb.table("boats").update(stats).eq("id", boat_id).execute()
+                    try:
+                        sb.table("boats").update(stats).eq("id", boat_id).execute()
+                    except Exception as upd_err:
+                        err_str = str(upd_err)
+                        # gen_rate/hit_rate列未追加の場合はそれらを除いて再試行（migrate前の互換）
+                        if "gen_rate" in err_str or "hit_rate" in err_str or "PGRST204" in err_str:
+                            fallback = {k: v for k, v in stats.items()
+                                        if k not in ("gen_rate", "hit_rate")}
+                            sb.table("boats").update(fallback).eq("id", boat_id).execute()
+                        else:
+                            raise
                     saved += 1
 
                 results.append({"venue": v, "item": "profile", "status": "ok", "saved": saved})
@@ -1081,7 +1093,7 @@ class ScrapeRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status":"ok","service":"boatrace-sakura-scraper","version":"6.1-odds"}
+    return {"status":"ok","service":"boatrace-sakura-scraper","version":"6.2-v58.7"}
 
 @app.post("/migrate")
 async def migrate(req: dict = None):
@@ -1091,7 +1103,8 @@ async def migrate(req: dict = None):
         raise HTTPException(status_code=403, detail="Forbidden")
     try:
         import asyncpg
-        conn = await asyncpg.connect(SUPABASE_DB_URL, ssl="require")
+        # プーラーDSN（IPv4経由・Transaction mode port 6543）でIPv6直結失敗を回避
+        conn = await asyncpg.connect(SUPABASE_POOLER_URL, ssl="require")
         sql = """
         ALTER TABLE boats
           ADD COLUMN IF NOT EXISTS c1_nige INTEGER DEFAULT 0,
@@ -1143,9 +1156,17 @@ async def migrate(req: dict = None):
           ON race_winner_log (venue, date DESC);
         """)
         await conn.close()
-        return {"status": "ok", "message": "Migration completed"}
+        return {"status": "ok", "message": "Migration completed (gen_rate/hit_rate added)"}
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        # DB直結・プーラー接続失敗時: Supabase Dashboardで実行するSQLを返す
+        manual_sql = """
+-- Supabase Dashboard > SQL Editor で以下を実行してください:
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS gen_rate FLOAT DEFAULT 0;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS hit_rate FLOAT DEFAULT 0;
+"""
+        return {"status": "error", "message": str(e),
+                "manual_migration_sql": manual_sql,
+                "hint": "Supabase Dashboard > SQL Editor で上記SQLを実行してください"}
 
 
 import json as _json
