@@ -881,107 +881,124 @@ async def scrape_odds(date, venues):
 
 async def scrape_results(date, venues):
     """boaters-boatrace.com から確定着順を取得して race_winner_log に保存。
-    1〜3着の艇番・進入コースを完全記録し trifecta_result/exacta_result を導出。
-    URL: https://boaters-boatrace.com/race/{slug}/{YYYY-MM-DD}/{n}R
+    asyncio.gather で全会場×全Rを並列取得（セマフォ20で同時接続数制御）。
     """
+    import asyncio
     import json as _json
     sb = create_client(SUPABASE_URL, SUPABASE_KEY)
     date_fmt = fmt(date)
+    sem = asyncio.Semaphore(20)  # 同時接続数上限
+
+    async def fetch_race(client, vname, slug, rno):
+        url = f"https://boaters-boatrace.com/race/{slug}/{date_fmt}/{rno}R"
+        async with sem:
+            try:
+                resp = await client.get(url, timeout=20)
+                if resp.status_code != 200:
+                    return []
+                m = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', resp.text, re.S)
+                if not m:
+                    return []
+                apollo = _json.loads(m.group(1)).get("props", {}).get("pageProps", {}).get("initialApolloState", {})
+                groups = {}
+                for k, val in apollo.items():
+                    if not k.startswith("CrawledRaceResultRacer:") or not isinstance(val, dict):
+                        continue
+                    ref = (val.get("result") or {}).get("__ref")
+                    if not ref or not ref.startswith("CrawledRaceResult:"):
+                        continue
+                    rid = ref.split(":", 1)[1]
+                    chaku = str(val.get("chakuPosition") or "")
+                    if not chaku or chaku == "None":
+                        continue
+                    groups.setdefault(rid, {})[chaku] = (
+                        val.get("startSinnyu"), val.get("boatNumber"))
+                rows = []
+                for rid, chmap in groups.items():
+                    if len(rid) != 12 or "1" not in chmap:
+                        continue
+                    course1, lane1 = chmap["1"]
+                    if course1 is None and lane1 is None:
+                        continue
+                    r_date = f"{rid[0:4]}-{rid[4:6]}-{rid[6:8]}"
+                    r_vname = VENUE_NAME_MAP.get(rid[8:10], vname)
+                    try:
+                        r_no = int(rid[10:12])
+                    except ValueError:
+                        continue
+                    result_all = []
+                    for pos in range(1, 7):
+                        if str(pos) in chmap:
+                            c, l = chmap[str(pos)]
+                            result_all.append({"pos": pos,
+                                               "lane": int(l) if l is not None else None,
+                                               "course": int(c) if c is not None else None})
+                    place2_lane = int(chmap["2"][1]) if "2" in chmap and chmap["2"][1] is not None else None
+                    place3_lane = int(chmap["3"][1]) if "3" in chmap and chmap["3"][1] is not None else None
+                    trifecta_result = (f"{int(lane1)}-{place2_lane}-{place3_lane}"
+                                       if lane1 is not None and place2_lane and place3_lane else None)
+                    exacta_result = (f"{int(lane1)}-{place2_lane}"
+                                     if lane1 is not None and place2_lane else None)
+                    rows.append({
+                        "race_key": rid, "venue": r_vname, "date": r_date, "race_no": r_no,
+                        "winner_course": int(course1) if course1 is not None else None,
+                        "winner_lane": int(lane1) if lane1 is not None else None,
+                        "place2_lane": place2_lane, "place3_lane": place3_lane,
+                        "trifecta_result": trifecta_result, "exacta_result": exacta_result,
+                        "result_all": _json.dumps(result_all, ensure_ascii=False),
+                    })
+                return rows
+            except Exception as e:
+                print(f"results {vname} {rno}R err: {e}")
+                return []
+
     results = []
     async with httpx.AsyncClient(
-        follow_redirects=True, timeout=30,
-        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+        follow_redirects=True, timeout=25,
+        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+        limits=httpx.Limits(max_connections=30, max_keepalive_connections=20),
     ) as client:
+        # 全会場 × 1〜12R のタスクを一斉生成
+        tasks = []
+        venue_map = {}
         for v in venues:
             vname, vc = resolve_venue(v)
             slug = BOATERS_SLUG_MAP.get(vname)
             if not slug:
                 results.append({"venue": v, "item": "results", "status": "error", "message": "unknown venue"})
                 continue
-            saved = 0
-            errs = 0
             for rno in range(1, 13):
+                t = asyncio.create_task(fetch_race(client, vname, slug, rno))
+                tasks.append((v, vname, t))
+
+        # 全タスク完了待ち
+        venue_saved: dict = {}
+        for v, vname, t in tasks:
+            rows = await t
+            for row in rows:
                 try:
-                    url = f"https://boaters-boatrace.com/race/{slug}/{date_fmt}/{rno}R"
-                    resp = await client.get(url, timeout=25)
-                    if resp.status_code != 200:
-                        continue
-                    m = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', resp.text, re.S)
-                    if not m:
-                        continue
-                    apollo = _json.loads(m.group(1)).get("props", {}).get("pageProps", {}).get("initialApolloState", {})
-                    # 着順→(進入コース,艇番) をグループ化
-                    groups = {}
-                    for k, val in apollo.items():
-                        if not k.startswith("CrawledRaceResultRacer:") or not isinstance(val, dict):
-                            continue
-                        ref = (val.get("result") or {}).get("__ref")
-                        if not ref or not ref.startswith("CrawledRaceResult:"):
-                            continue
-                        rid = ref.split(":", 1)[1]
-                        chaku = str(val.get("chakuPosition") or "")
-                        if not chaku or chaku == "None":
-                            continue
-                        groups.setdefault(rid, {})[chaku] = (
-                            val.get("startSinnyu"), val.get("boatNumber"))
-                    for rid, chmap in groups.items():
-                        if len(rid) != 12 or "1" not in chmap:
-                            continue
-                        course1, lane1 = chmap["1"]
-                        if course1 is None and lane1 is None:
-                            continue
-                        r_date = f"{rid[0:4]}-{rid[4:6]}-{rid[6:8]}"
-                        r_vname = VENUE_NAME_MAP.get(rid[8:10], vname)
+                    sb.table("race_winner_log").upsert(row, on_conflict="race_key").execute()
+                    venue_saved[v] = venue_saved.get(v, 0) + 1
+                except Exception as ue:
+                    err_s = str(ue)
+                    if any(c in err_s for c in ["place2_lane","place3_lane","trifecta_result","exacta_result","result_all"]):
+                        old_row = {k: val for k, val in row.items()
+                                   if k in ("race_key","venue","date","race_no","winner_course","winner_lane")}
                         try:
-                            r_no = int(rid[10:12])
-                        except ValueError:
-                            continue
-                        # 全着順の艇番リスト(result_all)
-                        result_all = []
-                        for pos in range(1, 7):
-                            if str(pos) in chmap:
-                                c, l = chmap[str(pos)]
-                                result_all.append({"pos": pos, "lane": int(l) if l is not None else None,
-                                                   "course": int(c) if c is not None else None})
-                        # 3連単・2連単結果文字列
-                        place2_lane = int(chmap["2"][1]) if "2" in chmap and chmap["2"][1] is not None else None
-                        place3_lane = int(chmap["3"][1]) if "3" in chmap and chmap["3"][1] is not None else None
-                        trifecta_result = None
-                        exacta_result = None
-                        if lane1 is not None and place2_lane is not None and place3_lane is not None:
-                            trifecta_result = f"{int(lane1)}-{place2_lane}-{place3_lane}"
-                        if lane1 is not None and place2_lane is not None:
-                            exacta_result = f"{int(lane1)}-{place2_lane}"
-                        row = {
-                            "race_key": rid,
-                            "venue": r_vname,
-                            "date": r_date,
-                            "race_no": r_no,
-                            "winner_course": int(course1) if course1 is not None else None,
-                            "winner_lane": int(lane1) if lane1 is not None else None,
-                            "place2_lane": place2_lane,
-                            "place3_lane": place3_lane,
-                            "trifecta_result": trifecta_result,
-                            "exacta_result": exacta_result,
-                            "result_all": _json.dumps(result_all, ensure_ascii=False),
-                        }
-                        try:
-                            sb.table("race_winner_log").upsert(row, on_conflict="race_key").execute()
-                            saved += 1
-                        except Exception as ue:
-                            # 新列未追加の場合は旧列のみで保存
-                            err_s = str(ue)
-                            if any(c in err_s for c in ["place2_lane","place3_lane","trifecta_result","exacta_result","result_all"]):
-                                old_row = {k: v for k, v in row.items()
-                                           if k in ("race_key","venue","date","race_no","winner_course","winner_lane")}
-                                sb.table("race_winner_log").upsert(old_row, on_conflict="race_key").execute()
-                                saved += 1
-                            else:
-                                print(f"results upsert {rid} err: {ue}")
-                except Exception as e:
-                    errs += 1
-                    print(f"results {vname} {rno}R err: {e}")
-            results.append({"venue": v, "item": "results", "status": "ok", "saved": saved, "errors": errs})
+                            sb.table("race_winner_log").upsert(old_row, on_conflict="race_key").execute()
+                            venue_saved[v] = venue_saved.get(v, 0) + 1
+                        except Exception:
+                            pass
+                    else:
+                        print(f"upsert err {row.get('race_key')}: {ue}")
+
+    seen_venues = set()
+    for v in venues:
+        vname, _ = resolve_venue(v)
+        slug = BOATERS_SLUG_MAP.get(vname)
+        if slug and v not in [r["venue"] for r in results]:
+            results.append({"venue": v, "item": "results", "status": "ok",
+                            "saved": venue_saved.get(v, 0)})
     return results
 
 
@@ -1400,9 +1417,10 @@ async def evaluate_predictions(req: EvaluateRequest):
 
 @app.post("/scrape_history")
 async def scrape_history(req: HistoryRequest):
-    """過去日付の確定着順を一括取得。from_date〜to_date の全日付に対して results スクレイプを実行。"""
+    """過去日付の確定着順を並列一括取得。from_date〜to_date の全日付を asyncio.gather で並走。"""
     if req.secret != API_SECRET:
         raise HTTPException(status_code=403, detail="Forbidden")
+    import asyncio
     from datetime import date as _date, timedelta
 
     def _parse(d: str) -> _date:
@@ -1414,27 +1432,36 @@ async def scrape_history(req: HistoryRequest):
     today = _date.today()
     from_d = _parse(req.from_date) if req.from_date else (today - timedelta(days=7))
     to_d   = _parse(req.to_date)   if req.to_date   else (today - timedelta(days=1))
-    venues = req.venues or list(VENUE_CODE_MAP.keys())
+    venues = req.venues or [str(i).zfill(2) for i in range(1, 25)]
 
-    # 最大30日に制限
-    if (to_d - from_d).days > 30:
-        to_d = from_d + timedelta(days=30)
+    # 最大14日に制限（並列でも負荷制御）
+    if (to_d - from_d).days > 14:
+        to_d = from_d + timedelta(days=14)
 
-    all_results = []
+    dates = []
     cur = from_d
     while cur <= to_d:
-        date_str = cur.strftime("%Y%m%d")
-        day_results = await scrape_results(date_str, venues)
-        all_results.extend(day_results)
+        dates.append(cur.strftime("%Y%m%d"))
         cur += timedelta(days=1)
 
+    # 日付ごとに並列実行（最大3日同時）
+    date_sem = asyncio.Semaphore(3)
+
+    async def scrape_day(date_str):
+        async with date_sem:
+            return await scrape_results(date_str, venues)
+
+    tasks = [scrape_day(d) for d in dates]
+    day_results = await asyncio.gather(*tasks)
+
+    all_results = [r for day in day_results for r in day]
     s = sum(1 for r in all_results if r.get("status") == "ok")
     e = sum(1 for r in all_results if r.get("status") == "error")
     total_saved = sum(r.get("saved", 0) for r in all_results)
     return {
         "from_date": from_d.isoformat(),
         "to_date": to_d.isoformat(),
-        "results": all_results,
+        "days": len(dates),
         "summary": f"成功:{s} エラー:{e} 保存:{total_saved}件",
     }
 
