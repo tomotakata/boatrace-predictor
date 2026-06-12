@@ -606,7 +606,7 @@ const SOURCE_CONFIG = {
   gemini: { label: 'Gemini', color: '#34d399' },
   ensemble: { label: 'Ensemble', color: '#a78bfa' },
   system_v56: { label: 'システム v56.3', color: '#60a5fa' },
-  system_v58: { label: 'システム v58.5', color: '#60a5fa' },
+  system_v58: { label: 'システム v58.7', color: '#60a5fa' },
 }
 
 function PredictionPanel({ prediction }: { prediction: Prediction }) {
@@ -953,7 +953,7 @@ export default function RaceDetail() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={handlePredictSystem} disabled={predicting}
               style={{ padding: '8px 16px', background: 'linear-gradient(135deg,#1e40af,#3b82f6)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-              {predicting ? '予測中…' : 'システム予測 v58.5'}
+              {predicting ? '予測中…' : 'システム予測 v58.7'}
             </button>
             <button onClick={() => handlePredict('ensemble')} disabled={predicting}
               style={{ padding: '8px 14px', background: '#1e2a40', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
