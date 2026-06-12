@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getRace, predictRace, predictRaceSystem, getVenueConfig, type Race, type Boat, type Prediction, type SystemPredictionDetail, type VenueConfig } from '../lib/api'
+import { getRace, predictRace, predictRaceSystem, getVenueConfig, getRaceResult, savePredictionMemo, type Race, type Boat, type Prediction, type SystemPredictionDetail, type VenueConfig, type RaceResult } from '../lib/api'
 
 // 進入順ラベルの色
 const LANE_BG: Record<number, string> = {
@@ -681,6 +681,117 @@ function PredictionPanel({ prediction }: { prediction: Prediction }) {
   )
 }
 
+// ───── 結果確認・改善コメントパネル ─────
+function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number; raceDate: string; systemDetail: SystemPredictionDetail | null }) {
+  const [result, setResult] = useState<RaceResult | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [fetched, setFetched] = useState(false)
+  const [memo, setMemo] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const isPast = raceDate < new Date().toISOString().slice(0, 10)
+  if (!isPast) return null
+
+  async function fetchResult() {
+    setLoading(true)
+    try {
+      const res = await getRaceResult(raceId)
+      setResult(res.data)
+    } catch { setResult(null) }
+    setFetched(true)
+    setLoading(false)
+  }
+
+  async function handleSaveMemo() {
+    setSaving(true)
+    try {
+      await savePredictionMemo(raceId, memo)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch { /* ignore */ }
+    setSaving(false)
+  }
+
+  // 的中判定（3連単・2連単）
+  const trifecta = result?.trifecta_result
+  const exacta = result?.exacta_result
+  const predTrifecta = systemDetail?.trifecta_f1?.concat(systemDetail?.trifecta_f2 || []) || []
+  const predExacta = systemDetail?.exacta || []
+  const hitTrifecta = trifecta ? predTrifecta.some(t => t.replace(/-/g, '') === trifecta.replace(/-/g, '').replace(/→/g, '')) : null
+  const hitExacta = exacta ? predExacta.some(e => e.replace(/-/g, '') === exacta.replace(/-/g, '').replace(/→/g, '')) : null
+
+  return (
+    <div style={{ border: '1px solid #1e3a5f', borderRadius: 10, marginTop: 12, overflow: 'hidden' }}>
+      <div style={{ background: '#0a1f3f', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #1e3a5f' }}>
+        <span style={{ fontWeight: 700, color: '#60a5fa', fontSize: 13 }}>確定結果・改善コメント</span>
+        <span style={{ fontSize: 11, color: '#64748b' }}>（過去レース）</span>
+      </div>
+      <div style={{ padding: '12px 14px', background: '#090f1e' }}>
+        {!fetched ? (
+          <button onClick={fetchResult} disabled={loading}
+            style={{ padding: '7px 18px', background: '#1e3a5f', color: '#93c5fd', border: '1px solid #3b82f6', borderRadius: 7, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+            {loading ? '取得中…' : '確定結果を取得'}
+          </button>
+        ) : result && (result.trifecta_result || result.winner_lane) ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
+            {/* 結果表示 */}
+            <div style={{ minWidth: 200 }}>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6, fontWeight: 700 }}>確定結果</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {[result.winner_lane, result.place2_lane, result.place3_lane].filter(Boolean).map((lane, i) => (
+                  <div key={i} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 11, color: '#64748b' }}>{i + 1}着</div>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: LANE_BG[lane as number] || '#1e3a5f', color: LANE_TEXT[lane as number] || '#e2e8f0',
+                      fontWeight: 700, fontSize: 16, border: '2px solid #1e3a5f'
+                    }}>{lane}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {trifecta && <span style={{ fontSize: 12, color: '#fcd34d', background: '#1a1000', padding: '2px 8px', borderRadius: 5, fontFamily: 'monospace' }}>3連単 {trifecta}</span>}
+                {exacta && <span style={{ fontSize: 12, color: '#6ee7b7', background: '#001a0f', padding: '2px 8px', borderRadius: 5, fontFamily: 'monospace' }}>2連単 {exacta}</span>}
+              </div>
+              {/* 的中バッジ */}
+              <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {hitTrifecta != null && (
+                  <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700, background: hitTrifecta ? '#0f2d1a' : '#2d0f0f', color: hitTrifecta ? '#22c55e' : '#ef4444', border: `1px solid ${hitTrifecta ? '#22c55e' : '#ef4444'}` }}>
+                    3連単 {hitTrifecta ? '的中' : '外れ'}
+                  </span>
+                )}
+                {hitExacta != null && (
+                  <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700, background: hitExacta ? '#0f2d1a' : '#2d0f0f', color: hitExacta ? '#22c55e' : '#ef4444', border: `1px solid ${hitExacta ? '#22c55e' : '#ef4444'}` }}>
+                    2連単 {hitExacta ? '的中' : '外れ'}
+                  </span>
+                )}
+              </div>
+            </div>
+            {/* 改善コメント */}
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6, fontWeight: 700 }}>改善コメント</div>
+              <textarea
+                value={memo}
+                onChange={e => setMemo(e.target.value)}
+                placeholder="予想との乖離や改善点を記入…"
+                rows={3}
+                style={{ width: '100%', background: '#0d1b2e', border: '1px solid #1e3a5f', borderRadius: 6, color: '#e2e8f0', fontSize: 12, padding: '6px 8px', resize: 'vertical', boxSizing: 'border-box' }}
+              />
+              <button onClick={handleSaveMemo} disabled={saving}
+                style={{ marginTop: 6, padding: '5px 16px', background: saved ? '#0f2d1a' : '#1e3a5f', color: saved ? '#22c55e' : '#93c5fd', border: '1px solid #3b82f6', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                {saving ? '保存中…' : saved ? '保存済' : '保存'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, color: '#64748b' }}>結果データがありません（未スクレイピング）</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
   return (
     <div style={{ border: '2px solid #3b82f644', borderRadius: 10, marginBottom: 16, overflow: 'hidden' }}>
@@ -1030,6 +1141,8 @@ export default function RaceDetail() {
         <div style={{ marginTop: 20 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#94a3b8', marginBottom: 12 }}>予測結果</div>
           {systemDetail && <SystemPredictionPanel detail={systemDetail} />}
+          {/* 過去レース：確定結果取得 & 改善コメント */}
+          <ResultAndMemoPanel raceId={race.id!} raceDate={race.date} systemDetail={systemDetail} />
           {predictions.length > 1 && (
             <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
               {predictions.map((p, i) => {
@@ -1045,6 +1158,13 @@ export default function RaceDetail() {
             </div>
           )}
           {activePred && <PredictionPanel prediction={activePred} />}
+        </div>
+      )}
+
+      {/* 予測なし・過去レースの場合も結果パネルを表示 */}
+      {!(systemDetail || predictions.length > 0) && race.id && (
+        <div style={{ marginTop: 20 }}>
+          <ResultAndMemoPanel raceId={race.id} raceDate={race.date} systemDetail={null} />
         </div>
       )}
 

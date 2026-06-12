@@ -221,3 +221,34 @@ async def scrape_races(target_date: Optional[str] = Query(None)):
     query_date = target_date or date.today().isoformat()
     result = await scrape_race_list(query_date)
     return result
+
+
+@router.get("/{race_id}/result")
+async def get_race_result(race_id: int):
+    """race_winner_log から実結果（1〜3着・3連単・2連単）を取得"""
+    sb = get_supabase()
+    race_resp = sb.table("races").select("date, venue, race_no").eq("id", race_id).single().execute()
+    if not race_resp.data:
+        raise HTTPException(status_code=404, detail="Race not found")
+    race = race_resp.data
+    result_resp = sb.table("race_winner_log").select(
+        "race_key, winner_lane, winner_course, place2_lane, place3_lane, "
+        "trifecta_result, exacta_result, result_all"
+    ).eq("date", race["date"]).eq("venue", race["venue"]).eq("race_no", race["race_no"]).maybe_single().execute()
+    return result_resp.data or {}
+
+
+@router.patch("/{race_id}/prediction/memo")
+async def save_prediction_memo(race_id: int, body: dict):
+    """直近のシステム予想に改善コメント(memo)を保存"""
+    sb = get_supabase()
+    memo = body.get("memo", "")
+    pred = sb.table("predictions").select("id").eq("race_id", race_id).eq("source", "system_v58") \
+        .order("created_at", desc=True).limit(1).maybe_single().execute()
+    if pred.data:
+        try:
+            sb.table("predictions").update({"memo": memo}).eq("id", pred.data["id"]).execute()
+        except Exception:
+            # memo列未追加の場合は無視
+            pass
+    return {"status": "ok"}

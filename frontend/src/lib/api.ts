@@ -340,3 +340,21 @@ export const updateVenueConfig = (venueName: string, data: VenueConfig) =>
 
 export const deleteVenueConfig = (venueName: string) =>
   api.delete(`/venues/${encodeURIComponent(venueName)}`)
+
+// Race Result API
+export interface RaceResult {
+  race_key?: string
+  winner_lane?: number | null
+  winner_course?: number | null
+  place2_lane?: number | null
+  place3_lane?: number | null
+  trifecta_result?: string | null
+  exacta_result?: string | null
+  result_all?: Record<string, number> | null
+}
+
+export const getRaceResult = (raceId: number) =>
+  api.get<RaceResult>(`/races/${raceId}/result`)
+
+export const savePredictionMemo = (raceId: number, memo: string) =>
+  api.patch<{ status: string }>(`/races/${raceId}/prediction/memo`, { memo })
