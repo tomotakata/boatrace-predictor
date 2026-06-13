@@ -829,6 +829,18 @@ class BoatracePredictor:
         self._mark_sink(c)
 
     def _build_pdf_templates(self, attack_course: int) -> List[Tuple[int, List[int], List[int]]]:
+        if self.out.fmt == "B":
+            lane1 = self._lane_of_course(1)
+            if lane1:
+                lane2 = self._lane_of_course(2)
+                lane3 = self._lane_of_course(3)
+                lane4 = self._lane_of_course(4)
+                lane5 = self._lane_of_course(5)
+                return [(
+                    lane1,
+                    [ln for ln in (lane2, lane3, lane5) if ln],
+                    [ln for ln in (lane2, lane3, lane4, lane5) if ln],
+                )]
         if attack_course == 1:
             lane1 = self._lane_of_course(1)
             lane2 = self._lane_of_course(2)
