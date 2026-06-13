@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getRace, predictRace, predictRaceSystem, getVenueConfig, getRaceResult, savePredictionMemo, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult } from '../lib/api'
+import { getRace, predictRace, predictRaceSystem, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult } from '../lib/api'
 
 // 進入順ラベルの色
 const LANE_BG: Record<number, string> = {
@@ -1260,10 +1260,11 @@ function SectionExhibit({ boats }: { boats: Boat[] }) {
 
 
 // ───── 結果確認・改善コメントパネル ─────
-function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number; raceDate: string; systemDetail: SystemPredictionDetail | null }) {
+function ResultAndMemoPanel({ raceId, raceDate, raceVenue, systemDetail }: { raceId: number; raceDate: string; raceVenue: string; systemDetail: SystemPredictionDetail | null }) {
   const [result, setResult] = useState<RaceResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [fetched, setFetched] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [memo, setMemo] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -1273,12 +1274,30 @@ function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number
 
   async function fetchResult() {
     setLoading(true)
+    setError(null)
     try {
-      const res = await getRaceResult(raceId)
-      setResult(res.data)
-    } catch { setResult(null) }
-    setFetched(true)
-    setLoading(false)
+      let res = await getRaceResult(raceId)
+      const hasResult = !!(res.data && (res.data.trifecta_result || res.data.winner_lane))
+
+      if (!hasResult) {
+        await scrapeRaceResult({ date: raceDate, venue: raceVenue })
+        res = await getRaceResult(raceId)
+      }
+
+      const refreshed = res.data
+      const refreshedHasResult = !!(refreshed && (refreshed.trifecta_result || refreshed.winner_lane))
+      setResult(refreshedHasResult ? refreshed : null)
+      setFetched(true)
+      if (!refreshedHasResult) {
+        setError('確定結果を取得しましたが、対象レースの結果はまだ登録されていません。')
+      }
+    } catch (err: unknown) {
+      setResult(null)
+      setFetched(false)
+      setError(err instanceof Error ? err.message : '確定結果の取得に失敗しました。')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleSaveMemo() {
@@ -1352,6 +1371,11 @@ function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number
         <span style={{ fontSize: 11, color: '#64748b' }}>（過去レース）</span>
       </div>
       <div style={{ padding: '12px 14px', background: '#090f1e' }}>
+        {error && (
+          <div style={{ marginBottom: 10, padding: '8px 10px', borderRadius: 8, border: '1px solid #7f1d1d', background: '#2a0f14', color: '#fca5a5', fontSize: 12 }}>
+            {error}
+          </div>
+        )}
         {!fetched ? (
           <button onClick={fetchResult} disabled={loading}
             style={{ padding: '7px 18px', background: '#1e3a5f', color: '#93c5fd', border: '1px solid #3b82f6', borderRadius: 7, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
@@ -1830,14 +1854,14 @@ export default function RaceDetail() {
           <div style={{ fontSize: 14, fontWeight: 700, color: '#94a3b8', marginBottom: 12 }}>予測結果</div>
           {systemDetail && <SystemPredictionPanel detail={systemDetail} />}
           {/* 過去レース：確定結果取得 & 改善コメント */}
-          <ResultAndMemoPanel raceId={race.id!} raceDate={race.date} systemDetail={systemDetail} />
+          <ResultAndMemoPanel raceId={race.id!} raceDate={race.date} raceVenue={race.venue} systemDetail={systemDetail} />
         </div>
       )}
 
       {/* 予測なし・過去レースの場合も結果パネルを表示 */}
       {!(systemDetail || predictions.length > 0) && race.id && (
         <div style={{ marginTop: 20 }}>
-          <ResultAndMemoPanel raceId={race.id} raceDate={race.date} systemDetail={null} />
+          <ResultAndMemoPanel raceId={race.id} raceDate={race.date} raceVenue={race.venue} systemDetail={null} />
         </div>
       )}
 

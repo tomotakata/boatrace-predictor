@@ -29,6 +29,13 @@ VENUE_CODE_MAP = {
     "尼崎":"13","鳴門":"14","丸亀":"15","児島":"16","宮島":"17","徳山":"18",
     "下関":"19","若松":"20","芦屋":"21","福岡":"22","唐津":"23","大村":"24"
 }
+# boaters-boatrace.com の会場slug(ローマ字) — odds取得で使用
+BOATERS_SLUG_MAP = {
+    "桐生":"kiryu","戸田":"toda","江戸川":"edogawa","平和島":"heiwajima","多摩川":"tamagawa","浜名湖":"hamanako",
+    "蒲郡":"gamagori","常滑":"tokoname","津":"tsu","三国":"mikuni","びわこ":"biwako","住之江":"suminoe",
+    "尼崎":"amagasaki","鳴門":"naruto","丸亀":"marugame","児島":"kojima","宮島":"miyajima","徳山":"tokuyama",
+    "下関":"shimonoseki","若松":"wakamatsu","芦屋":"ashiya","福岡":"fukuoka","唐津":"karatsu","大村":"omura"
+}
 # 数字コード→会場名の逆引きマップ
 VENUE_NAME_MAP = {v: k for k, v in VENUE_CODE_MAP.items()}
 # 1桁/2桁どちらでも対応するヘルパー
@@ -1029,7 +1036,7 @@ async def scrape_results(date, venues):
         tasks = []
         for v in venues:
             vname, venue_code = resolve_venue(v)
-            jcd = normalize_venue_code(venue_code)
+            jcd = venue_code.zfill(2) if venue_code else None
             if not jcd:
                 results.append({"venue": v, "item": "results", "status": "error", "message": "unknown venue"})
                 continue
@@ -1061,11 +1068,8 @@ async def scrape_results(date, venues):
                     else:
                         print(f"upsert err {row.get('race_key')}: {ue}")
 
-    seen_venues = set()
     for v in venues:
-        vname, _ = resolve_venue(v)
-        slug = BOATERS_SLUG_MAP.get(vname)
-        if slug and v not in [r["venue"] for r in results]:
+        if v not in [r["venue"] for r in results]:
             results.append({"venue": v, "item": "results", "status": "ok",
                             "saved": venue_saved.get(v, 0)})
     return results

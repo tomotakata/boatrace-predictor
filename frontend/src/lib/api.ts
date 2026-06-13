@@ -297,6 +297,9 @@ export const getVenues = () =>
 export const runScraping = (data: { date: string; venues: string[]; items: string[] }) =>
   api.post<{ results: Array<{ venue: string; item: string; status: string; message?: string }> }>('/scrape/run', data)
 
+export const scrapeRaceResult = (data: { date: string; venue: string }) =>
+  api.post<{ date: string; results: Array<{ venue: string; item: string; status: string; saved?: number; message?: string }>; summary?: string }>('/scrape/results', data)
+
 export const setTeleboadCookies = (cookies: string) =>
   api.post<{ status: string; cookie_count?: number; message?: string }>('/scrape/set_teleboat_cookies', { cookies })
 

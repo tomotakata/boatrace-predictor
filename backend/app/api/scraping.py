@@ -3,7 +3,7 @@
 さくらサーバー: http://153.121.51.74:8080
 """
 from typing import List, Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import httpx
 import os
@@ -42,6 +42,11 @@ class HistoryRequest(BaseModel):
     venues: List[str] = []
 
 
+class ResultScrapeRequest(BaseModel):
+    date: str
+    venue: str
+
+
 @router.get("/venues")
 async def get_venues():
     return {"venues": VENUE_LIST}
@@ -73,6 +78,34 @@ async def run_scraping(req: ScrapeRequest):
             return {"results": results}
     except Exception as e:
         return {"results": [{"venue": "全体", "item": "all", "status": "error", "message": str(e)}]}
+
+
+@router.post("/results")
+async def scrape_result(req: ResultScrapeRequest):
+    try:
+        payload = {
+            "date": req.date.replace("-", ""),
+            "items": ["results"],
+            "secret": SAKURA_SCRAPER_SECRET,
+        }
+        if req.venue:
+            payload["venues"] = [req.venue]
+
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(f"{SAKURA_SCRAPER_URL}/scrape", json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+            results = data.get("results", [])
+            if not results:
+                raise HTTPException(status_code=502, detail="スクレイピング結果が返されませんでした")
+            first = results[0]
+            if first.get("status") != "ok":
+                raise HTTPException(status_code=502, detail=first.get("message") or data.get("summary") or "結果取得に失敗しました")
+            return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"結果取得API呼び出しに失敗しました: {e}")
 
 
 @router.post("/evaluate")
