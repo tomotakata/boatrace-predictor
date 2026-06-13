@@ -23,15 +23,16 @@
       "dest": "api/index.py"
     },
     {
-      "handle": "filesystem"
+      "src": "/assets/(.*)",
+      "dest": "frontend/dist/assets/$1"
+    },
+    {
+      "src": "/(favicon\\.ico|robots\\.txt|manifest\\.json|vite\\.svg|favicon\\.svg)",
+      "dest": "frontend/dist/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/$1"
-    },
-    {
-      "src": "/.*",
-      "dest": "/frontend/index.html"
+      "dest": "frontend/dist/index.html"
     }
   ]
 }
