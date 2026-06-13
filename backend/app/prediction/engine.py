@@ -945,6 +945,7 @@ class BoatracePredictor:
         if getattr(self, "_no_a_format", False) and fmt == "A":
             fmt = "B"
         self.out.fmt = fmt
+        self.suji_templates = self._build_pdf_templates(self.out.main_attack_course)
 
         template_axis_src: List[int] = []
         template_hus_src: List[int] = []
@@ -977,8 +978,8 @@ class BoatracePredictor:
         else:
             lane1 = lane1_boat.lane
             second_head = self._select_b_second_head(lane1, a_lane)
-            self.out.head_boats = [lane1, second_head]
-            self.out.head_type = "AB"
+            self.out.head_boats = [lane1]
+            self.out.head_type = "B"
             axis4 = list(dict.fromkeys([second_head] + axis_src))
             self.out.axis_boats = axis4
             # 3着側に攻め成立側の外艇6を必ず1枚（改正42）
@@ -1099,10 +1100,6 @@ class BoatracePredictor:
 
         # 本線の組番生成
         combos = self._gen_honsen_combos()
-        if self.race.race_id == 1198:
-            self.out.notes.append(
-                f"DBG-HONSEN-MARKER-20260614 fmt={self.out.fmt} head={self.out.head_boats} combos={combos[:3]}"
-            )
 
         if not odds3:
             # 改正56：ODDS_T取得不能 → 全枝見送り
