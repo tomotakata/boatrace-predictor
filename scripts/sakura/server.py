@@ -25,7 +25,7 @@ BR_BASE = "https://www.boatrace.jp"
 
 VENUE_CODE_MAP = {
     "桐生":"01","戸田":"02","江戸川":"03","平和島":"04","多摩川":"05","浜名湖":"06",
-    "蒲郡":"07","常滑":"08","津":"09","三国":"10","びわこ":"11","住之江":"12",
+    "蒲郡":"07","常滑":"08","津":"09","三国":"10","びわこ":"12","住之江":"11",
     "尼崎":"13","鳴門":"14","丸亀":"15","児島":"16","宮島":"17","徳山":"18",
     "下関":"19","若松":"20","芦屋":"21","福岡":"22","唐津":"23","大村":"24"
 }
@@ -990,13 +990,15 @@ async def scrape_results(date, venues):
             try:
                 resp = await client.get(official_url, timeout=20)
                 if resp.status_code != 200:
-                    return []
+                    return {"rows": [], "error": f"http_{resp.status_code}"}
+                if not resp.text or not resp.text.strip():
+                    return {"rows": [], "error": "empty_html"}
                 soup = BeautifulSoup(resp.text, "html.parser")
                 if "データがありません" in soup.get_text(" ", strip=True):
-                    return []
+                    return {"rows": [], "error": None}
                 result_all = extract_result_rows(soup)
                 if not result_all or not any(item["pos"] == 1 for item in result_all):
-                    return []
+                    return {"rows": [], "error": "result_parse_failed"}
                 payouts = extract_payouts(soup)
                 lane_by_pos = {item["pos"]: item["lane"] for item in result_all}
                 course_by_pos = {item["pos"]: item["course"] for item in result_all}
@@ -1021,10 +1023,10 @@ async def scrape_results(date, venues):
                     "trifecta_place_payout": payouts["trifecta_place_payout"],
                     "result_all": _json.dumps(result_all, ensure_ascii=False),
                 }
-                return [row]
+                return {"rows": [row], "error": None}
             except Exception as e:
                 print(f"results {vname} {rno}R err: {e}")
-                return []
+                return {"rows": [], "error": str(e)}
 
     results = []
     async with httpx.AsyncClient(
@@ -1046,8 +1048,13 @@ async def scrape_results(date, venues):
 
         # 全タスク完了待ち
         venue_saved: dict = {}
+        venue_errors: dict = {}
         for v, vname, t in tasks:
-            rows = await t
+            payload = await t
+            rows = payload.get("rows", [])
+            error = payload.get("error")
+            if error:
+                venue_errors.setdefault(v, set()).add(error)
             for row in rows:
                 try:
                     sb.table("race_winner_log").upsert(row, on_conflict="race_key").execute()
@@ -1069,9 +1076,21 @@ async def scrape_results(date, venues):
                         print(f"upsert err {row.get('race_key')}: {ue}")
 
     for v in venues:
-        if v not in [r["venue"] for r in results]:
+        if v in [r["venue"] for r in results]:
+            continue
+        saved_count = venue_saved.get(v, 0)
+        errors = sorted(venue_errors.get(v, set()))
+        if saved_count == 0 and errors:
+            results.append({
+                "venue": v,
+                "item": "results",
+                "status": "error",
+                "message": ",".join(errors),
+                "saved": 0,
+            })
+        else:
             results.append({"venue": v, "item": "results", "status": "ok",
-                            "saved": venue_saved.get(v, 0)})
+                            "saved": saved_count})
     return results
 
 
