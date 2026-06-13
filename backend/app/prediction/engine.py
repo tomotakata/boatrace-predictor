@@ -51,6 +51,19 @@ SINK = 0.5         # 沈み艇3着補正係数
 MANSHU_MIN_ODDS = 100.0   # 万舟=100倍以上
 WEAK_HEAD_TH = 0.50       # 弱頭判定（1着率合計<50%）
 
+PDF_TEMPLATE_MAP = {
+    "2差し": {"head_course": 2, "seconds": [1, 4, 5, 6], "thirds": [1, 4, 5, 6]},
+    "2捲り": {"head_course": 2, "seconds": [3, 4, 5, 6], "thirds": [3, 4, 5, 6]},
+    "3差し": {"head_course": 3, "seconds": [1, 2, 4, 5], "thirds": [1, 2, 4, 5]},
+    "3捲り": {"head_course": 3, "seconds": [1, 4, 5, 6], "thirds": [1, 4, 5, 6]},
+    "4差し": {"head_course": 4, "seconds": [1, 2, 3, 5], "thirds": [1, 2, 3, 5]},
+    "4捲り": {"head_course": 4, "seconds": [1, 2, 5, 6], "thirds": [1, 2, 5, 6]},
+    "5捲り": {"head_course": 5, "seconds": [1, 2, 3, 6], "thirds": [1, 2, 3, 6]},
+    "5差し": {"head_course": 5, "seconds": [1, 2, 4, 6], "thirds": [1, 2, 4, 6]},
+    "6捲り": {"head_course": 6, "seconds": [1, 2, 4, 5], "thirds": [1, 2, 4, 5]},
+    "6差し": {"head_course": 6, "seconds": [1, 2, 3, 4], "thirds": [1, 2, 3, 4]},
+}
+
 # 改正60：戻り額ゲート（合成オッズ反比例配分→戻り額で見送り/通常/勝負）
 PAYOUT_SKIP = 30000.0     # 戻り額≤この値→見送り
 PAYOUT_BET = 50000.0      # 戻り額≥この値→勝負（間は通常）
@@ -108,6 +121,8 @@ class BoatEntry:
     # v58.7 新規（スクレイピング導出値）
     gen_rate: float = 0.0    # 攻め発生率（per艇・非1号フィールドで使用／0-1）
     hit_rate: float = 0.0    # 被弾率⑤f（1号評価専用：差され/捲られ落ち率／0-1）
+    gen_rate_raw: float = 0.0
+    hit_rate_raw: float = 0.0
 
     # P2連動（⑤g・参考/EV用）
     p2_link: Dict[int, float] = field(default_factory=dict)  # {頭号艇: P(this 2着|頭)}
@@ -159,6 +174,13 @@ class BuyPoint:
 
 
 @dataclass
+class ValidationReport:
+    template_collation: List[Dict] = field(default_factory=list)
+    fire_recognition: List[Dict] = field(default_factory=list)
+    payout_audit: List[Dict] = field(default_factory=list)
+
+
+@dataclass
 class PredictionOutput:
     race_type: str = ""
     regime: str = ""              # 順当/隠れ混戦/明白混戦
@@ -201,6 +223,10 @@ class PredictionOutput:
     fire_boat_lane: int = 0        # 発動艇の枠番（0=無し）
     fire_boat_gen: float = 0.0     # 発動艇の発生率
     dkan_counts: Dict[int, int] = field(default_factory=dict)  # {枠番: D-KAN充足数}
+    recognized_fire_lane: int = 0
+    fallback_fire_lane: int = 0
+    revision67_active: bool = False
+    revision67_beneficiary_lane: int = 0
 
     # 予算
     budget_main: int = 14000
@@ -217,6 +243,7 @@ class PredictionOutput:
     boat_evals: List[Dict] = field(default_factory=list)
     insufficient_boats: bool = False
     reasoning: str = ""
+    validation_report: Optional[ValidationReport] = None
 
 
 # ═══════════════════════════════════════════════════════════
@@ -312,6 +339,10 @@ class BoatracePredictor:
         self.out.notes = []
         self.benefit_ladder = []
         self.suji_templates = []
+        self.recognized_fire_lane = 0
+        self.fallback_fire_lane = 0
+        self.revision67_active = False
+        self.revision67_beneficiary_lane = 0
 
         if not self.boats:
             self.out.notes.append("艇データ欠損：予測対象が存在しないため見送り")
@@ -332,6 +363,7 @@ class BoatracePredictor:
         self._run07_anomaly()
         self._run08_payout_gate()
         self._run09_exacta_manshu()
+        self._run10_4m_validation()
         self._run10_finalize()
         return self.out
 
@@ -360,17 +392,15 @@ class BoatracePredictor:
 
     def _recompute_attack_rates(self):
         attackers = [b for b in self.boats if b.course >= 2]
-        total_attack = 0.0
         for b in attackers:
             attack_score = _prob(b.course_win_rates.get(b.course, 0))
             attack_score += _prob(b.course_place2_rates.get(b.course, 0)) * 0.35
             attack_score += min(0.25, max(0.0, b.ei) / 100.0) * 0.25
             attack_score += min(0.20, b.completion_power * 0.03)
-            b.gen_rate = max(b.gen_rate, attack_score)
-            total_attack += max(0.0, b.gen_rate)
-        if total_attack > 0:
-            for b in attackers:
-                b.gen_rate = max(0.0, b.gen_rate) / total_attack
+            if b.gen_rate_raw > 0:
+                b.gen_rate = b.gen_rate_raw
+            elif b.gen_rate <= 0:
+                b.gen_rate = max(0.0, attack_score)
 
         boat1 = self._boat_by_course(1)
         if boat1 is not None:
@@ -378,7 +408,11 @@ class BoatracePredictor:
             inside_pressure = sum(
                 max(0.0, b.gen_rate) for b in attackers if b.course in (2, 3, 4)
             )
-            boat1.hit_rate = max(boat1.hit_rate, min(1.0, hit_base * 0.6 + inside_pressure * 0.4))
+            imputed_hit = min(1.0, hit_base * 0.6 + inside_pressure * 0.4)
+            if boat1.hit_rate_raw > 0:
+                boat1.hit_rate = boat1.hit_rate_raw
+            elif boat1.hit_rate <= 0:
+                boat1.hit_rate = imputed_hit
 
     # ────────────────────────────────────
     # RUN-00 進入・初日・SINK適用可否
@@ -602,45 +636,28 @@ class BoatracePredictor:
         gen = (1.0 - in_p1) * 100
         self.out.gen_rate = round(gen, 1)
 
-        # 最強攻め艇（非1号）
-        attackers = [b for b in self.boats if b.course >= 2]
-        strongest = max(attackers, key=lambda b: b.p1) if attackers else None
+        recognized_fire, fallback_fire = self._select_fire_boat_with_fallback()
+        self.recognized_fire_lane = recognized_fire.lane if recognized_fire else 0
+        self.fallback_fire_lane = fallback_fire.lane if fallback_fire else 0
+        self.revision67_active = False
+        self.revision67_beneficiary_lane = 0
 
-        # ── 発動艇認定（改正65）──
-        # 発生率がフィールド最大 ∧ ≥5% ∧ D-KAN2項目以上
-        fire = None
-        if attackers:
-            gmax_val = max(b.gen_rate for b in attackers)
-            cand = max(attackers, key=lambda b: (b.gen_rate, b.completion_power))
-            if (gmax_val >= GEN_FIRE
-                    and cand.gen_rate >= gmax_val - 1e-9
-                    and cand.completion_power >= DKAN_FIRE):
-                fire = cand
-        if fire is not None:
-            self.out.fire_boat_lane = fire.lane
-            self.out.fire_boat_gen = round(fire.gen_rate, 3)
-
-        a_lane, a_course, a_type = (boat1.lane if boat1 else 1), 1, "1逃げ"
-
-        if boat1 and in_p1 >= 0.50 and self.out.s_in == "イン強":
-            # イン強：1逃げを主体。発動艇は第2頭候補として記録のみ（進入双方向再評価）
-            a_lane, a_course, a_type = boat1.lane, 1, "1逃げ"
-        elif fire is not None:
-            # 発動艇優先：認定艇を攻めの主体に
-            a_lane, a_course = fire.lane, fire.course
-            a_type = self._attack_label(fire)
-        elif gen >= 60 and strongest:
-            a_lane, a_course = strongest.lane, strongest.course
-            a_type = self._attack_label(strongest)
-        elif top.course != 1 and in_p1 < 0.50:
-            a_lane, a_course = top.lane, top.course
-            a_type = self._attack_label(top)
-        elif boat1:
-            a_lane, a_course, a_type = boat1.lane, 1, "1逃げ"
+        a_lane, a_course, a_type = self._select_main_attack_by_pdf_priority(
+            boat1=boat1,
+            top=top,
+            recognized_fire=recognized_fire,
+        )
 
         self.out.main_attack_lane = a_lane
         self.out.main_attack_course = a_course
         self.out.attack_type = a_type
+        self.out.recognized_fire_lane = self.recognized_fire_lane
+        self.out.fallback_fire_lane = self.fallback_fire_lane
+        self.out.revision67_active = self.revision67_active
+        self.out.revision67_beneficiary_lane = self.revision67_beneficiary_lane
+        self.out.fire_boat_lane = self.recognized_fire_lane
+        if recognized_fire is not None:
+            self.out.fire_boat_gen = round(recognized_fire.gen_rate, 3)
 
         # 進入双方向再評価（P2前付け／P3深進入）：受益方向の補正注記
         amain = self._boat_by_lane(a_lane)
@@ -651,26 +668,112 @@ class BoatracePredictor:
             self.out.notes.append(
                 f"進入再評価：{a_course}号は前付け(P2)→内側受益を強める")
 
-        if fire is not None:
+        if recognized_fire is not None:
             self.out.notes.append(
-                f"発動艇認定＝{fire.course}号（発生率{fire.gen_rate*100:.0f}%・"
-                f"D-KAN{fire.completion_power}/5・改正65）")
+                f"発動艇認定＝{recognized_fire.course}号（発生率{recognized_fire.gen_rate*100:.0f}%・"
+                f"D-KAN{recognized_fire.completion_power}/5・改正65）")
+        elif fallback_fire is not None:
+            self.out.notes.append(
+                f"発動艇fallback＝{fallback_fire.course}号（後1着率最上位の非1号）")
+        if self.revision67_active and self.revision67_beneficiary_lane:
+            beneficiary = self._boat_by_lane(self.revision67_beneficiary_lane)
+            if beneficiary is not None:
+                self.out.notes.append(
+                    f"改正67発火：頭={{2コース発動, {beneficiary.course}コース受益}}")
         self.out.notes.append(
             f"攻めの主体＝{a_course}号（{a_type}）／発生率{gen:.0f}%／"
             f"イン{self.out.s_in}")
+
+    def _is_lane1_escape_a_case(self, boat1: Optional[BoatEntry]) -> bool:
+        if boat1 is None:
+            return False
+        ranked = sorted(self.boats, key=lambda b: b.p1, reverse=True)
+        top1 = ranked[0]
+        top2 = ranked[1] if len(ranked) > 1 else ranked[0]
+        gap_ok = top2.p1 > 0 and (top1.p1 / max(top2.p1, 1e-6)) >= GAP
+        return boat1.p1 >= 0.50 and self.out.s_in == "イン強" and gap_ok
+
+    def _is_lane1_unreliable(self, boat1: Optional[BoatEntry]) -> bool:
+        return boat1 is not None and boat1.p1 < 0.45
+
+    def _is_revision67_case(
+        self,
+        boat1: Optional[BoatEntry],
+        boat2: Optional[BoatEntry],
+        boat3: Optional[BoatEntry],
+    ) -> bool:
+        if boat1 is None or boat2 is None or boat3 is None:
+            return False
+        if not self._is_lane1_unreliable(boat1):
+            return False
+        c2_attack = boat2.attack_type in ("差し", "捲り", "捲差")
+        sashi_top2 = boat2.sashi > 0 and sum(
+            1 for b in self.boats if b.sashi > boat2.sashi
+        ) < 2
+        makuri_top2 = boat2.makuri > 0 and sum(
+            1 for b in self.boats if b.makuri > boat2.makuri
+        ) < 2
+        c2_advantage = sashi_top2 or makuri_top2
+        c2_edge = boat2.p1 >= boat3.p1
+        return c2_attack and c2_advantage and c2_edge
+
+    def _select_fire_boat_with_fallback(self) -> Tuple[Optional[BoatEntry], Optional[BoatEntry]]:
+        attackers = [b for b in self.boats if b.course >= 2 and b.lane != 1]
+        recognized = None
+        if attackers:
+            gmax_val = max(b.gen_rate for b in attackers)
+            cand = max(attackers, key=lambda b: (b.gen_rate, b.completion_power, b.p1))
+            if (
+                cand.gen_rate >= GEN_FIRE
+                and cand.gen_rate >= gmax_val - 1e-9
+                and cand.completion_power >= DKAN_FIRE
+            ):
+                recognized = cand
+        fallback = max(
+            attackers,
+            key=lambda b: (
+                _prob(b.course_win_rates.get(b.course, 0)),
+                b.gen_rate,
+                b.p1,
+            ),
+            default=None,
+        )
+        return recognized, fallback
+
+    def _select_main_attack_by_pdf_priority(
+        self,
+        boat1: Optional[BoatEntry],
+        top: BoatEntry,
+        recognized_fire: Optional[BoatEntry],
+    ) -> Tuple[int, int, str]:
+        boat2 = self._boat_by_course(2)
+        boat3 = self._boat_by_course(3)
+        if self._is_lane1_escape_a_case(boat1):
+            return boat1.lane, 1, "1逃げ"
+        if self._is_revision67_case(boat1, boat2, boat3):
+            self.revision67_active = True
+            self.revision67_beneficiary_lane = boat3.lane
+            return boat2.lane, boat2.course, self._attack_label(boat2)
+        if self._is_lane1_unreliable(boat1) and recognized_fire is not None:
+            return recognized_fire.lane, recognized_fire.course, self._attack_label(recognized_fire)
+        if top.course != 1 and boat1 is not None and boat1.p1 < 0.50:
+            return top.lane, top.course, self._attack_label(top)
+        if boat1 is not None:
+            return boat1.lane, 1, "1逃げ"
+        return top.lane, top.course, self._attack_label(top)
 
     def _attack_label(self, b: BoatEntry) -> str:
         c = b.course
         if c == 2:
             return "2捲り" if b.attack_type == "捲り" else "2差し"
         if c == 3:
-            return "3主体"
+            return "3捲り" if b.attack_type == "捲り" else "3差し"
         if c == 4:
-            return "4捲り"
+            return "4捲り" if b.attack_type == "捲り" else "4差し"
         if c == 5:
-            return "5単独捲り差し"
+            return "5捲り" if b.attack_type == "捲り" else "5差し"
         if c == 6:
-            return "6単独大外"
+            return "6捲り" if b.attack_type == "捲り" else "6差し"
         return "1逃げ"
 
     # ────────────────────────────────────
@@ -701,41 +804,9 @@ class BoatracePredictor:
             b = self._boat_by_course(course)
             return b.lane if b else None
 
-        # 攻めの主体・型 → 着順テンプレ（号艇=枠番へ）
-        # 受益マップ原則：差し系=遠い外を切る／捲り系=通り道(内寄り)を切る
-        templates: List[Tuple[int, List[int], List[int]]] = []  # (頭, 2着候補, 3着候補)
-        L = {co: lane(co) for co in range(1, 7)}
-
-        if c == 1:
-            # 1逃げ：1-23系。番手筆頭＝2、一次受益＝カド外5
-            templates.append((L[1], [L[2], L[3], L[5]], [L[2], L[3], L[4], L[5]]))
-        elif c == 2:
-            if self.out.attack_type == "2捲り":
-                # 2捲り：1沈み・3以下便乗（2-3456）／通り道=1を切る
-                templates.append((L[2], [L[3], L[4], L[5]], [L[3], L[4], L[5], L[6]]))
-            else:
-                # 2差し：1残る（2-1系）／遠い外(56)を切る
-                templates.append((L[2], [L[1], L[3], L[4]], [L[1], L[3], L[4]]))
-        elif c == 3:
-            # 3主体・捲り：3-4-1 / 3-456／通り道=12を切る
-            templates.append((L[3], [L[4], L[1], L[5]], [L[1], L[4], L[5], L[6]]))
-        elif c == 4:
-            # 4捲り（ダッシュ・役割交代）：4-1256（新4=1差し・新5=2連れ）
-            templates.append((L[4], [L[1], L[2], L[5]], [L[1], L[2], L[5], L[6]]))
-        elif c == 5:
-            # 5単独捲り差し：5-12-1234／遠い外(6)を切る
-            templates.append((L[5], [L[1], L[2], L[3]], [L[1], L[2], L[3], L[4]]))
-        elif c == 6:
-            # 6単独大外捲り：6-12系
-            templates.append((L[6], [L[1], L[2]], [L[1], L[2], L[3]]))
-
-        # 受益ラダー（0-7）：一次受益=カド外5・二次=6。anchor確定。
-        if c == 1:
-            ladder = [L[2], L[5], L[3]]            # 番手筆頭→一次受益→便乗
-        else:
-            ladder = [L[5], L[1], L[4]]            # 一次受益→差され残り本命→カド
-        self.benefit_ladder = [x for x in ladder if x and x != a_lane]
+        templates = self._build_pdf_templates(c)
         self.suji_templates = templates
+        self.benefit_ladder = self._derive_benefit_ladder_by_attack_course(c, a_lane)
 
         # ── 被弾率⑤f（1号評価専用：A型禁止判定・崩壊枝厚み）──
         self._no_a_format = False
@@ -756,6 +827,74 @@ class BoatracePredictor:
 
         # 沈み候補（S4）：攻めが外ほど内が washed → SINK対象
         self._mark_sink(c)
+
+    def _build_pdf_templates(self, attack_course: int) -> List[Tuple[int, List[int], List[int]]]:
+        if attack_course == 1:
+            lane1 = self._lane_of_course(1)
+            lane2 = self._lane_of_course(2)
+            lane3 = self._lane_of_course(3)
+            lane4 = self._lane_of_course(4)
+            lane5 = self._lane_of_course(5)
+            return [(
+                lane1,
+                [ln for ln in (lane2, lane3, lane5) if ln],
+                [ln for ln in (lane2, lane3, lane4, lane5) if ln],
+            )]
+        if self.revision67_active and attack_course == 2 and self.revision67_beneficiary_lane:
+            head = self._lane_of_course(2)
+            beneficiary = self.revision67_beneficiary_lane
+            thirds = [
+                ln for ln in self._template_courses_to_lanes(PDF_TEMPLATE_MAP["2差し"]["thirds"])
+                if ln not in (head, beneficiary)
+            ]
+            return [(head, [beneficiary], thirds)]
+        template_key = self.out.attack_type if self.out.attack_type in PDF_TEMPLATE_MAP else None
+        if template_key is None:
+            fallback_key = f"{attack_course}捲り"
+            template_key = fallback_key if fallback_key in PDF_TEMPLATE_MAP else f"{attack_course}差し"
+        template = PDF_TEMPLATE_MAP.get(template_key)
+        if template is None:
+            return []
+        head = self._lane_of_course(template["head_course"])
+        seconds = self._template_courses_to_lanes(template["seconds"])
+        thirds = self._template_courses_to_lanes(template["thirds"])
+        return [(head, seconds, thirds)] if head else []
+
+    def _template_courses_to_lanes(self, courses: List[int]) -> List[int]:
+        lanes: List[int] = []
+        for course in courses:
+            lane = self._lane_of_course(course)
+            if lane and lane not in lanes:
+                lanes.append(lane)
+        return lanes
+
+    def _derive_benefit_ladder_by_attack_course(self, attack_course: int, attack_lane: int) -> List[int]:
+        primary_course = 0
+        secondary_course = 0
+        if self.revision67_active and self.revision67_beneficiary_lane:
+            beneficiary = self._boat_by_lane(self.revision67_beneficiary_lane)
+            if beneficiary is not None:
+                primary_course = beneficiary.course
+        elif attack_course == 2:
+            primary_course = 3
+        elif attack_course == 3:
+            primary_course = 4
+        elif attack_course == 4:
+            primary_course = 5
+            secondary_course = 6
+        elif attack_course == 5:
+            primary_course = 6
+        elif attack_course == 6:
+            primary_course = 0
+            secondary_course = 0
+        ladder: List[int] = []
+        for course in (primary_course, secondary_course):
+            lane = self._lane_of_course(course) if course else 0
+            if lane and lane != attack_lane and lane not in ladder:
+                ladder.append(lane)
+        self.primary_beneficiary_lane = ladder[0] if ladder else 0
+        self.secondary_beneficiary_lane = ladder[1] if len(ladder) > 1 else 0
+        return ladder
 
     def _mark_sink(self, attack_course: int):
         for b in self.boats:
@@ -783,43 +922,40 @@ class BoatracePredictor:
         top1, top2 = ranked[0], (ranked[1] if len(ranked) > 1 else ranked[0])
 
         a_lane = self.out.main_attack_lane
-        head_boat = self._boat_by_lane(a_lane) or top1
+        attack_boat = self._boat_by_lane(a_lane) or top1
+        lane1_boat = self._boat_by_course(1) or self._boat_by_lane(self._lane_of_course(1) or 1) or top1
 
         # フォーマット選択（0.2）
-        gap_ok = top2.p1 > 0 and (top1.p1 / max(top2.p1, 1e-6)) >= GAP
-        if head_boat.p1 >= 0.50 and gap_ok:
-            fmt = "A"
-        elif (top1.p1 / max(top2.p1, 1e-6)) < GAP:
-            fmt = "B"
-        else:
+        fmt = "B"
+        if self._is_a_format_escape_case(attack_boat, top1, top2):
             fmt = "A"
         # 被弾率⑤f：1号被弾率が高い場合A型禁止→B型へ強制（v58.7）
         if getattr(self, "_no_a_format", False) and fmt == "A":
             fmt = "B"
         self.out.fmt = fmt
 
-        # 軸（受益ラダー優先・geometry最優先）
-        axis_src = self.benefit_ladder[:]
-        # テンプレ2着候補を補完
-        for _, seconds, _ in self.suji_templates:
+        template_axis_src: List[int] = []
+        template_hus_src: List[int] = []
+        for _, seconds, thirds in self.suji_templates:
             for ln in seconds:
-                if ln and ln not in axis_src and ln != a_lane:
-                    axis_src.append(ln)
-        # 紐（3着）
-        hus_src = []
-        for _, _, thirds in self.suji_templates:
+                if ln and ln != a_lane and ln not in template_axis_src:
+                    template_axis_src.append(ln)
             for ln in thirds:
-                if ln and ln not in hus_src:
-                    hus_src.append(ln)
-        # A級・着内ありの深枠艇を残す（0-10：レーンだけで切らない）
+                if ln and ln not in template_hus_src:
+                    template_hus_src.append(ln)
+        axis_src = [ln for ln in self.benefit_ladder if ln in template_axis_src]
+        for ln in template_axis_src:
+            if ln not in axis_src:
+                axis_src.append(ln)
+        hus_src = template_hus_src[:]
+        template_pool = {a_lane, *template_axis_src, *template_hus_src}
         for b in sorted(self.boats, key=lambda b: b.p1, reverse=True):
-            if b.lane == a_lane:
+            if b.lane in template_pool or b.lane == a_lane:
                 continue
-            if b.rank in ("A1", "A2") or _prob(b.course_tricast_rates.get(b.course, 0)) >= 0.40:
-                if b.lane not in axis_src:
-                    axis_src.append(b.lane)
-                if b.lane not in hus_src:
-                    hus_src.append(b.lane)
+            if self._is_full_elimination_candidate(b):
+                continue
+            if self._should_keep_deep_lane_for_third(b) and b.lane not in hus_src:
+                hus_src.append(b.lane)
 
         if fmt == "A":
             self.out.head_boats = [a_lane]
@@ -827,11 +963,11 @@ class BoatracePredictor:
             self.out.axis_boats = axis_src[:3]
             self.out.hus_boats = (axis_src[:3] + [x for x in hus_src if x not in axis_src[:3]])[:4]
         else:
-            # B型：頭2枚（本命逃げ or 発動艇）
-            second_head = top1.lane if top1.lane != a_lane else top2.lane
-            self.out.head_boats = [a_lane, second_head]
+            lane1 = lane1_boat.lane
+            second_head = self._select_b_second_head(lane1, a_lane)
+            self.out.head_boats = [lane1, second_head]
             self.out.head_type = "AB"
-            axis4 = list(dict.fromkeys([a_lane, second_head] + axis_src))[:4]
+            axis4 = list(dict.fromkeys([second_head] + axis_src))
             self.out.axis_boats = axis4
             # 3着側に攻め成立側の外艇6を必ず1枚（改正42）
             hus4 = list(dict.fromkeys(axis4 + hus_src))
@@ -842,13 +978,85 @@ class BoatracePredictor:
 
         # 弱頭判定（改正54）
         if fmt == "A":
-            self.out.weak_head = head_boat.p1 < WEAK_HEAD_TH
+            self.out.weak_head = attack_boat.p1 < WEAK_HEAD_TH
         else:
             hsum = sum(self._boat_by_lane(h).p1 for h in self.out.head_boats
                        if self._boat_by_lane(h))
             self.out.weak_head = hsum < WEAK_HEAD_TH
         if self.out.weak_head:
             self.out.notes.append("弱頭：頭1着率<50%→高オッズでも勝負禁止（改正54）")
+
+    def _is_a_format_escape_case(
+        self,
+        head_boat: Optional[BoatEntry],
+        top1: BoatEntry,
+        top2: BoatEntry,
+    ) -> bool:
+        if head_boat is None:
+            return False
+        gap_ok = top2.p1 > 0 and (top1.p1 / max(top2.p1, 1e-6)) >= GAP
+        escape_outstanding = self.out.main_attack_course == 1 and self.out.s_in == "イン強"
+        return head_boat.p1 >= 0.50 and gap_ok and escape_outstanding
+
+    def _select_b_second_head(self, lane1: int, attack_lane: int) -> int:
+        candidates = [
+            self.recognized_fire_lane,
+            self.revision67_beneficiary_lane if self.revision67_active else 0,
+            self.fallback_fire_lane,
+            attack_lane,
+        ]
+        template_seconds = set()
+        for _, seconds, _ in self.suji_templates:
+            template_seconds.update(seconds)
+        for lane in candidates:
+            if not lane or lane == lane1:
+                continue
+            if lane == self.revision67_beneficiary_lane:
+                boat = self._boat_by_lane(lane)
+                if boat is not None and self._is_valid_beneficiary_promotion(boat):
+                    return lane
+                continue
+            if lane == attack_lane or lane in template_seconds:
+                return lane
+        ranked = sorted(self.boats, key=lambda b: b.p1, reverse=True)
+        for boat in ranked:
+            if boat.lane != lane1 and boat.lane in template_seconds:
+                return boat.lane
+        return attack_lane if attack_lane != lane1 else ranked[0].lane
+
+    def _is_valid_beneficiary_promotion(self, boat: BoatEntry) -> bool:
+        motor_order = sorted(self.boats, key=lambda x: _prob(x.motor_place2_rate), reverse=True)
+        motor_top3 = {b.lane for b in motor_order[:3]}
+        tricast_values = sorted(_prob(b.course_tricast_rates.get(b.course, 0)) for b in self.boats)
+        median_idx = len(tricast_values) // 2
+        median_tricast = tricast_values[median_idx] if tricast_values else 0.0
+        return (
+            boat.lane in motor_top3
+            or (boat.rank or "").upper() in ("A1", "A2")
+            or _prob(boat.course_tricast_rates.get(boat.course, 0)) >= median_tricast
+        )
+
+    def _is_full_elimination_candidate(self, boat: BoatEntry) -> bool:
+        template_lanes = {ln for _, seconds, thirds in self.suji_templates for ln in seconds + thirds}
+        if boat.lane in template_lanes or boat.lane == self.out.main_attack_lane:
+            return False
+        tricast_values = sorted(
+            (_prob(b.course_tricast_rates.get(b.course, 0)), b.ei or 0.0) for b in self.boats
+        )
+        tricast_floor = tricast_values[1][0] if len(tricast_values) > 1 else 0.0
+        ei_floor = tricast_values[1][1] if len(tricast_values) > 1 else 0.0
+        return (
+            boat.p1 < 0.05
+            and _prob(boat.course_place2_rates.get(boat.course, boat.place_rate)) < 0.05
+            and _prob(boat.course_tricast_rates.get(boat.course, 0)) <= tricast_floor
+            and (boat.ei or 0.0) <= ei_floor
+        )
+
+    def _should_keep_deep_lane_for_third(self, boat: BoatEntry) -> bool:
+        return (
+            (boat.rank or "").upper() in ("A1", "A2")
+            or _prob(boat.course_tricast_rates.get(boat.course, 0)) > 0
+        )
 
     # ────────────────────────────────────
     # RUN-06 資金枠取り（オッズ前）
@@ -1036,22 +1244,24 @@ class BoatracePredictor:
                     ev = p * od
                     if od > 0:
                         raw.append((combo, p, od, ev))
-            # ガミ禁止：Σ(1/オッズ)<1.0 ＋ EV≥EV_min
-            raw.sort(key=lambda x: x[3], reverse=True)
-            sel = []
+            raw.sort(key=lambda x: (-x[2], -x[1], x[0]))
+            sel: List[Tuple[str, float, float, float]] = []
             for combo, p, od, ev in raw:
-                if ev < EV_MIN:
-                    continue
+                if len(sel) >= 3:
+                    break
                 trial = sel + [(combo, p, od, ev)]
-                if sum(1.0 / o for _, _, o, _ in trial) < 1.0 and len(trial) <= 3:
+                payout = self._synthetic_payout([o for _, _, o, _ in trial], self.out.budget_exacta)
+                if len(trial) == 1 or payout >= 20000.0:
                     sel = trial
-            exacta_pts = [BuyPoint(c, round(p, 5), round(o, 1), round(e, 3),
-                                   "勝負" if e >= EV_BAT else "通常", "2連単(別頭)")
-                          for c, p, o, e in sel]
+            exacta_pts = []
+            for c, p, o, e in sel:
+                payout = self._synthetic_payout([o for _, _, o, _ in sel], self.out.budget_exacta)
+                exacta_pts.append(BuyPoint(c, round(p, 5), round(o, 1), round(e, 3),
+                                           "通常", "2連単(別頭)", round(payout, 0)))
         self.out.exacta = exacta_pts
         exacta_prefix = {p.combo for p in exacta_pts}
 
-        # ── 万舟：6〜8点抽出義務（改正59）──
+        # ── 万舟：6〜10点抽出義務（PDF v58.7）──
         manshu_raw: List[Tuple[str, str]] = []  # (combo, branch)
         l4 = self._lane_of_course(4)
         l5 = self._lane_of_course(5)
@@ -1097,26 +1307,347 @@ class BoatracePredictor:
             ev = p * od
             if odds3 and od > 0 and od < MANSHU_MIN_ODDS:
                 continue  # 100倍未満は万舟対象外
-            grade = "通常" if (od > 0 and ev >= EV_MIN) else "見送り"
+            grade = "通常" if od > 0 else "見送り"
             manshu_pts.append(BuyPoint(combo, round(p, 5), round(od, 1),
                                        round(ev, 3), grade, branch))
 
-        # 保険枠（改正45/52）：主攻め/外強襲頭は各1点をEV例外で最小単位確保
-        ins_heads = {a_lane}
-        if l4:
-            ins_heads.add(l4)
-        if l6 and self.out.main_attack_course >= 4:
-            ins_heads.add(l6)
-        for p in manshu_pts:
-            if int(p.combo.split("-")[0]) in ins_heads and p.grade == "見送り" and p.odds >= MANSHU_MIN_ODDS:
-                p.grade = "保険"
-
-        # 6〜8点抽出義務
-        manshu_pts.sort(key=lambda p: (p.grade != "保険", -(p.ev if p.ev > 0 else -1)))
-        self.out.manshu = manshu_pts[:8]
-        if len(self.out.manshu) < 6:
+        manshu_pts.sort(key=lambda p: (-p.odds, -p.p, p.combo))
+        if len(manshu_pts) >= 6:
+            self.out.manshu = manshu_pts[:10]
+        else:
+            self.out.manshu = []
             self.out.notes.append(
-                f"万舟抽出{len(self.out.manshu)}点（6点未満：100倍候補不足・要オッズ）")
+                f"万舟見送り：100倍以上候補が{len(manshu_pts)}点でPDF規定の6点下限を満たさない")
+
+    def _synthetic_payout(self, odds: List[float], budget: int) -> float:
+        valid_odds = [float(o) for o in odds if o and o > 0]
+        if not valid_odds or budget <= 0:
+            return 0.0
+        inv_sum = sum(1.0 / o for o in valid_odds)
+        if inv_sum <= 0:
+            return 0.0
+        return (1.0 / inv_sum) * float(budget)
+
+    def _payout_threshold_label(self, payout: float) -> str:
+        if payout >= PAYOUT_BET:
+            return ">=50000"
+        if payout > PAYOUT_SKIP:
+            return "30000-50000"
+        return "<=30000"
+
+    def _build_template_collation_report(
+        self,
+        template_key: Optional[str],
+        template_head: int,
+        template_seconds: set,
+        template_thirds: set,
+        template_pool: set,
+    ) -> List[Dict]:
+        rows: List[Dict] = []
+        for point in self.out.honsen:
+            combo = point.combo or ""
+            lanes = [int(part) for part in combo.split("-") if part.isdigit()]
+            excluded = [lane for lane in lanes if lane not in template_pool]
+            rows.append({
+                "combo": combo,
+                "template_key": template_key,
+                "head_lane": lanes[0] if len(lanes) > 0 else 0,
+                "second_lane": lanes[1] if len(lanes) > 1 else 0,
+                "third_lane": lanes[2] if len(lanes) > 2 else 0,
+                "template_head_lane": template_head,
+                "template_second_lanes": sorted(template_seconds),
+                "template_third_lanes": sorted(template_thirds),
+                "matches_template": bool(template_key) and not excluded,
+                "excluded_lanes": excluded,
+                "exclusion_reason": "物理的死亡のみ可" if excluded else "",
+            })
+        return rows
+
+    def _build_fire_recognition_report(
+        self,
+        recognized_fire: Optional[BoatEntry],
+        fallback_fire: Optional[BoatEntry],
+        primary_lane: int,
+        secondary_lane: int,
+    ) -> List[Dict]:
+        rows: List[Dict] = []
+        recognized_conditions: List[str] = []
+        if recognized_fire is not None:
+            recognized_conditions = [
+                f"gen_rate={recognized_fire.gen_rate:.3f}>=閾値{GEN_FIRE:.2f}",
+                f"D-KAN={recognized_fire.completion_power}>={DKAN_FIRE}",
+                "外攻め候補内で発生率最大",
+            ]
+        rows.append({
+            "role": "発動艇",
+            "lane": self.out.recognized_fire_lane,
+            "recognized": self.out.recognized_fire_lane > 0,
+            "reason": (
+                "D-KAN/発生率条件を満たす認定発動艇"
+                if self.out.recognized_fire_lane
+                else "認定発動艇なし"
+            ),
+            "conditions": recognized_conditions,
+            "fallback_lane": self.out.fallback_fire_lane,
+            "fallback_reason": (
+                "認定不成立時のフォールバック候補"
+                if fallback_fire is not None
+                else ""
+            ),
+            "revision67_active": self.out.revision67_active,
+        })
+        if fallback_fire is not None:
+            rows.append({
+                "role": "発動艇フォールバック",
+                "lane": fallback_fire.lane,
+                "recognized": fallback_fire.lane == self.out.fallback_fire_lane,
+                "reason": "コース別1着率→発生率→p1優先で選定した代替候補",
+                "conditions": [
+                    f"course_win_rate={_prob(fallback_fire.course_win_rates.get(fallback_fire.course, 0)):.3f}",
+                    f"gen_rate={fallback_fire.gen_rate:.3f}",
+                    f"p1={fallback_fire.p1:.3f}",
+                ],
+                "fallback_lane": 0,
+                "fallback_reason": "",
+                "revision67_active": self.out.revision67_active,
+            })
+        for role, lane, reason in [
+            ("一次受益艇", primary_lane, "攻め主体別の一次受益マップ"),
+            ("二次受益艇", secondary_lane, "攻め主体別の二次受益マップ"),
+            ("改正67受益艇", self.out.revision67_beneficiary_lane, "改正67の2-3受益特例"),
+        ]:
+            if lane:
+                rows.append({
+                    "role": role,
+                    "lane": lane,
+                    "recognized": True,
+                    "reason": reason,
+                    "conditions": [f"lane={lane}"],
+                    "fallback_lane": 0,
+                    "fallback_reason": "",
+                    "revision67_active": self.out.revision67_active,
+                })
+        return rows
+
+    def _build_payout_audit_report(self) -> List[Dict]:
+        rows: List[Dict] = []
+        branches = [
+            ("本線", self.out.honsen, int(self.out.budget_main or 0), "本線戻り額帯判定"),
+            ("二連単", self.out.exacta, int(self.out.budget_exacta or 0), "配分後戻り>20000"),
+            ("万舟", self.out.manshu, int(self.out.budget_manshu or 0), "100倍以上かつ6-10点"),
+        ]
+        for branch_name, points, budget, criterion in branches:
+            odds = [point.odds for point in points if point.odds and point.odds > 0]
+            synthetic_odds = round((1.0 / sum(1.0 / float(od) for od in odds)), 1) if odds else 0.0
+            payout = round(self._synthetic_payout(odds, budget), 0) if odds else 0.0
+            if branch_name == "本線":
+                threshold_ok = payout > PAYOUT_SKIP
+            elif branch_name == "二連単":
+                threshold_ok = payout > 20000
+            else:
+                threshold_ok = len(points) >= 6 and all((point.odds or 0) >= MANSHU_MIN_ODDS for point in points)
+            for point in points:
+                rows.append({
+                    "branch": branch_name,
+                    "combo": point.combo,
+                    "synthetic_odds": synthetic_odds,
+                    "stake": budget,
+                    "payout": payout,
+                    "threshold_ok": threshold_ok,
+                    "criterion": criterion,
+                    "point_odds": point.odds,
+                    "point_payout": point.payout,
+                    "payout_band": self._payout_threshold_label(payout) if branch_name == "本線" else "",
+                })
+        return rows
+
+    def _run10_4m_validation(self):
+        summary_parts: List[str] = []
+        notes_to_add: List[str] = []
+
+        attack_lane = self.out.main_attack_lane
+        attack_course = self.out.main_attack_course
+        primary = getattr(self, "primary_beneficiary_lane", 0)
+        secondary = getattr(self, "secondary_beneficiary_lane", 0)
+        template_key = self.out.attack_type if self.out.attack_type in PDF_TEMPLATE_MAP else None
+        template = PDF_TEMPLATE_MAP.get(template_key) if template_key else None
+        template_head = self._lane_of_course(template["head_course"]) if template else 0
+        template_seconds = set(self._template_courses_to_lanes(template["seconds"])) if template else set()
+        template_thirds = set(self._template_courses_to_lanes(template["thirds"])) if template else set()
+        template_pool = ({template_head} | template_seconds | template_thirds) - {0}
+
+        honsen_prefixes = {"-".join(point.combo.split("-")[:2]) for point in self.out.honsen if point.combo}
+        exacta_prefixes = {point.combo for point in self.out.exacta if point.combo}
+        manshu_prefixes = {"-".join(point.combo.split("-")[:2]) for point in self.out.manshu if point.combo}
+
+        subject_ok = False
+        if self.out.fmt == "B":
+            lane1 = self._lane_of_course(1)
+            subject_ok = bool(
+                lane1
+                and self.out.head_boats
+                and self.out.head_boats[0] == lane1
+            )
+        elif attack_lane and self.out.head_boats:
+            subject_ok = attack_lane in self.out.head_boats
+        elif attack_lane:
+            subject_ok = any(point.combo.startswith(f"{attack_lane}-") for point in self.out.honsen)
+        if not subject_ok and attack_lane:
+            if self.out.fmt == "B":
+                lane1 = self._lane_of_course(1)
+                if lane1:
+                    second_head = self._select_b_second_head(lane1, attack_lane)
+                    self.out.head_boats = [lane1, second_head]
+            elif attack_lane not in self.out.head_boats:
+                self.out.head_boats = [attack_lane] + [lane for lane in self.out.head_boats if lane != attack_lane]
+                self.out.head_boats = self.out.head_boats[:1]
+            self.out.head_type = "AB" if self.out.fmt == "B" else "A"
+            if self.out.fmt == "B":
+                notes_to_add.append("4M主体整合是正：Bフォーマット頭を1号艇へ復帰")
+                summary_parts.append("主体=是正(B=1号頭)")
+            else:
+                notes_to_add.append(f"4M主体整合是正：攻め主体{attack_course}号を頭候補へ復帰")
+                summary_parts.append(f"主体=是正({attack_course}号)")
+        else:
+            summary_parts.append("主体=適合(B=1号頭)" if self.out.fmt == "B" else f"主体=適合({attack_course}号)")
+
+        beneficiary_conflicts: List[str] = []
+        if primary:
+            if template and primary not in template_seconds and primary not in template_thirds:
+                beneficiary_conflicts.append(f"一次受益{primary}がテンプレ外")
+            if self.out.axis_boats and primary not in self.out.axis_boats and primary not in self.out.head_boats:
+                self.out.axis_boats = [primary] + [lane for lane in self.out.axis_boats if lane != primary]
+                self.out.axis_boats = self.out.axis_boats[:4]
+                beneficiary_conflicts.append(f"一次受益{primary}を軸へ復帰")
+        if secondary and template and secondary not in template_thirds and secondary not in self.out.hus_boats:
+            self.out.hus_boats = [secondary] + [lane for lane in self.out.hus_boats if lane != secondary]
+            self.out.hus_boats = self.out.hus_boats[:4]
+            beneficiary_conflicts.append(f"二次受益{secondary}を紐へ補完")
+        if beneficiary_conflicts:
+            notes_to_add.append("4M受益整合是正：" + "／".join(beneficiary_conflicts))
+            summary_parts.append("受益=是正")
+        else:
+            summary_parts.append("受益=適合")
+
+        template_violations: List[str] = []
+        if template:
+            expected_head = self._lane_of_course(1) if self.out.fmt == "B" else attack_lane
+            invalid_heads = [lane for lane in self.out.head_boats if lane != expected_head and lane not in template_seconds]
+            if invalid_heads:
+                self.out.head_boats = [lane for lane in self.out.head_boats if lane not in invalid_heads]
+                if expected_head and expected_head not in self.out.head_boats:
+                    self.out.head_boats.insert(0, expected_head)
+                template_violations.append(f"頭テンプレ外除去={invalid_heads}")
+            invalid_axis = [lane for lane in self.out.axis_boats if lane not in template_seconds and lane not in self.out.head_boats]
+            if invalid_axis:
+                self.out.axis_boats = [lane for lane in self.out.axis_boats if lane not in invalid_axis]
+                template_violations.append(f"2着テンプレ外除去={invalid_axis}")
+            invalid_hus = [lane for lane in self.out.hus_boats if lane not in template_pool]
+            if invalid_hus:
+                self.out.hus_boats = [lane for lane in self.out.hus_boats if lane not in invalid_hus]
+                template_violations.append(f"3着テンプレ外除去={invalid_hus}")
+        if template_violations:
+            notes_to_add.append("4Mテンプレ整合是正：" + "／".join(template_violations))
+            summary_parts.append("テンプレ=是正")
+        else:
+            summary_parts.append("テンプレ=適合" if template else "テンプレ=対象外")
+
+        duplicate_notes: List[str] = []
+        duplicate_exacta = sorted(exacta_prefixes & honsen_prefixes)
+        if duplicate_exacta:
+            self.out.exacta = [point for point in self.out.exacta if point.combo not in duplicate_exacta]
+            duplicate_notes.append(f"二連単重複除去={duplicate_exacta}")
+        duplicate_manshu = sorted(manshu_prefixes & (honsen_prefixes | exacta_prefixes))
+        if duplicate_manshu:
+            self.out.manshu = [
+                point for point in self.out.manshu
+                if "-".join(point.combo.split("-")[:2]) not in duplicate_manshu
+            ]
+            duplicate_notes.append(f"万舟重複除去={duplicate_manshu}")
+        if duplicate_notes:
+            notes_to_add.append("4M非被り是正：" + "／".join(duplicate_notes))
+            summary_parts.append("非被り=是正")
+        else:
+            summary_parts.append("非被り=適合")
+
+        payout_notes: List[str] = []
+        if self.out.honsen and self.out.odds_available and self.out.payout <= PAYOUT_SKIP:
+            self.out.race_verdict = "見送り"
+            self.out.payout_grade = "見送り"
+            for point in self.out.honsen:
+                point.grade = "見送り"
+            payout_notes.append(f"本線戻り額不足={self.out.payout:.0f}円")
+        filtered_exacta: List[BuyPoint] = []
+        for point in self.out.exacta:
+            payout = point.payout or self._synthetic_payout([point.odds], self.out.budget_exacta)
+            point.payout = round(payout, 0)
+            if payout >= 20000.0:
+                filtered_exacta.append(point)
+            else:
+                payout_notes.append(f"二連単見送り={point.combo}:{payout:.0f}円")
+        self.out.exacta = filtered_exacta
+        filtered_manshu: List[BuyPoint] = []
+        for point in self.out.manshu:
+            if point.odds >= MANSHU_MIN_ODDS:
+                filtered_manshu.append(point)
+            else:
+                payout_notes.append(f"万舟見送り={point.combo}:{point.odds:.1f}倍")
+        self.out.manshu = filtered_manshu
+        if payout_notes:
+            notes_to_add.append("4M戻り額整合：" + "／".join(payout_notes))
+            summary_parts.append("戻り額=是正")
+        else:
+            summary_parts.append("戻り額=適合")
+
+        if len(self.out.manshu) < 6 and self.out.manshu:
+            notes_to_add.append(f"4M万舟縮小：非被り/戻り額検証後{len(self.out.manshu)}点のため縮小採用")
+        elif len(self.out.manshu) == 0:
+            notes_to_add.append("4M万舟見送り：非被りまたは100倍基準を満たす候補なし")
+
+        self.out.head_boats = list(dict.fromkeys([lane for lane in self.out.head_boats if lane]))
+        self.out.axis_boats = list(dict.fromkeys([lane for lane in self.out.axis_boats if lane and lane not in self.out.head_boats]))
+        self.out.hus_boats = list(dict.fromkeys([lane for lane in self.out.hus_boats if lane]))
+        recognized_fire = self._boat_by_lane(self.out.recognized_fire_lane) if self.out.recognized_fire_lane else None
+        fallback_fire = self._boat_by_lane(self.out.fallback_fire_lane) if self.out.fallback_fire_lane else None
+        self.out.validation_report = ValidationReport(
+            template_collation=self._build_template_collation_report(
+                template_key=template_key,
+                template_head=template_head,
+                template_seconds=template_seconds,
+                template_thirds=template_thirds,
+                template_pool=template_pool,
+            ),
+            fire_recognition=self._build_fire_recognition_report(
+                recognized_fire=recognized_fire,
+                fallback_fire=fallback_fire,
+                primary_lane=primary,
+                secondary_lane=secondary,
+            ),
+            payout_audit=self._build_payout_audit_report(),
+        )
+        if self.out.validation_report.template_collation:
+            notes_to_add.append(
+                "4Mテンプレ照合表=" + "／".join(
+                    f"{row['combo']}→{row['template_key'] or '対象外'}"
+                    for row in self.out.validation_report.template_collation
+                )
+            )
+        if self.out.validation_report.fire_recognition:
+            notes_to_add.append(
+                "4M発動艇認定根拠=" + "／".join(
+                    f"{row['role']}:{row['lane']}:{row['reason']}"
+                    for row in self.out.validation_report.fire_recognition
+                )
+            )
+        if self.out.validation_report.payout_audit:
+            notes_to_add.append(
+                "4M検算行=" + "／".join(
+                    f"{row['branch']}:{row['combo']}:{row['synthetic_odds']}x{row['stake']}={row['payout']}"
+                    for row in self.out.validation_report.payout_audit
+                )
+            )
+        self.out.notes.extend(notes_to_add)
+        self.out.notes.append("4M検証=" + "／".join(summary_parts))
 
     # ────────────────────────────────────
     # RUN-10 整合チェック → 出力
@@ -1185,7 +1716,8 @@ class BoatracePredictor:
             + payout_txt
             + ("／弱頭" if self.out.weak_head else "")
             + ("／較正適用" if self.out.cal_applied else "")
-            + f"／本線採用{len(adopted_h)}点・万舟{len(self.out.manshu)}点（v59.0）")
+            + f"／本線採用{len(adopted_h)}点・万舟{len(self.out.manshu)}点"
+            + (f"／{self.out.notes[-1]}" if self.out.notes and self.out.notes[-1].startswith("4M検証=") else ""))
         self.out.race_type = self.out.regime
 
     # ── ユーティリティ ──
@@ -1261,6 +1793,8 @@ def race_dict_to_input(race: dict) -> RaceInput:
             local5y_tricast_rate=_safe_float(b.get("local5y_tricast_rate")),
             gen_rate=_safe_float(b.get("gen_rate")),
             hit_rate=_safe_float(b.get("hit_rate")),
+            gen_rate_raw=_safe_float(b.get("gen_rate")),
+            hit_rate_raw=_safe_float(b.get("hit_rate")),
             p2_link=p2_link,
         ))
 
