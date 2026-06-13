@@ -24,6 +24,25 @@ function fmtPct(v?: number | null) {
   return v.toFixed(2) + '%'
 }
 
+function parsePercentValue(v?: string) {
+  if (!v || v === '—' || v === '-') return null
+  const n = parseFloat(v.replace('%', ''))
+  return Number.isFinite(n) ? n : null
+}
+
+function highlightMaxPercent(values: (string | undefined)[]) {
+  const nums = values.map(parsePercentValue)
+  const max = nums.reduce<number | null>((acc, value) => {
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  return (v: string | undefined) => {
+    const n = parsePercentValue(v)
+    if (n == null) return '#94a3b8'
+    return max != null && n === max ? '#f87171' : '#e2e8f0'
+  }
+}
+
 // ───── セクションヘッダー ─────
 function SectionHeader({ title, sub }: { title: string; sub?: string }) {
   return (
@@ -74,6 +93,17 @@ function DataRow({ label, values, colorFn }: {
   )
 }
 
+function parseNumericRate(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string') {
+    const normalized = value.replace('%', '').trim()
+    if (!normalized) return null
+    const parsed = Number(normalized)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
 // ───── セクションテーブル ─────
 function SectionTable({ title, sub, lanes, rows }: {
   title: string; sub?: string; lanes: number[]
@@ -95,11 +125,32 @@ function SectionTable({ title, sub, lanes, rows }: {
 }
 
 // ───── ①基本 ─────
-function Section1Basic({ boats }: { boats: Boat[] }) {
+function Section1Basic({ boats, venueConfig, venueName }: { boats: Boat[]; venueConfig?: VenueConfig | null; venueName?: string }) {
   const lanes = [1, 2, 3, 4, 5, 6]
   const get = (lane: number) => boats.find(b => b.lane === lane)
+  const homeBranch = venueConfig?.home_branch?.trim()
+  const venueLabel = venueConfig?.venue_name?.trim() || venueName?.trim() || ''
+  const isLocalBoat = (boat?: Boat) => {
+    if (!boat) return false
+    if (boat.is_local) return true
+    const branch = boat.branch?.trim()
+    return !!(homeBranch && branch && branch === homeBranch)
+  }
 
   const rows = [
+    {
+      label: '進入',
+      values: lanes.map(l => {
+        const course = get(l)?.entry_course
+        return course != null ? String(course) : '—'
+      }),
+      colorFn: () => '#e2e8f0'
+    },
+    {
+      label: '枠番',
+      values: lanes.map(l => String(l)),
+      colorFn: () => '#e2e8f0'
+    },
     {
       label: '名前',
       values: lanes.map(l => get(l)?.name || '—'),
@@ -111,7 +162,7 @@ function Section1Basic({ boats }: { boats: Boat[] }) {
       colorFn: (v: string | undefined) => v === 'A1' ? '#fcd34d' : v === 'A2' ? '#f59e0b' : '#94a3b8'
     },
     {
-      label: '年齢',
+      label: '年',
       values: lanes.map(l => get(l)?.age ? String(get(l)!.age) : '—'),
     },
     {
@@ -126,6 +177,14 @@ function Section1Basic({ boats }: { boats: Boat[] }) {
       }),
       colorFn: (v: string | undefined) => (v && v !== '-' && v !== '—') ? '#f87171' : '#94a3b8'
     },
+    {
+      label: '地元',
+      values: lanes.map(l => {
+        const boat = get(l)
+        return isLocalBoat(boat) && venueLabel ? venueLabel : ''
+      }),
+      colorFn: (v: string | undefined) => v ? '#fcd34d' : '#94a3b8'
+    },
   ]
 
   return (
@@ -137,40 +196,87 @@ function Section1Basic({ boats }: { boats: Boat[] }) {
 function Section2Motor({ boats }: { boats: Boat[] }) {
   const lanes = [1, 2, 3, 4, 5, 6]
   const get = (lane: number) => boats.find(b => b.lane === lane)
+  const rankOrder: Record<string, number> = { A: 4, B: 3, C: 2, D: 1 }
+  const dashValues = boats.map(b => b.motor_dashfoot).filter((v): v is number => v != null)
+  const extValues = boats.map(b => b.motor_extfoot).filter((v): v is number => v != null)
+  const evalValues = boats
+    .map(b => b.motor_eval?.trim().toUpperCase())
+    .filter((v): v is string => !!v && v in rankOrder)
+  const explicitRankValues = boats.map(b => b.motor_rank).filter((v): v is number => v != null)
+  const fallbackRankMap = (() => {
+    if (explicitRankValues.length > 0) return null
+    const sorted = boats
+      .filter(b => b.motor_place2_rate != null)
+      .sort((a, b) => (b.motor_place2_rate ?? 0) - (a.motor_place2_rate ?? 0))
+    if (sorted.length === 0) return null
+    const map = new Map<number, number>()
+    let currentRank = 1
+    let previousRate: number | null = null
+    sorted.forEach((boat, index) => {
+      const rate = boat.motor_place2_rate ?? null
+      if (rate == null) return
+      if (previousRate != null && rate !== previousRate) currentRank = index + 1
+      map.set(boat.lane, currentRank)
+      previousRate = rate
+    })
+    return map
+  })()
+  const bestDash = dashValues.length > 0 ? Math.max(...dashValues) : null
+  const bestExt = extValues.length > 0 ? Math.max(...extValues) : null
+  const bestEval = evalValues.length > 0
+    ? Math.max(...evalValues.map(v => rankOrder[v]))
+    : null
+  const rankCandidates = lanes
+    .map(lane => {
+      const boat = get(lane)
+      return boat?.motor_rank ?? fallbackRankMap?.get(lane) ?? null
+    })
+    .filter((v): v is number => v != null)
+  const bestRank = rankCandidates.length > 0 ? Math.min(...rankCandidates) : null
 
   const rows = [
     {
-      label: 'M出足',
+      label: '出足',
       values: lanes.map(l => fmt(get(l)?.motor_dashfoot, 1)),
       colorFn: (_v: string | undefined, i: number) => {
-        const b = get(lanes[i]); const val = b?.motor_dashfoot
+        const val = get(lanes[i])?.motor_dashfoot
         if (val == null) return '#94a3b8'
-        // 上位2位を黄色
-        const sorted = boats.map(b2 => b2.motor_dashfoot ?? 0).sort((a, b2) => b2 - a)
-        return val >= sorted[1] ? '#fcd34d' : val <= sorted[3] ? '#f87171' : '#e2e8f0'
+        return bestDash != null && val === bestDash ? '#f87171' : '#e2e8f0'
       }
     },
     {
-      label: 'M伸び足',
+      label: '伸び足',
       values: lanes.map(l => fmt(get(l)?.motor_extfoot, 1)),
       colorFn: (_v: string | undefined, i: number) => {
-        const b = get(lanes[i]); const val = b?.motor_extfoot
+        const val = get(lanes[i])?.motor_extfoot
         if (val == null) return '#94a3b8'
-        const sorted = boats.map(b2 => b2.motor_extfoot ?? 0).sort((a, b2) => b2 - a)
-        return val >= sorted[1] ? '#fcd34d' : val <= sorted[3] ? '#f87171' : '#e2e8f0'
+        return bestExt != null && val === bestExt ? '#f87171' : '#e2e8f0'
       }
     },
     {
-      label: 'M2連率',
-      values: lanes.map(l => get(l)?.motor_place2_rate ? `${fmt(get(l)!.motor_place2_rate)}%` : '—'),
+      label: 'ランク',
+      values: lanes.map(l => {
+        const value = get(l)?.motor_eval?.trim().toUpperCase()
+        return value || '—'
+      }),
       colorFn: (v: string | undefined) => {
-        const n = parseFloat(v ?? '0'); return n >= 40 ? '#fcd34d' : n <= 20 ? '#f87171' : '#e2e8f0'
+        if (!v || v === '—') return '#94a3b8'
+        const score = rankOrder[v]
+        return bestEval != null && score === bestEval ? '#22c55e' : '#e2e8f0'
       }
     },
     {
-      label: 'モーターNo',
-      values: lanes.map(l => get(l)?.motor_no ? `#${get(l)!.motor_no}` : '—'),
-      colorFn: () => '#94a3b8'
+      label: '順位',
+      values: lanes.map(l => {
+        const boat = get(l)
+        const rank = boat?.motor_rank ?? fallbackRankMap?.get(l) ?? null
+        return rank != null ? String(rank) : '—'
+      }),
+      colorFn: (v: string | undefined) => {
+        if (!v || v === '—') return '#94a3b8'
+        const rank = Number(v)
+        return bestRank != null && rank === bestRank ? '#f87171' : '#e2e8f0'
+      }
     },
   ]
 
@@ -250,8 +356,13 @@ function Section5aCourse({ boats }: { boats: Boat[] }) {
   const p2Rates = lanes.map(l => {
     const b = get(l); if (!b) return '—'
     const lane = b.lane
-    // c1_tricast is actually 2-place rate based on context
-    const r = (b as any)[`c${lane}_tricast_rate`]  // using tricast as 3-place
+    const r = (b as any)[`c${lane}_place2_rate`]
+    return fmtPct(r)
+  })
+  const p3Rates = lanes.map(l => {
+    const b = get(l); if (!b) return '—'
+    const lane = b.lane
+    const r = (b as any)[`c${lane}_tricast_rate`]
     return fmtPct(r)
   })
   const races = lanes.map(l => {
@@ -261,45 +372,42 @@ function Section5aCourse({ boats }: { boats: Boat[] }) {
     return r ? String(r) : '—'
   })
 
-  const pctColor = (v: string | undefined) => {
-    const n = parseFloat(v ?? '0')
-    if (isNaN(n) || v === '—') return '#94a3b8'
-    return n >= 50 ? '#fcd34d' : n >= 30 ? '#f59e0b' : n < 5 ? '#f87171' : '#e2e8f0'
-  }
-
   const rows = [
     { label: '出走数(自C)', values: races, colorFn: () => '#94a3b8' as string },
-    { label: '勝率(自C)', values: winRates, colorFn: pctColor },
-    { label: '3連率(自C)', values: p2Rates, colorFn: pctColor },
+    { label: '勝率(自C)', values: winRates, colorFn: highlightMaxPercent(winRates) },
+    { label: '2連率(自C)', values: p2Rates, colorFn: highlightMaxPercent(p2Rates) },
+    { label: '3連率(自C)', values: p3Rates, colorFn: highlightMaxPercent(p3Rates) },
     {
       label: '全国勝率',
       values: lanes.map(l => fmtPct(get(l)?.national_win_rate)),
-      colorFn: pctColor
+      colorFn: highlightMaxPercent(lanes.map(l => fmtPct(get(l)?.national_win_rate)))
     },
     {
       label: '全国2連率',
       values: lanes.map(l => fmtPct(get(l)?.national_place2_rate)),
-      colorFn: pctColor
+      colorFn: highlightMaxPercent(lanes.map(l => fmtPct(get(l)?.national_place2_rate)))
     },
     {
       label: '当地勝率',
       values: lanes.map(l => fmtPct(get(l)?.local_win_rate)),
-      colorFn: pctColor
+      colorFn: highlightMaxPercent(lanes.map(l => fmtPct(get(l)?.local_win_rate)))
     },
     {
       label: '当地2連率',
       values: lanes.map(l => fmtPct(get(l)?.local_place2_rate)),
-      colorFn: pctColor
+      colorFn: highlightMaxPercent(lanes.map(l => fmtPct(get(l)?.local_place2_rate)))
     },
   ]
 
-  return <SectionTable title="⑤a コース別・勝率" sub="(自コース直近)" lanes={lanes} rows={rows} />
+  return <SectionTable title="⑤a コース別（直近1年）" lanes={lanes} rows={rows} />
 }
 
 // ───── ⑤b コース別決まり手 ─────
-function Section5bKimete({ boats }: { boats: Boat[] }) {
+function Section5bKimete({ boats, venueConfig, venueName }: { boats: Boat[]; venueConfig?: VenueConfig | null; venueName?: string }) {
   const lanes = [1, 2, 3, 4, 5, 6]
   const get = (lane: number) => boats.find(b => b.lane === lane)
+  const venueLabel = venueConfig?.venue_name?.trim() || venueName?.trim() || ''
+  const c2RateLabel = venueConfig?.c2_rate != null ? `${venueConfig.c2_rate.toFixed(1)}%` : '—'
 
   // 各艇の「自コース」での決まり手データ
   const getKimete = (lane: number, key: string) => {
@@ -360,7 +468,7 @@ function Section5bKimete({ boats }: { boats: Boat[] }) {
       colorFn: countColor
     },
     {
-      label: '差し率',
+      label: '差★率',
       values: lanes.map(l => pctOfTotal(l, 'sashi')),
       colorFn: pctColor
     },
@@ -386,72 +494,51 @@ function Section5bKimete({ boats }: { boats: Boat[] }) {
     },
   ]
 
-  return <SectionTable title="⑤b コース別決まり手" sub="(自コース)" lanes={lanes} rows={rows} />
+  return <SectionTable title={`⑤b 決まり手(${venueLabel || '場名未設定'}:2C差し率${c2RateLabel}突出)`} lanes={lanes} rows={rows.map((row) => {
+    if (row.label === '差し数') return { ...row, label: '差★数' }
+    return row
+  })} />
 }
 
 // ───── ⑤c 握り率 ─────
-function Section5cNigiri({ boats }: { boats: Boat[] }) {
+function Section5cNigiri({ boats, venueConfig, venueName }: { boats: Boat[]; venueConfig?: VenueConfig | null; venueName?: string }) {
   const lanes = [1, 2, 3, 4, 5, 6]
   const get = (lane: number) => boats.find(b => b.lane === lane)
-
-  const pctColor = (v: string | undefined) => {
-    const n = parseFloat(v ?? '0')
-    if (isNaN(n) || v === '—') return '#94a3b8'
-    return n >= 70 ? '#fcd34d' : n >= 50 ? '#f59e0b' : n > 0 ? '#e2e8f0' : '#64748b'
-  }
+  const venueLabel = venueConfig?.venue_name?.trim() || venueName?.trim() || ''
+  const c2Correction = venueConfig?.kad_c2 ?? 0.85
+  const c3Correction = venueConfig?.kad_c3 ?? 0.85
+  const c56Correction = venueConfig?.kad_c5 ?? 0.90
+  const nigiriRates = lanes.map(l => {
+    const b = get(l); if (!b) return '—'
+    if (l === 1) return '-'
+    return b.nigiri_rate != null ? fmtPct(b.nigiri_rate) : '—'
+  })
+  const genRates = lanes.map(l => {
+    const b = get(l); if (!b) return '—'
+    if (l === 1) return '-'
+    return b.gen_rate != null ? fmtPct(b.gen_rate) : '—'
+  })
 
   const rows = [
     {
       label: '握り率',
-      values: lanes.map(l => {
-        const b = get(l); if (!b) return '—'
-        return b.nigiri_rate != null ? fmtPct(b.nigiri_rate) : '—'
-      }),
-      colorFn: pctColor
+      values: nigiriRates,
+      colorFn: highlightMaxPercent(nigiriRates)
     },
     {
-      label: '握り発生数',
-      values: lanes.map(l => {
-        const b = get(l); if (!b) return '—'
-        return b.nigiri_occurrence != null ? String(b.nigiri_occurrence) : '—'
-      }),
-      colorFn: () => '#94a3b8' as string
-    },
-    {
-      label: '全国逃げ数',
-      values: lanes.map(l => {
-        const b = get(l); if (!b) return '—'
-        return b.nige_count != null ? String(b.nige_count) : '—'
-      }),
-      colorFn: () => '#94a3b8' as string
-    },
-    {
-      label: '全国差し数',
-      values: lanes.map(l => {
-        const b = get(l); if (!b) return '—'
-        return b.sashi_count != null ? String(b.sashi_count) : '—'
-      }),
-      colorFn: () => '#94a3b8' as string
-    },
-    {
-      label: '全国まくり数',
-      values: lanes.map(l => {
-        const b = get(l); if (!b) return '—'
-        return b.makuri_count != null ? String(b.makuri_count) : '—'
-      }),
-      colorFn: () => '#94a3b8' as string
-    },
-    {
-      label: '全国まくり差し数',
-      values: lanes.map(l => {
-        const b = get(l); if (!b) return '—'
-        return b.makurisashi_count != null ? String(b.makurisashi_count) : '—'
-      }),
-      colorFn: () => '#94a3b8' as string
+      label: '発生率',
+      values: genRates,
+      colorFn: highlightMaxPercent(genRates)
     },
   ]
 
-  return <SectionTable title="⑤c 握り率・決まり手" sub="(全国)" lanes={lanes} rows={rows} />
+  return (
+    <SectionTable
+      title={`⑤c 握り率・発生率(${venueLabel || '場名未設定'}差し水面補正:2C×${c2Correction.toFixed(2)}/3C×${c3Correction.toFixed(2)}/5-6C×${c56Correction.toFixed(2)})`}
+      lanes={lanes}
+      rows={rows}
+    />
+  )
 }
 
 // ───── ⑤e 当地別（直近5年） ─────
@@ -504,55 +591,610 @@ function Section5eLocal({ boats }: { boats: Boat[] }) {
 
 // ───── ⑤f 一般戦(G2,G3含む) 直近1年 ─────
 function Section5fGeneral({ boats }: { boats: Boat[] }) {
-  const lanes = [1, 2, 3, 4, 5, 6]
+  const lanes = [2, 3, 4, 5, 6]
   const get = (lane: number) => boats.find(b => b.lane === lane)
-  const hasData = boats.some(b => b.general1y_win_rate != null || b.general1y_place2_rate != null || b.general1y_races != null)
+  const boat1 = boats.find(b => b.lane === 1)
+  const hasData = boats.some(b =>
+    b.general1y_place2_rate != null ||
+    b.general1y_races != null ||
+    b.general1y_sashi != null ||
+    b.general1y_makuri != null ||
+    b.general1y_makurizashi != null
+  )
   if (!hasData) return null
 
-  const pctColor = (v: string | undefined) => {
-    const n = parseFloat(v ?? '0')
-    if (isNaN(n) || v === '—') return '#94a3b8'
-    return n >= 30 ? '#fcd34d' : n >= 15 ? '#f59e0b' : '#e2e8f0'
+  const pickMainAttack = (boat?: Boat) => {
+    if (!boat) return '—'
+    const candidates = [
+      { label: '差', value: boat.general1y_sashi ?? null },
+      { label: '捲', value: boat.general1y_makuri ?? null },
+      { label: '捲差', value: boat.general1y_makurizashi ?? null },
+    ].filter((item) => item.value != null && item.value! > 0)
+    if (candidates.length === 0) return '—'
+    candidates.sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
+    return candidates[0].label
   }
 
+  const hitRates = lanes.map((lane) => {
+    const boat = get(lane)
+    const value = boat?.escape1y_place2_rate ?? boat?.general1y_place2_rate ?? null
+    return value != null ? `${value.toFixed(1)}%` : '—'
+  })
+  const rideFactors = lanes.map((lane) => {
+    const boat = get(lane)
+    const place2 = boat?.national_place2_rate ?? boat?.local_place2_rate ?? boat?.general1y_place2_rate ?? null
+    if (place2 == null) return '—'
+    return (place2 / 50).toFixed(2)
+  })
+  const adjustedHit = lanes.map((_lane, index) => {
+    const hit = parsePercentValue(hitRates[index])
+    const factor = rideFactors[index] === '—' ? null : parseFloat(rideFactors[index]!)
+    if (hit == null || factor == null || !Number.isFinite(factor)) return '—'
+    return `↑${(hit * factor).toFixed(1)}%`
+  })
+  const adjustedNums = adjustedHit.map((value) => {
+    if (!value || value === '—') return null
+    const n = parseFloat(value.replace('↑', '').replace('%', ''))
+    return Number.isFinite(n) ? n : null
+  })
+  const adjustedMax = adjustedNums.reduce<number | null>((acc, value) => {
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  const confidenceRuns = boat1?.general1y_races ?? null
+  const confidenceLabel = confidenceRuns != null
+    ? `${confidenceRuns >= 15 ? '完全信頼' : confidenceRuns >= 8 ? '参考信頼' : '低信頼'}（1C走数:${confidenceRuns}/15）`
+    : '—'
+
   const rows = [
-    { label: '出走数', values: lanes.map(l => get(l)?.general1y_races != null ? String(get(l)!.general1y_races) : '—'), colorFn: () => '#94a3b8' as string },
-    { label: '勝率', values: lanes.map(l => fmtPct(get(l)?.general1y_win_rate)), colorFn: pctColor },
-    { label: '2連率', values: lanes.map(l => fmtPct(get(l)?.general1y_place2_rate)), colorFn: pctColor },
-    { label: '3連率', values: lanes.map(l => fmtPct(get(l)?.general1y_tricast_rate)), colorFn: pctColor },
     {
-      label: '差/捲/捲差',
-      values: lanes.map(l => {
-        const b = get(l)
-        if (!b) return '—'
-        const s = b.general1y_sashi, mk = b.general1y_makuri, mz = b.general1y_makurizashi
-        if (s == null && mk == null && mz == null) return '—'
-        return `${s ?? 0}/${mk ?? 0}/${mz ?? 0}`
+      label: '被弾率',
+      values: hitRates,
+      colorFn: highlightMaxPercent(hitRates)
+    },
+    {
+      label: '主決手',
+      values: lanes.map((lane) => pickMainAttack(get(lane))),
+      colorFn: () => '#cbd5e1'
+    },
+    {
+      label: '乗艇係数',
+      values: rideFactors,
+      colorFn: (_v: string | undefined, idx: number) => rideFactors[idx] === '—' ? '#94a3b8' : '#e2e8f0'
+    },
+    {
+      label: '補正被弾',
+      values: adjustedHit,
+      colorFn: (v: string | undefined) => {
+        if (!v || v === '—') return '#94a3b8'
+        const n = parseFloat(v.replace('↑', '').replace('%', ''))
+        if (!Number.isFinite(n)) return '#94a3b8'
+        return adjustedMax != null && n === adjustedMax ? '#f87171' : '#fca5a5'
+      }
+    },
+    {
+      label: '危険度',
+      values: adjustedNums.map((value) => value != null && value >= 35 ? '高' : value != null ? '低' : '—'),
+      colorFn: (v: string | undefined) => v === '高' ? '#f87171' : v === '低' ? '#22c55e' : '#94a3b8'
+    },
+    {
+      label: '他艇2連率',
+      values: lanes.map((lane) => {
+        const value = get(lane)?.general1y_place2_rate ?? get(lane)?.national_place2_rate ?? null
+        return value != null ? `${value.toFixed(1)}%` : '—'
       }),
-      colorFn: () => '#cbd5e1' as string
+      colorFn: (_v: string | undefined, idx: number) => {
+        const value = get(lanes[idx])?.general1y_place2_rate ?? get(lanes[idx])?.national_place2_rate ?? null
+        if (value == null) return '#94a3b8'
+        return value >= 40 ? '#fcd34d' : value >= 25 ? '#f59e0b' : '#e2e8f0'
+      }
     },
   ]
-  return <SectionTable title="⑤f 一般戦(G2,G3含む)" sub="(直近1年)" lanes={lanes} rows={rows} />
+
+  return (
+    <div style={{ marginBottom: 16, borderRadius: 10, overflow: 'hidden', border: '1px solid #1e3a5f', background: '#0b1730' }}>
+      <div style={{ background: 'linear-gradient(90deg, #10264d 0%, #0a1f3f 100%)', padding: '8px 14px', borderBottom: '1px solid #1e3a5f' }}>
+        <span style={{ color: '#93c5fd', fontWeight: 700, fontSize: 14 }}>⑤f 1号艇被弾分析(他艇成績実データ統合版)</span>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#0b1730', tableLayout: 'fixed' }}>
+          <tbody>
+            <LaneHeaderRow lanes={lanes} />
+            {rows.map((r, i) => <DataRow key={i} label={r.label} values={r.values} colorFn={r.colorFn} />)}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ padding: '8px 14px 10px', borderTop: '1px solid #1e3a5f', color: '#cbd5e1', fontSize: 12 }}>
+        <span style={{ color: '#93c5fd', fontWeight: 700, marginRight: 8 }}>信頼度</span>
+        <span>{confidenceLabel}</span>
+        {(boat1?.general1y_races == null || boat1?.escape1y_place2_rate == null) && (
+          <span style={{ display: 'block', marginTop: 4, color: '#64748b' }}>
+            TODO: APIで1号艇被弾専用のコース別実データが未提供のため、一部は既存general1y_/escape1y_から近似計算
+          </span>
+        )}
+      </div>
+    </div>
+  )
 }
 
-// ───── ⑤g イン逃げ時 直近1年 ─────
-function Section5gEscape({ boats }: { boats: Boat[] }) {
+// ───── ⑤g P2連動要約 ─────
+function Section5gP2LinkSummary({ boats }: { boats: Boat[] }) {
   const lanes = [1, 2, 3, 4, 5, 6]
-  const get = (lane: number) => boats.find(b => b.lane === lane)
-  const hasData = boats.some(b => b.escape1y_place2_rate != null || b.escape1y_tricast_rate != null)
-  if (!hasData) return null
+  const summaries = lanes.map((winnerLane) => {
+    const candidates = boats
+      .filter((boat) => boat.lane !== winnerLane)
+      .map((boat) => {
+        const rawP2Link = parseNumericRate((boat as any)[`p2_link_${winnerLane}`])
+        const fallbackPlace2 = parseNumericRate((boat as any)[`c${winnerLane}_place2_rate`])
+        const rate = rawP2Link ?? fallbackPlace2
+        const source = rawP2Link != null ? 'p2_link' : fallbackPlace2 != null ? 'fallback' : 'missing'
+        return { lane: boat.lane, rate, source }
+      })
+      .filter((candidate) => candidate.rate != null)
+      .sort((a, b) => {
+        if ((b.rate ?? -1) !== (a.rate ?? -1)) return (b.rate ?? -1) - (a.rate ?? -1)
+        return a.lane - b.lane
+      })
 
-  const pctColor = (v: string | undefined) => {
-    const n = parseFloat(v ?? '0')
-    if (isNaN(n) || v === '—') return '#94a3b8'
-    return n >= 30 ? '#fcd34d' : n >= 15 ? '#f59e0b' : '#e2e8f0'
+    const top = candidates[0] ?? null
+    const second = candidates[1] ?? null
+    const confidence = top && second
+      ? (top.source === 'p2_link' && second.source === 'p2_link'
+          ? '完全'
+          : top.source !== 'missing'
+            ? '中'
+            : '低')
+      : top
+        ? (top.source === 'p2_link' ? '中' : '低')
+        : '低'
+
+    return { winnerLane, top, second, confidence }
+  })
+
+  const hasAnyData = summaries.some((summary) => summary.top || summary.second)
+  if (!hasAnyData) return null
+
+  const topRates = summaries.map((summary) => summary.top?.rate ?? null)
+  const maxTopRate = topRates.reduce<number | null>((acc, value) => {
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+
+  const formatCandidate = (candidate: { lane: number; rate: number | null } | null) =>
+    candidate && candidate.rate != null ? `${candidate.lane}(${candidate.rate.toFixed(0)})` : 'TODO'
+
+  const confidenceColor = (value: string | undefined) => {
+    if (value === '完全') return '#4ade80'
+    if (value === '中') return '#facc15'
+    if (value === '低') return '#f87171'
+    return '#94a3b8'
   }
 
-  const rows = [
-    { label: '2連率', values: lanes.map(l => fmtPct(get(l)?.escape1y_place2_rate)), colorFn: pctColor },
-    { label: '3連率', values: lanes.map(l => fmtPct(get(l)?.escape1y_tricast_rate)), colorFn: pctColor },
-  ]
-  return <SectionTable title="⑤g イン逃げ時" sub="(直近1年)" lanes={lanes} rows={rows} />
+  return (
+    <div style={{ marginBottom: 16, borderRadius: 10, overflow: 'hidden', border: '1px solid #1e3a5f', background: '#081427' }}>
+      <div style={{ background: 'linear-gradient(90deg, #10264d 0%, #0a1f3f 100%)', padding: '8px 14px', borderBottom: '1px solid #1e3a5f' }}>
+        <span style={{ color: '#93c5fd', fontWeight: 700, fontSize: 14 }}>⑤g P2連動要約(他艇成績→2着連動率)</span>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#081427', tableLayout: 'fixed' }}>
+          <tbody>
+            <tr>
+              <td style={{ width: 90, padding: '6px 8px', color: '#93c5fd', fontSize: 11, fontWeight: 700, background: '#0a1520', borderRight: '1px solid #1e3a5f', whiteSpace: 'nowrap' }}>勝者→</td>
+              {lanes.map((lane) => (
+                <td key={lane} style={{
+                  background: LANE_BG[lane], color: LANE_TEXT[lane],
+                  textAlign: 'center', fontWeight: 700, fontSize: 13,
+                  padding: '6px 0', width: 68, border: '1px solid #1e3a5f'
+                }}>{lane}</td>
+              ))}
+            </tr>
+            <DataRow
+              label="2着筆頭"
+              values={summaries.map((summary) => formatCandidate(summary.top))}
+              colorFn={(_value, index) => {
+                const rate = summaries[index].top?.rate ?? null
+                if (rate == null) return '#94a3b8'
+                return maxTopRate != null && rate === maxTopRate ? '#f87171' : '#e2e8f0'
+              }}
+            />
+            <DataRow
+              label="2着次点"
+              values={summaries.map((summary) => formatCandidate(summary.second))}
+              colorFn={(value) => value === 'TODO' ? '#64748b' : '#cbd5e1'}
+            />
+            <DataRow
+              label="信頼度"
+              values={summaries.map((summary) => summary.confidence)}
+              colorFn={(value) => confidenceColor(value)}
+            />
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function Section6EI({ detail, venueName }: { detail: SystemPredictionDetail; venueName?: string }) {
+  const lanes = [1, 2, 3, 4, 5, 6]
+  const evalMap = new Map((detail.boat_evals || []).map((boat) => [boat.lane, boat]))
+  const eiValues = lanes.map((lane) => evalMap.get(lane)?.ei)
+  const maxEi = eiValues.reduce<number | null>((acc, value) => {
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  const venueLabel = venueName?.trim() || '場名未設定'
+
+  return (
+    <div style={{ marginBottom: 16, borderRadius: 10, overflow: 'hidden', border: '1px solid #4338ca' }}>
+      <div style={{
+        background: 'linear-gradient(90deg, #312e81 0%, #581c87 100%)',
+        padding: '8px 14px',
+        borderBottom: '1px solid #4338ca'
+      }}>
+        <span style={{ color: '#c4b5fd', fontWeight: 700, fontSize: 14 }}>
+          {`⑥期待指数(EI) 最終版-${venueLabel} — 個人実力評価`}
+        </span>
+      </div>
+      <div style={{ overflowX: 'auto', background: '#0f172a' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+          <tbody>
+            <LaneHeaderRow lanes={lanes} />
+            <tr>
+              <td style={{ padding: '10px 8px', color: '#cbd5e1', fontSize: 13, background: '#111827', borderRight: '1px solid #312e81', whiteSpace: 'nowrap' }}>EI</td>
+              {lanes.map((lane, index) => {
+                const value = eiValues[index]
+                const isMax = value != null && maxEi != null && value === maxEi
+                return (
+                  <td key={lane} style={{
+                    textAlign: 'center',
+                    padding: '12px 4px',
+                    fontSize: '2.25rem',
+                    fontWeight: 700,
+                    color: isMax ? '#f87171' : '#e9d5ff',
+                    border: '1px solid #1f2937',
+                    background: '#111827'
+                  }}>
+                    {value != null ? Math.round(value).toString() : '—'}
+                  </td>
+                )
+              })}
+            </tr>
+            <tr>
+              <td style={{ padding: '8px', color: '#cbd5e1', fontSize: 13, background: '#111827', borderRight: '1px solid #312e81', whiteSpace: 'nowrap' }}>EI順</td>
+              {lanes.map((lane) => {
+                const rank = evalMap.get(lane)?.ei_rank
+                return (
+                  <td key={lane} style={{
+                    textAlign: 'center',
+                    padding: '8px 4px',
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: rank === 1 ? '#f87171' : '#e2e8f0',
+                    border: '1px solid #1f2937',
+                    background: '#111827'
+                  }}>
+                    {rank != null ? `${rank}` : '—'}
+                  </td>
+                )
+              })}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function Section7TI({ detail, boats, venueName }: { detail: SystemPredictionDetail; boats: Boat[]; venueName?: string }) {
+  const lanes = [1, 2, 3, 4, 5, 6]
+  const evalMap = new Map((detail.boat_evals || []).map((boat) => [boat.lane, boat]))
+  const boatMap = new Map(boats.map((boat) => [boat.lane, boat]))
+  const venueLabel = venueName?.trim() || '場名未設定'
+  const syntheticOdds = detail.synthetic_odds && detail.synthetic_odds > 0 ? detail.synthetic_odds : null
+  const approxFirstRate = syntheticOdds ? Math.min(100, Math.max(0, 100 / syntheticOdds)) : null
+  const tiValues = lanes.map((lane) => evalMap.get(lane)?.ti ?? evalMap.get(lane)?.p1 ?? null)
+  const maxTi = tiValues.reduce<number | null>((acc, value) => {
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  const maxCompletion = lanes.reduce<number | null>((acc, lane) => {
+    const value = evalMap.get(lane)?.completion_power ?? null
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  const maxResistance = lanes.reduce<number | null>((acc, lane) => {
+    const value = boatMap.get(lane)?.general1y_place2_rate ?? boatMap.get(lane)?.national_place2_rate ?? null
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  const maxSurvival = lanes.reduce<number | null>((acc, lane) => {
+    const value = boatMap.get(lane)?.local5y_tricast_rate ?? boatMap.get(lane)?.general1y_tricast_rate ?? boatMap.get(lane)?.c3_tricast_rate ?? null
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  const maxPlace = lanes.reduce<number | null>((acc, lane) => {
+    const value = boatMap.get(lane)?.national_place2_rate ?? boatMap.get(lane)?.local_place2_rate ?? null
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  const maxSecond = lanes.reduce<number | null>((acc, lane) => {
+    const value = boatMap.get(lane)?.local_place2_rate ?? boatMap.get(lane)?.national_place2_rate ?? null
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  const tiRanks = [...lanes]
+    .map((lane) => ({ lane, value: evalMap.get(lane)?.ti ?? evalMap.get(lane)?.p1 ?? null }))
+    .sort((a, b) => {
+      if (a.value == null && b.value == null) return a.lane - b.lane
+      if (a.value == null) return 1
+      if (b.value == null) return -1
+      if (b.value !== a.value) return b.value - a.value
+      return a.lane - b.lane
+    })
+  const tiRankMap = new Map<number, number>()
+  tiRanks.forEach((item, index) => {
+    if (item.value != null) tiRankMap.set(item.lane, index + 1)
+  })
+  const bestTiRank = tiRankMap.size > 0 ? 1 : null
+  const maxFirstRate = lanes.reduce<number | null>((acc, lane) => {
+    const value = lane === 1
+      ? approxFirstRate
+      : ((evalMap.get(lane)?.ti ?? evalMap.get(lane)?.p1 ?? null) != null && approxFirstRate != null
+          ? approxFirstRate * ((evalMap.get(lane)?.ti ?? evalMap.get(lane)?.p1 ?? 0) / Math.max(maxTi ?? 1, 1))
+          : null)
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  const nigeText = [
+    detail.main_attack_course ? `${detail.main_attack_course}C${detail.attack_type || '攻め'}` : null,
+    detail.surface_type ? `${detail.surface_type}補正` : null,
+    detail.regime ? `${detail.regime}連動` : null,
+    'TODO: 被弾統合文言'
+  ].filter(Boolean).join('・')
+  const highlightColor = '#f87171'
+  const defaultColor = '#e2e8f0'
+  const mutedColor = '#94a3b8'
+  const formatRatio = (value?: number | null) => value != null ? value.toFixed(2) : '—'
+  const formatPercent = (value?: number | null) => value != null ? `${value.toFixed(2)}%` : '—'
+  const formatTi = (value?: number | null) => value != null ? value.toFixed(3) : '—'
+  const isMax = (value: number | null | undefined, max: number | null) => value != null && max != null && value === max
+
+  return (
+    <div style={{ marginBottom: 16, borderRadius: 10, overflow: 'hidden', border: '1px solid #1d4ed8', background: '#081427' }}>
+      <div style={{
+        background: 'linear-gradient(90deg, #0f2d5e 0%, #081a38 100%)',
+        padding: '8px 14px',
+        borderBottom: '1px solid #1d4ed8'
+      }}>
+        <span style={{ color: '#bfdbfe', fontWeight: 700, fontSize: 14 }}>
+          {`⑦展開指数(TI v14.6) — ${venueLabel}差し水面+被弾統合・実P2・逃げ展開度・着内確率`}
+        </span>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', background: '#081427' }}>
+          <tbody>
+            <LaneHeaderRow lanes={lanes} />
+            <DataRow
+              label="旋回型"
+              values={lanes.map((lane) => lane === 1 && detail.main_attack_course === 1 ? 'expand' : 'normal')}
+              colorFn={(value) => value === 'expand' ? '#fcd34d' : defaultColor}
+            />
+            <DataRow
+              label="万能度"
+              values={lanes.map((lane) => formatRatio((evalMap.get(lane)?.completion_power ?? null) != null ? (evalMap.get(lane)!.completion_power! / 5) : null))}
+              colorFn={(_value, index) => {
+                const raw = evalMap.get(lanes[index])?.completion_power ?? null
+                return isMax(raw, maxCompletion) ? highlightColor : raw != null ? defaultColor : mutedColor
+              }}
+            />
+            <DataRow
+              label="1着確率"
+              values={lanes.map((lane) => {
+                const ti = evalMap.get(lane)?.ti ?? evalMap.get(lane)?.p1 ?? null
+                if (ti == null || approxFirstRate == null || maxTi == null || maxTi <= 0) return '—'
+                return formatPercent(approxFirstRate * (ti / maxTi))
+              })}
+              colorFn={(value) => {
+                const parsed = parsePercentValue(value)
+                return parsed != null && maxFirstRate != null && parsed === maxFirstRate ? highlightColor : parsed != null ? defaultColor : mutedColor
+              }}
+            />
+            <tr>
+              <td style={{ padding: '4px 8px', color: mutedColor, fontSize: 12, background: '#0a1520', borderRight: '1px solid #1e3a5f', whiteSpace: 'nowrap' }}>逃げ成立</td>
+              <td style={{ textAlign: 'center', padding: '4px 2px', fontSize: 13, fontWeight: 600, color: defaultColor, border: '1px solid #0a1520' }}>
+                {detail.in_win_rate != null ? detail.in_win_rate.toFixed(2) : 'TODO'}
+              </td>
+              <td colSpan={5} style={{ padding: '4px 8px', fontSize: 12, color: '#cbd5e1', border: '1px solid #0a1520', background: '#0b1730' }}>
+                {nigeText}
+              </td>
+            </tr>
+            <DataRow
+              label="抵抗率"
+              values={lanes.map((lane) => formatPercent(boatMap.get(lane)?.general1y_place2_rate ?? boatMap.get(lane)?.national_place2_rate ?? null))}
+              colorFn={(_value, index) => {
+                const raw = boatMap.get(lanes[index])?.general1y_place2_rate ?? boatMap.get(lanes[index])?.national_place2_rate ?? null
+                return isMax(raw, maxResistance) ? highlightColor : raw != null ? defaultColor : mutedColor
+              }}
+            />
+            <DataRow
+              label="残存確率"
+              values={lanes.map((lane) => formatPercent(boatMap.get(lane)?.local5y_tricast_rate ?? boatMap.get(lane)?.general1y_tricast_rate ?? boatMap.get(lane)?.c3_tricast_rate ?? null))}
+              colorFn={(_value, index) => {
+                const raw = boatMap.get(lanes[index])?.local5y_tricast_rate ?? boatMap.get(lanes[index])?.general1y_tricast_rate ?? boatMap.get(lanes[index])?.c3_tricast_rate ?? null
+                return isMax(raw, maxSurvival) ? highlightColor : raw != null ? defaultColor : mutedColor
+              }}
+            />
+            <tr style={{ background: 'linear-gradient(90deg, rgba(180,83,9,0.35) 0%, rgba(251,191,36,0.18) 100%)' }}>
+              <td style={{ padding: '6px 8px', color: '#fde68a', fontSize: 12, fontWeight: 700, background: 'rgba(120,53,15,0.45)', borderRight: '1px solid #92400e', whiteSpace: 'nowrap' }}>着内確率</td>
+              {lanes.map((lane) => {
+                const raw = boatMap.get(lane)?.national_place2_rate ?? boatMap.get(lane)?.local_place2_rate ?? null
+                const highlighted = isMax(raw, maxPlace)
+                return (
+                  <td key={lane} style={{
+                    textAlign: 'center',
+                    padding: '6px 2px',
+                    fontSize: 15,
+                    fontWeight: 800,
+                    color: highlighted ? highlightColor : '#fef3c7',
+                    border: '1px solid rgba(146,64,14,0.45)'
+                  }}>
+                    {formatPercent(raw)}
+                  </td>
+                )
+              })}
+            </tr>
+            <DataRow
+              label="2着期待"
+              values={lanes.map((lane) => formatRatio((boatMap.get(lane)?.local_place2_rate ?? boatMap.get(lane)?.national_place2_rate ?? null) != null ? ((boatMap.get(lane)?.local_place2_rate ?? boatMap.get(lane)?.national_place2_rate ?? 0) / 100) : null))}
+              colorFn={(_value, index) => {
+                const raw = boatMap.get(lanes[index])?.local_place2_rate ?? boatMap.get(lanes[index])?.national_place2_rate ?? null
+                return isMax(raw, maxSecond) ? highlightColor : raw != null ? defaultColor : mutedColor
+              }}
+            />
+            <tr style={{ background: 'linear-gradient(90deg, rgba(30,64,175,0.45) 0%, rgba(37,99,235,0.18) 100%)' }}>
+              <td style={{ padding: '8px', color: '#bfdbfe', fontSize: 13, fontWeight: 700, background: 'rgba(15,23,42,0.8)', borderRight: '1px solid #1d4ed8', whiteSpace: 'nowrap' }}>TI</td>
+              {lanes.map((lane, index) => {
+                const value = tiValues[index]
+                const highlighted = isMax(value, maxTi)
+                return (
+                  <td key={lane} style={{
+                    textAlign: 'center',
+                    padding: '10px 4px',
+                    fontSize: '2.2rem',
+                    fontWeight: 800,
+                    color: highlighted ? highlightColor : '#dbeafe',
+                    border: '1px solid rgba(29,78,216,0.35)'
+                  }}>
+                    {formatTi(value)}
+                  </td>
+                )
+              })}
+            </tr>
+            <DataRow
+              label="TI順"
+              values={lanes.map((lane) => tiRankMap.get(lane) != null ? String(tiRankMap.get(lane)) : '—')}
+              colorFn={(value) => {
+                const rank = value && value !== '—' ? Number(value) : null
+                return rank != null && bestTiRank != null && rank === bestTiRank ? highlightColor : rank != null ? defaultColor : mutedColor
+              }}
+            />
+          </tbody>
+        </table>
+      </div>
+      <div style={{ padding: '8px 14px 10px', borderTop: '1px solid #1e3a5f', color: '#64748b', fontSize: 11 }}>
+        TODO: engine側の `output_to_prediction_dict` で TI専用の旋回型・実P2・抵抗率・残存確率・2着期待を明示出力できるようになったら近似値を置換
+      </div>
+    </div>
+  )
+}
+
+function Section8OverallJudgement({ detail, boats, venueName }: { detail: SystemPredictionDetail; boats: Boat[]; venueName?: string }) {
+  const lanes = [1, 2, 3, 4, 5, 6]
+  const evalMap = new Map((detail.boat_evals || []).map((boat) => [boat.lane, boat]))
+  const boatMap = new Map(boats.map((boat) => [boat.lane, boat]))
+  const venueLabel = venueName?.trim() || '場名未設定'
+  const fallbackCalFactor = detail.cal_factor != null && Number.isFinite(detail.cal_factor) ? detail.cal_factor : 1
+  const placeProbabilities = lanes.map((lane) => {
+    const boat = boatMap.get(lane)
+    const candidates = [
+      boat?.national_place2_rate,
+      boat?.local_place2_rate,
+      boat?.general1y_place2_rate,
+      boat?.c2_rate,
+    ]
+    const raw = candidates.find((value) => value != null)
+    if (raw == null) return null
+    const normalized = raw > 1 ? raw / 100 : raw
+    return Number.isFinite(normalized) ? Math.max(0, normalized) : null
+  })
+  const calFactors = lanes.map((lane) => {
+    const boat = evalMap.get(lane)
+    const raw = lane === 1
+      ? fallbackCalFactor
+      : ((boat?.gen_rate ?? 0) > 0 ? 1 + (boat?.gen_rate ?? 0) : 1)
+    return Number.isFinite(raw) ? raw : 1
+  })
+  const compositeScores = lanes.map((lane, index) => {
+    const boat = evalMap.get(lane)
+    const ei = boat?.ei ?? null
+    const ti = boat?.ti ?? boat?.p1 ?? null
+    const place = placeProbabilities[index]
+    const cal = calFactors[index]
+    if (ei == null || ti == null || place == null) return null
+    const score = ei * ti * place * cal
+    return Number.isFinite(score) ? Math.round(score) : null
+  })
+  const maxCalFactor = calFactors.reduce<number | null>((acc, value) => acc == null ? value : Math.max(acc, value), null)
+  const maxComposite = compositeScores.reduce<number | null>((acc, value) => {
+    if (value == null) return acc
+    return acc == null ? value : Math.max(acc, value)
+  }, null)
+  const ranked = [...lanes]
+    .map((lane, index) => ({ lane, score: compositeScores[index] }))
+    .sort((a, b) => {
+      if (a.score == null && b.score == null) return a.lane - b.lane
+      if (a.score == null) return 1
+      if (b.score == null) return -1
+      if (b.score !== a.score) return b.score - a.score
+      return a.lane - b.lane
+    })
+  const rankMap = new Map<number, number>()
+  ranked.forEach((item, index) => {
+    if (item.score != null) rankMap.set(item.lane, index + 1)
+  })
+  const judgementByRank = (rank?: number) => {
+    if (rank === 1) return '軸候補'
+    if (rank === 2) return '頭候補'
+    if (rank != null && rank <= 4) return '紐候補'
+    if (rank != null) return '着外候補'
+    return '—'
+  }
+  const judgementColor = (value: string | undefined) => {
+    if (value === '軸候補') return '#f87171'
+    if (value === '頭候補') return '#fbbf24'
+    if (value === '紐候補') return '#60a5fa'
+    if (value === '着外候補') return '#94a3b8'
+    return '#64748b'
+  }
+
+  return (
+    <div style={{ marginBottom: 16, borderRadius: 10, overflow: 'hidden', border: '1px solid #1e3a8a', background: '#081427' }}>
+      <div style={{
+        background: 'linear-gradient(90deg, #102a56 0%, #081a38 100%)',
+        padding: '8px 14px',
+        borderBottom: '1px solid #1e3a8a'
+      }}>
+        <span style={{ color: '#bfdbfe', fontWeight: 700, fontSize: 14 }}>
+          {`⑧総合判定 (EI×TI×着内×${venueLabel}乖離補正・被弾統合)`}
+        </span>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', background: '#081427' }}>
+          <tbody>
+            <LaneHeaderRow lanes={lanes} />
+            <DataRow
+              label="乖離補正"
+              values={calFactors.map((value) => value.toFixed(2))}
+              colorFn={(_value, index) => calFactors[index] === maxCalFactor ? '#f87171' : '#dbeafe'}
+            />
+            <DataRow
+              label="合成"
+              values={compositeScores.map((value) => value != null ? String(value) : '—')}
+              colorFn={(value) => {
+                const numeric = value && value !== '—' ? Number(value) : null
+                return numeric != null && maxComposite != null && numeric === maxComposite ? '#f87171' : numeric != null ? '#e2e8f0' : '#64748b'
+              }}
+            />
+            <DataRow
+              label="判定"
+              values={lanes.map((lane) => judgementByRank(rankMap.get(lane)))}
+              colorFn={(value) => judgementColor(value)}
+            />
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
 }
 
 // ───── 展示タイム ─────
@@ -606,7 +1248,7 @@ const SOURCE_CONFIG = {
   gemini: { label: 'Gemini', color: '#34d399' },
   ensemble: { label: 'Ensemble', color: '#a78bfa' },
   system_v56: { label: 'システム v56.3', color: '#60a5fa' },
-  system_v58: { label: 'システム v59.0', color: '#60a5fa' },
+  system_v58: { label: 'システム v60.0', color: '#60a5fa' },
 }
 
 function PredictionPanel({ prediction }: { prediction: Prediction }) {
@@ -793,10 +1435,20 @@ function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number
 }
 
 function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
+  const escapeVerdict = (detail as any).escape_verdict || (detail as any).nige_verdict || (
+    detail.fire_boat_lane
+      ? `逃堅め候補（${detail.fire_boat_lane}号発動警戒）`
+      : '逃堅め候補'
+  )
+  const sujiAndNotes = [
+    (detail as any).suji,
+    ...(Array.isArray(detail.notes) ? detail.notes : []),
+  ].filter((value): value is string => !!value && value.trim().length > 0)
+
   return (
     <div style={{ border: '2px solid #3b82f644', borderRadius: 10, marginBottom: 16, overflow: 'hidden' }}>
       <div style={{ background: '#1e3a5f44', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #1e3a5f', flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: 700, color: '#60a5fa', fontSize: 14 }}>システム予測 {detail.version || 'v59.0'}</span>
+        <span style={{ fontWeight: 700, color: '#60a5fa', fontSize: 14 }}>システム予測 {detail.version || 'v60.0'}</span>
         <span style={{ padding: '2px 10px', borderRadius: 10, background: '#1e3a5f', color: '#94a3b8', fontSize: 12 }}>{detail.regime}</span>
         <span style={{ padding: '2px 10px', borderRadius: 10, background: '#1e3a5f', color: '#94a3b8', fontSize: 12 }}>{detail.s_in}（{detail.surface_type}）</span>
         <span style={{ fontSize: 12, color: '#64748b' }}>自信度: {Math.round(detail.confidence)}% / 波乱度: {Math.round(detail.wave_score)}%</span>
@@ -861,6 +1513,29 @@ function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
             {detail.notes.map((n, i) => <div key={i} style={{ fontSize: 12, color: '#fcd34d' }}>⚠ {n}</div>)}
           </div>
         )}
+      </div>
+      <div style={{ padding: '0 14px 14px' }}>
+        <div style={{ background: '#2d1f5e', border: '1px solid #4c1d95', borderRadius: 8, overflow: 'hidden' }}>
+          {[
+            ['パターン', detail.regime || '—'],
+            ['逃げ判定', escapeVerdict],
+            ['主攻め候補', detail.main_attack_course ? `${detail.main_attack_course}号${detail.attack_type ? `（${detail.attack_type}）` : ''}` : '—'],
+            ['沈み候補', detail.sink_boat_lane ? `${detail.sink_boat_lane}号` : '—'],
+            ['スジ・特記', sujiAndNotes.length > 0 ? sujiAndNotes.join(' / ') : '—'],
+          ].map(([label, value], index) => (
+            <div key={label} style={{
+              display: 'grid',
+              gridTemplateColumns: '120px 1fr',
+              gap: 12,
+              padding: '10px 12px',
+              borderTop: index === 0 ? 'none' : '1px solid #5b21b6',
+              background: index % 2 === 0 ? '#2d1f5e' : '#312e81'
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#c4b5fd' }}>{label}</div>
+              <div style={{ fontSize: 12, color: '#ede9fe' }}>{value}</div>
+            </div>
+          ))}
+        </div>
       </div>
       {detail.boat_evals && detail.boat_evals.length > 0 && (
         <div style={{ padding: '0 14px 14px' }}>
@@ -1064,7 +1739,7 @@ export default function RaceDetail() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={handlePredictSystem} disabled={predicting}
               style={{ padding: '8px 16px', background: 'linear-gradient(135deg,#1e40af,#3b82f6)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-              {predicting ? '予測中…' : 'システム予測 v59.0'}
+              {predicting ? '予測中…' : 'システム予測 v60.0'}
             </button>
             <button onClick={() => handlePredict('ensemble')} disabled={predicting}
               style={{ padding: '8px 14px', background: '#1e2a40', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
@@ -1116,16 +1791,19 @@ export default function RaceDetail() {
       {/* データセクション */}
       {boats.length > 0 ? (
         <div>
-          <Section1Basic boats={boats} />
+          <Section1Basic boats={boats} venueConfig={venueConfig} venueName={race.venue} />
           <Section2Motor boats={boats} />
           <Section3Start boats={boats} />
           <SectionExhibit boats={boats} />
           <Section5aCourse boats={boats} />
-          <Section5bKimete boats={boats} />
-          <Section5cNigiri boats={boats} />
+          <Section5bKimete boats={boats} venueConfig={venueConfig} venueName={race.venue} />
+          <Section5cNigiri boats={boats} venueConfig={venueConfig} venueName={race.venue} />
           <Section5eLocal boats={boats} />
           <Section5fGeneral boats={boats} />
-          <Section5gEscape boats={boats} />
+          <Section5gP2LinkSummary boats={boats} />
+          {systemDetail && <Section6EI detail={systemDetail} venueName={race.venue} />}
+          {systemDetail && <Section7TI detail={systemDetail} boats={boats} venueName={race.venue} />}
+          {systemDetail && <Section8OverallJudgement detail={systemDetail} boats={boats} venueName={race.venue} />}
         </div>
       ) : (
         <div style={{ textAlign: 'center', padding: 40, color: '#64748b', background: '#0d1b2e', borderRadius: 10, marginBottom: 18 }}>

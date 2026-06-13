@@ -1170,7 +1170,7 @@ class ScrapeRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status":"ok","service":"boatrace-sakura-scraper","version":"6.2-v59.0"}
+    return {"status":"ok","service":"boatrace-sakura-scraper","version":"6.2-v60.0"}
 
 @app.post("/migrate")
 async def migrate(req: dict = None):

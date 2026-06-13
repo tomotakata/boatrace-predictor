@@ -6,11 +6,13 @@ export interface Boat {
   id?: number
   race_id?: number
   lane: number
+  entry_course?: number
   name?: string
   age?: number
   weight?: number
   rank?: string
   f_count?: number
+  branch?: string
   is_local?: boolean
   national_win_rate?: number
   national_place2_rate?: number
@@ -20,9 +22,11 @@ export interface Boat {
   motor_dashfoot?: number
   motor_extfoot?: number
   motor_eval?: string
+  motor_rank?: number
   motor_rank_letter?: string
   motor_place2_rate?: number
   avg_st?: number
+  gen_rate?: number
   today_st?: number
   today_st_rank?: number
   exhibition_st?: number
@@ -51,6 +55,7 @@ export interface Boat {
   general1y_win_rate?: number
   general1y_place2_rate?: number
   general1y_tricast_rate?: number
+  c2_rate?: number
   general1y_sashi?: number; general1y_makuri?: number; general1y_makurizashi?: number
   // イン逃げ時直近1年（自コース・boatfrontier プレミアム）
   escape1y_place2_rate?: number
@@ -110,7 +115,10 @@ export interface SystemPredictionDetail {
   payout_grade?: string
   fire_boat_lane?: number
   fire_boat_gen?: number
+  in_win_rate?: number
+  sink_boat_lane?: number
   dkan_counts?: Record<string, number>
+  cal_factor?: number
 }
 
 export interface BoatEval {
@@ -118,7 +126,9 @@ export interface BoatEval {
   course?: number
   name: string
   rank?: string
+  p1?: number
   ei: number | null
+  ti?: number | null
   st_rank: number | null
   ei_rank: number | null
   role: string
@@ -128,6 +138,7 @@ export interface BoatEval {
   gen_rate?: number
   hit_rate?: number
   is_fire?: boolean
+  confidence_runs?: number
 }
 
 export interface Prediction {
