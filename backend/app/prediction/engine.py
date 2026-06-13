@@ -1,5 +1,5 @@
 """
-競艇予想AI v58.7 完全版 システム実装
+競艇予想AI v59.0 完全版 システム実装
 PDFプロンプト「競艇予想AI v58.7 完全版」のロジックをAIプロンプトではなく
 Pythonの計算式（決定論的システム）として実装したもの。
 
@@ -95,8 +95,11 @@ class BoatEntry:
     # ST
     avg_st: float = 0.15
     today_st: float = 0.0
+    season_st: float = 0.0
     standard_st: float = 0.15
     st_rank: int = 3
+    exhibition_time: float = 0.0
+    exhibition_st: float = 0.0
 
     # 当地5年
     local5y_win_rate: float = 0.0
@@ -212,6 +215,7 @@ class PredictionOutput:
 
     notes: List[str] = field(default_factory=list)
     boat_evals: List[Dict] = field(default_factory=list)
+    insufficient_boats: bool = False
     reasoning: str = ""
 
 
@@ -276,18 +280,47 @@ def _normalize(d: Dict[int, float]) -> Dict[int, float]:
     return {k: (max(0.0, v) / s) for k, v in d.items()}
 
 
+def _safe_float(value, default: float = 0.0) -> float:
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        if value is None:
+            return default
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 # ═══════════════════════════════════════════════════════════
 # メインエンジン
 # ═══════════════════════════════════════════════════════════
 
 class BoatracePredictor:
-    """競艇予想AI v58.7 Pythonシステム実装"""
+    """競艇予想AI v59.0 Pythonシステム実装"""
 
     def predict(self, race: RaceInput) -> PredictionOutput:
         self.race = race
-        self.boats = race.boats
+        self.boats = sorted(race.boats, key=lambda b: (b.lane, b.course))
         self.out = PredictionOutput()
         self.out.notes = []
+        self.benefit_ladder = []
+        self.suji_templates = []
+
+        if not self.boats:
+            self.out.notes.append("艇データ欠損：予測対象が存在しないため見送り")
+            self.out.race_verdict = "見送り"
+            self.out.payout_grade = "見送り"
+            self.out.reasoning = "艇データ欠損により予測見送り"
+            return self.out
+
+        self._normalize_boat_field()
 
         self._run00_entry()
         self._run01_read()
@@ -301,6 +334,51 @@ class BoatracePredictor:
         self._run09_exacta_manshu()
         self._run10_finalize()
         return self.out
+
+    def _normalize_boat_field(self):
+        lane_map = {b.lane: b for b in self.boats if 1 <= b.lane <= 6}
+        if len(lane_map) < 6:
+            self.out.insufficient_boats = True
+            missing = [lane for lane in range(1, 7) if lane not in lane_map]
+            self.out.notes.append(
+                f"艇不足：{len(lane_map)}艇のみ取得（欠番 {missing}）→不足艇を安全なダミーで補完")
+            for lane in missing:
+                lane_map[lane] = BoatEntry(
+                    lane=lane,
+                    course=lane,
+                    name=f"欠番{lane}",
+                    rank="B2",
+                    avg_st=0.25,
+                    standard_st=0.25,
+                )
+        self.boats = [lane_map[lane] for lane in range(1, 7)]
+        seen_courses = set()
+        for b in self.boats:
+            if not 1 <= b.course <= 6 or b.course in seen_courses:
+                b.course = b.lane
+            seen_courses.add(b.course)
+
+    def _recompute_attack_rates(self):
+        attackers = [b for b in self.boats if b.course >= 2]
+        total_attack = 0.0
+        for b in attackers:
+            attack_score = _prob(b.course_win_rates.get(b.course, 0))
+            attack_score += _prob(b.course_place2_rates.get(b.course, 0)) * 0.35
+            attack_score += min(0.25, max(0.0, b.ei) / 100.0) * 0.25
+            attack_score += min(0.20, b.completion_power * 0.03)
+            b.gen_rate = max(b.gen_rate, attack_score)
+            total_attack += max(0.0, b.gen_rate)
+        if total_attack > 0:
+            for b in attackers:
+                b.gen_rate = max(0.0, b.gen_rate) / total_attack
+
+        boat1 = self._boat_by_course(1)
+        if boat1 is not None:
+            hit_base = 1.0 - boat1.p1
+            inside_pressure = sum(
+                max(0.0, b.gen_rate) for b in attackers if b.course in (2, 3, 4)
+            )
+            boat1.hit_rate = max(boat1.hit_rate, min(1.0, hit_base * 0.6 + inside_pressure * 0.4))
 
     # ────────────────────────────────────
     # RUN-00 進入・初日・SINK適用可否
@@ -327,6 +405,11 @@ class BoatracePredictor:
     # RUN-01 直接読み
     # ────────────────────────────────────
     def _run01_read(self):
+        exhibition_times = [b.exhibition_time for b in self.boats if b.exhibition_time > 0]
+        exhibition_sts = [b.exhibition_st for b in self.boats if b.exhibition_st != 0]
+        best_exhibition_time = min(exhibition_times) if exhibition_times else None
+        best_exhibition_st = min(exhibition_sts) if exhibition_sts else None
+
         for b in self.boats:
             c = b.course
             # P(1着)生値：コース別1着率を主、無ければ全国/当地から推定
@@ -349,6 +432,9 @@ class BoatracePredictor:
                 b.attack_type = "差し" if c <= 2 else "捲り"
 
             b.ei = self._compute_ei(b)
+            b.ei = round(max(0.0, b.ei + self._season_st_adjustment(b)), 1)
+            b.ei = self._apply_exhibition_adjustment(
+                b, b.ei, best_exhibition_time, best_exhibition_st)
 
         # ── D-KAN（完遂力）5項目（改正65）：フィールド横断順位を用いる ──
         # モーター順位（2連率降順）上位2
@@ -366,6 +452,7 @@ class BoatracePredictor:
             b.completion_power = self._completion_power(
                 b, motor_top2, ei_top3, st_top3)
         self.out.dkan_counts = {b.lane: b.completion_power for b in self.boats}
+        self._recompute_attack_rates()
 
     def _compute_ei(self, b: BoatEntry) -> float:
         motor = _motor_grade(b.motor_eval)
@@ -373,12 +460,44 @@ class BoatracePredictor:
         st_factor = max(0.5, 1.5 - st * 5)
         return round(b.p1_raw * 100 * (motor / 3.0 + 0.3) * st_factor, 1)
 
+    def _season_st_adjustment(self, b: BoatEntry) -> float:
+        season_st = b.season_st or 0.0
+        baseline_st = b.standard_st or b.avg_st or 0.15
+        if season_st <= 0 or baseline_st <= 0:
+            return 0.0
+        st_delta = baseline_st - season_st
+        return max(-6.0, min(6.0, st_delta * 60.0))
+
+    def _apply_exhibition_adjustment(
+        self,
+        b: BoatEntry,
+        base_ei: float,
+        best_exhibition_time: Optional[float],
+        best_exhibition_st: Optional[float],
+    ) -> float:
+        adjusted = base_ei
+
+        if b.exhibition_time > 0 and best_exhibition_time is not None:
+            diff = b.exhibition_time - best_exhibition_time
+            adjusted += max(-8.0, min(8.0, -diff * 40.0))
+
+        baseline_st = b.standard_st or b.avg_st or 0.15
+        if b.exhibition_st != 0:
+            st_delta = baseline_st - b.exhibition_st
+            adjusted += max(-6.0, min(6.0, st_delta * 60.0))
+            if best_exhibition_st is not None:
+                adjusted += max(-3.0, min(3.0, (best_exhibition_st - b.exhibition_st) * 30.0))
+
+        return round(max(0.0, adjusted), 1)
+
     def _completion_power(self, b: BoatEntry, motor_top2: set,
                           ei_top3: set, st_top3: set) -> int:
         """D-KAN充足数（0-5・改正65）"""
         count = 0
-        # ① モーターB以上 or モーター順位上位2
-        if _motor_grade(b.motor_eval) >= 2 or b.lane in motor_top2:
+        # ① モーターB以上
+        if _motor_grade(b.motor_eval) >= 2:
+            count += 1
+        elif b.lane in motor_top2 and _prob(b.motor_place2_rate) > 0:
             count += 1
         # ② EI上位3
         if b.lane in ei_top3:
@@ -829,8 +948,17 @@ class BoatracePredictor:
                 for t in thirds:
                     if t in (h, s):
                         continue
-                    combos.append(f"{h}-{s}-{t}")
+                    if self._combo_matches_story(h, s, t):
+                        combos.append(f"{h}-{s}-{t}")
         return list(dict.fromkeys(combos))
+
+    def _combo_matches_story(self, head: int, second: int, third: int) -> bool:
+        for tpl_head, tpl_seconds, tpl_thirds in self.suji_templates:
+            if head != tpl_head:
+                continue
+            if second in tpl_seconds and third in tpl_thirds:
+                return True
+        return False
 
     def _trifecta_p(self, combo: str) -> float:
         """P(A-B-C)=P(A1着)×P(B2着|A)×P(C3着|A,B)"""
@@ -865,8 +993,14 @@ class BoatracePredictor:
         return p1 * p2 * p3
 
     def _second_base(self, b: BoatEntry, head_lane: int) -> float:
+        head_course = head_lane
+        head_boat = self._boat_by_lane(head_lane)
+        if head_boat is not None:
+            head_course = head_boat.course or head_lane
         if head_lane in b.p2_link and b.p2_link[head_lane] > 0:
             return _prob(b.p2_link[head_lane])
+        if head_course in b.p2_link and b.p2_link[head_course] > 0:
+            return _prob(b.p2_link[head_course])
         place2 = _prob(b.course_place2_rates.get(b.course, 0))
         win = _prob(b.course_win_rates.get(b.course, 0))
         v = place2 - win
@@ -1031,6 +1165,13 @@ class BoatracePredictor:
             })
         self.out.boat_evals = evals
 
+        if self.out.insufficient_boats:
+            self.out.race_verdict = "見送り"
+            self.out.payout_grade = "見送り"
+            for points in (self.out.honsen, self.out.exacta, self.out.manshu):
+                for bp in points:
+                    bp.grade = "見送り"
+
         adopted_h = [p.combo for p in self.out.honsen if p.grade in ("勝負", "通常")]
         fire_txt = (f"／発動艇{self._boat_by_lane(self.out.fire_boat_lane).course}号"
                     if self.out.fire_boat_lane else "")
@@ -1044,7 +1185,7 @@ class BoatracePredictor:
             + payout_txt
             + ("／弱頭" if self.out.weak_head else "")
             + ("／較正適用" if self.out.cal_applied else "")
-            + f"／本線採用{len(adopted_h)}点・万舟{len(self.out.manshu)}点（v58.7）")
+            + f"／本線採用{len(adopted_h)}点・万舟{len(self.out.manshu)}点（v59.0）")
         self.out.race_type = self.out.regime
 
     # ── ユーティリティ ──
@@ -1073,50 +1214,57 @@ def race_dict_to_input(race: dict) -> RaceInput:
     boats_raw = race.get("boats", [])
     boats: List[BoatEntry] = []
     for i, b in enumerate(boats_raw):
-        lane = b.get("lane", i + 1)
-        course = b.get("entry_course", lane)
+        lane = _safe_int(b.get("lane", i + 1), i + 1)
+        course = _safe_int(b.get("entry_course", lane), lane)
 
         cw, cp2, ctri = {}, {}, {}
         sashi = makuri = makurizashi = 0
+        p2_link = {}
         for c in range(1, 7):
             if b.get(f"c{c}_win_rate") is not None:
-                cw[c] = float(b[f"c{c}_win_rate"] or 0)
+                cw[c] = _safe_float(b[f"c{c}_win_rate"])
             if b.get(f"c{c}_place2_rate") is not None:
-                cp2[c] = float(b[f"c{c}_place2_rate"] or 0)
+                cp2[c] = _safe_float(b[f"c{c}_place2_rate"])
             if b.get(f"c{c}_tricast_rate") is not None:
-                ctri[c] = float(b[f"c{c}_tricast_rate"] or 0)
+                ctri[c] = _safe_float(b[f"c{c}_tricast_rate"])
+            if b.get(f"p2_link_{c}") is not None:
+                p2_link[c] = _safe_float(b.get(f"p2_link_{c}"))
         # 進入コースの決まり手だけ集計
-        sashi = int(b.get(f"c{course}_sashi", 0) or 0)
-        makuri = int(b.get(f"c{course}_makuri", 0) or 0)
-        makurizashi = int(b.get(f"c{course}_makurizashi", 0) or 0)
+        sashi = _safe_int(b.get(f"c{course}_sashi", 0))
+        makuri = _safe_int(b.get(f"c{course}_makuri", 0))
+        makurizashi = _safe_int(b.get(f"c{course}_makurizashi", 0))
 
         boats.append(BoatEntry(
             lane=lane,
             course=course,
             name=b.get("name", ""),
             rank=b.get("rank", ""),
-            f_count=b.get("f_count", 0) or 0,
-            win_rate_1st=float(b.get("national_win_rate") or 0),
-            win_rate_2nd=float(b.get("national_place2_rate") or 0),
-            place_rate=float(b.get("national_place2_rate") or 0),
+            f_count=_safe_int(b.get("f_count", 0)),
+            win_rate_1st=_safe_float(b.get("national_win_rate")),
+            win_rate_2nd=_safe_float(b.get("national_place2_rate")),
+            place_rate=_safe_float(b.get("national_place2_rate")),
             course_win_rates=cw,
             course_place2_rates=cp2,
             course_tricast_rates=ctri,
             sashi=sashi, makuri=makuri, makurizashi=makurizashi,
-            nigiri_rate=float(b.get("nigiri_rate") or 0),
+            nigiri_rate=_safe_float(b.get("nigiri_rate")),
             motor_eval=b.get("motor_eval", "") or "",
-            motor_place2_rate=float(b.get("motor_place2_rate") or 0),
-            avg_st=float(b.get("avg_st") or 0.15),
-            today_st=float(b.get("today_st") or 0),
-            standard_st=float(b.get("standard_st") or b.get("avg_st") or 0.15),
-            st_rank=int(b.get("st_advantage_rank") or b.get("today_st_rank") or 3),
-            local5y_win_rate=float(b.get("local5y_win_rate") or 0),
-            local5y_tricast_rate=float(b.get("local5y_tricast_rate") or 0),
-            gen_rate=float(b.get("gen_rate") or 0),
-            hit_rate=float(b.get("hit_rate") or 0),
+            motor_place2_rate=_safe_float(b.get("motor_place2_rate")),
+            avg_st=_safe_float(b.get("avg_st"), 0.15),
+            today_st=_safe_float(b.get("today_st") or b.get("season_st") or b.get("exhibition_st")),
+            season_st=_safe_float(b.get("season_st")),
+            standard_st=_safe_float(b.get("standard_st") or b.get("avg_st"), 0.15),
+            st_rank=_safe_int(b.get("st_advantage_rank") or b.get("today_st_rank"), 3),
+            exhibition_time=_safe_float(b.get("exhibition_time")),
+            exhibition_st=_safe_float(b.get("exhibition_st")),
+            local5y_win_rate=_safe_float(b.get("local5y_win_rate")),
+            local5y_tricast_rate=_safe_float(b.get("local5y_tricast_rate")),
+            gen_rate=_safe_float(b.get("gen_rate")),
+            hit_rate=_safe_float(b.get("hit_rate")),
+            p2_link=p2_link,
         ))
 
-    if len(set(b.course for b in boats)) <= 1:
+    if len(set(b.course for b in boats if b.course)) <= 1:
         for b in boats:
             b.course = b.lane
 
@@ -1125,19 +1273,19 @@ def race_dict_to_input(race: dict) -> RaceInput:
         race_id=race.get("id", 0),
         venue=race.get("venue", ""),
         race_no=race.get("race_no", 0),
-        day_no=race.get("day_no", 1) or 1,
+        day_no=_safe_int(race.get("day_no", 1), 1),
         date=race.get("date", ""),
         weather=race.get("weather", "") or "",
-        wind_speed=float(race.get("wind_speed") or 0),
+        wind_speed=_safe_float(race.get("wind_speed")),
         wind_direction=race.get("wind_direction", "") or "",
-        wave_height=float(race.get("wave_height") or 0),
+        wave_height=_safe_float(race.get("wave_height")),
         boats=boats,
         odds_3t=race.get("odds_3t") or {},
         odds_2t=race.get("odds_2t") or {},
         odds_win=race.get("odds_win") or {},
         odds_updated_at=race.get("odds_updated_at") or "",
         cal_r=cal.get("r"),
-        cal_n=int(cal.get("n") or 0),
+        cal_n=_safe_int(cal.get("n")),
     )
 
 
@@ -1184,7 +1332,7 @@ def output_to_prediction_dict(out: PredictionOutput) -> dict:
         "exacta": exacta_str,
         "is_correct": None,
         "detail": {
-            "version": "v58.7",
+            "version": "v59.0",
             "regime": out.regime,
             "s_in": out.s_in,
             "in_win_rate": out.in_win_rate,
@@ -1238,7 +1386,7 @@ def output_to_prediction_dict(out: PredictionOutput) -> dict:
 
 
 def run_system_prediction(race: dict) -> dict:
-    """レースdictを受け取り、v58.7システム予測を実行して結果dictを返す"""
+    """レースdictを受け取り、v59.0システム予測を実行して結果dictを返す"""
     race_input = race_dict_to_input(race)
     predictor = BoatracePredictor()
     output = predictor.predict(race_input)

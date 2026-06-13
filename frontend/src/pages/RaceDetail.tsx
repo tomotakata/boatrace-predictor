@@ -606,7 +606,7 @@ const SOURCE_CONFIG = {
   gemini: { label: 'Gemini', color: '#34d399' },
   ensemble: { label: 'Ensemble', color: '#a78bfa' },
   system_v56: { label: 'システム v56.3', color: '#60a5fa' },
-  system_v58: { label: 'システム v58.7', color: '#60a5fa' },
+  system_v58: { label: 'システム v59.0', color: '#60a5fa' },
 }
 
 function PredictionPanel({ prediction }: { prediction: Prediction }) {
@@ -796,7 +796,7 @@ function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
   return (
     <div style={{ border: '2px solid #3b82f644', borderRadius: 10, marginBottom: 16, overflow: 'hidden' }}>
       <div style={{ background: '#1e3a5f44', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #1e3a5f', flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: 700, color: '#60a5fa', fontSize: 14 }}>システム予測 {detail.version || 'v58.7'}</span>
+        <span style={{ fontWeight: 700, color: '#60a5fa', fontSize: 14 }}>システム予測 {detail.version || 'v59.0'}</span>
         <span style={{ padding: '2px 10px', borderRadius: 10, background: '#1e3a5f', color: '#94a3b8', fontSize: 12 }}>{detail.regime}</span>
         <span style={{ padding: '2px 10px', borderRadius: 10, background: '#1e3a5f', color: '#94a3b8', fontSize: 12 }}>{detail.s_in}（{detail.surface_type}）</span>
         <span style={{ fontSize: 12, color: '#64748b' }}>自信度: {Math.round(detail.confidence)}% / 波乱度: {Math.round(detail.wave_score)}%</span>
@@ -1064,7 +1064,7 @@ export default function RaceDetail() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={handlePredictSystem} disabled={predicting}
               style={{ padding: '8px 16px', background: 'linear-gradient(135deg,#1e40af,#3b82f6)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-              {predicting ? '予測中…' : 'システム予測 v58.7'}
+              {predicting ? '予測中…' : 'システム予測 v59.0'}
             </button>
             <button onClick={() => handlePredict('ensemble')} disabled={predicting}
               style={{ padding: '8px 14px', background: '#1e2a40', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>

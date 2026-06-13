@@ -69,6 +69,22 @@ def sf(s):
     try: return float(re.search(r'[\d.]+', str(s)).group())
     except: return None
 
+def safe_float(value, default=0.0):
+    try:
+        if value in (None, "", "-"):
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+def safe_int(value, default=0):
+    try:
+        if value in (None, "", "-"):
+            return default
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
 async def bf_login(client):
     r = await client.get(f"{BF_BASE}/login")
     soup = BeautifulSoup(r.text, "html.parser")
@@ -279,7 +295,7 @@ async def scrape_motor(date, venues):
 
                         # 全クラス行をパース: motor_eval / start_data / course_data / local_course_data
                         # lane_order[i] = そのインデックスに対応するlane番号
-                        data_per_lane = {lane: {} for lane in lane_order}
+                        data_per_lane = {lane: {"entry_course": lane} for lane in lane_order}
 
                         def set_lane_vals(rows_class, th_keyword, field, transform=None):
                             for row in tbl.find_all("tr", class_=lambda c: c and rows_class in c):
@@ -292,7 +308,7 @@ async def scrape_motor(date, venues):
                                     if i >= len(lane_order): break
                                     lane = lane_order[i]
                                     try:
-                                        v = transform(val) if transform else float(val)
+                                        v = transform(val) if transform else safe_float(val, None)
                                         if v is not None:
                                             data_per_lane[lane][field] = v
                                     except: pass
@@ -332,13 +348,13 @@ async def scrape_motor(date, venues):
                                     if st is not None:
                                         data_per_lane[lane_order[i]]["today_st"] = st
                                         if rank is not None:
-                                            data_per_lane[lane_order[i]]["today_st_rank"] = int(round(rank))
+                                            data_per_lane[lane_order[i]]["today_st_rank"] = safe_int(round(rank), 0)
                             elif "平均ST" in th_text:
                                 for i, val in enumerate(tds):
                                     if i >= len(lane_order): break
                                     try:
                                         if val != "-":
-                                            data_per_lane[lane_order[i]]["avg_st"] = float(val)
+                                            data_per_lane[lane_order[i]]["avg_st"] = safe_float(val, None)
                                     except: pass
 
                         # コース別データ(直近1年) → 各ボートの担当コース成績
@@ -358,11 +374,11 @@ async def scrape_motor(date, venues):
                                             if rank is not None:
                                                 data_per_lane[lane]["course1y_st_rank"] = rank
                                     elif "コース別勝率" in th_text:
-                                        data_per_lane[lane][f"{cx}_win_rate"] = float(val)
+                                        data_per_lane[lane][f"{cx}_win_rate"] = safe_float(val, None)
                                     elif "コース別2着内率" in th_text:
-                                        data_per_lane[lane][f"{cx}_place2_rate"] = float(val)
+                                        data_per_lane[lane][f"{cx}_place2_rate"] = safe_float(val, None)
                                     elif "コース別3着内率" in th_text:
-                                        data_per_lane[lane][f"{cx}_tricast_rate"] = float(val)
+                                        data_per_lane[lane][f"{cx}_tricast_rate"] = safe_float(val, None)
                                     elif "コース別決まり手" in th_text:
                                         s, mk, mz = parse_kime(val)
                                         if s is not None:
@@ -381,13 +397,13 @@ async def scrape_motor(date, venues):
                                 lane = lane_order[i]
                                 try:
                                     if "出走数" in th_text:
-                                        data_per_lane[lane]["local5y_races"] = int(val)
+                                        data_per_lane[lane]["local5y_races"] = safe_int(val, 0)
                                     elif "コース別勝率" in th_text:
-                                        data_per_lane[lane]["local5y_win_rate"] = float(val)
+                                        data_per_lane[lane]["local5y_win_rate"] = safe_float(val, None)
                                     elif "コース別2着内率" in th_text:
-                                        data_per_lane[lane]["local5y_place2_rate"] = float(val)
+                                        data_per_lane[lane]["local5y_place2_rate"] = safe_float(val, None)
                                     elif "コース別3着内率" in th_text:
-                                        data_per_lane[lane]["local5y_tricast_rate"] = float(val)
+                                        data_per_lane[lane]["local5y_tricast_rate"] = safe_float(val, None)
                                     elif "コース別決まり手" in th_text:
                                         s, mk, mz = parse_kime(val)
                                         if s is not None:
@@ -408,13 +424,13 @@ async def scrape_motor(date, venues):
                                     continue
                                 try:
                                     if "出走数" in th_text:
-                                        data_per_lane[lane]["general1y_races"] = int(val)
+                                        data_per_lane[lane]["general1y_races"] = safe_int(val, 0)
                                     elif "コース別勝率" in th_text:
-                                        data_per_lane[lane]["general1y_win_rate"] = float(val)
+                                        data_per_lane[lane]["general1y_win_rate"] = safe_float(val, None)
                                     elif "コース別2着内率" in th_text:
-                                        data_per_lane[lane]["general1y_place2_rate"] = float(val)
+                                        data_per_lane[lane]["general1y_place2_rate"] = safe_float(val, None)
                                     elif "コース別3着内率" in th_text:
-                                        data_per_lane[lane]["general1y_tricast_rate"] = float(val)
+                                        data_per_lane[lane]["general1y_tricast_rate"] = safe_float(val, None)
                                     elif "コース別決まり手" in th_text:
                                         s, mk, mz = parse_kime(val)
                                         if s is not None:
@@ -435,9 +451,9 @@ async def scrape_motor(date, venues):
                                     continue
                                 try:
                                     if "2着内率" in th_text:
-                                        data_per_lane[lane]["escape1y_place2_rate"] = float(val)
+                                        data_per_lane[lane]["escape1y_place2_rate"] = safe_float(val, None)
                                     elif "3着内率" in th_text:
-                                        data_per_lane[lane]["escape1y_tricast_rate"] = float(val)
+                                        data_per_lane[lane]["escape1y_tricast_rate"] = safe_float(val, None)
                                 except: pass
 
                         # DBに保存
@@ -626,44 +642,59 @@ async def calc_st_metrics(date, venues):
 
 
 def parse_course_stats(html: str) -> dict:
-    """boatfrontier.jp /racer/{toban} のコース別成績テーブルをパース（正規表現）
+    """boatfrontier.jp /racer/{toban} のコース別成績テーブルをパース
     列順: コース, 出走数, 1着数, 1着率, 2連対率, 3連対率, 平均ST, 平均ST順, 逃げ, 差し, まくり, まくり差し, 抜き, 恵まれ
     """
     data = {}
-    # テーブル全文から1〜6コースを抽出
     soup = BeautifulSoup(html, "html.parser")
-    tables = soup.find_all("table")
-    # コース別成績テーブルを探す（逃げ・まくりが含まれるもの）
-    for tbl in tables:
-        txt = tbl.get_text(separator=" ", strip=True)
-        if "逃げ" not in txt or "まくり" not in txt:
+    for tbl in soup.find_all("table"):
+        headers = [th.get_text(" ", strip=True) for th in tbl.find_all("th")]
+        header_text = " ".join(headers)
+        table_text = tbl.get_text(separator=" ", strip=True)
+        if "逃げ" not in table_text or "まくり" not in table_text:
             continue
-        # 1〜6コースのデータ行を正規表現で抽出
-        # パターン: {n}コース {出走数} {1着数} {1着率} {2連率} {3連率} {ST} {ST順} {逃げ} {差し} {まくり} {まくり差し} {抜き} {恵まれ}
-        pattern = r'([1-6])コース\s+(\d+)\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)'
-        matches = re.findall(pattern, txt)
-        if not matches:
-            continue
-        for m in matches:
-            c = int(m[0])
-            if c < 1 or c > 6:
+        rows = tbl.select("tbody tr") or tbl.find_all("tr")
+        for row in rows:
+            cells = row.find_all(["th", "td"])
+            values = [cell.get_text(" ", strip=True) for cell in cells]
+            if not values:
                 continue
-            px = f"c{c}"
-            try: data[f"{px}_races"]       = int(m[1])       # 出走数
+            lane_match = re.search(r"([1-6])\s*コース", values[0])
+            if not lane_match:
+                lane_match = re.search(r"([1-6])\s*コース", " ".join(values[:2]))
+            if not lane_match:
+                continue
+            course = int(lane_match.group(1))
+            numeric_values = []
+            for value in values[1:]:
+                m = re.search(r"\d+(?:\.\d+)?", value.replace(",", ""))
+                if m:
+                    numeric_values.append(float(m.group(0)))
+            if len(numeric_values) < 11:
+                flat = row.get_text(separator=" ", strip=True)
+                fallback = [float(x) for x in re.findall(r"\d+(?:\.\d+)?", flat)]
+                if fallback and int(fallback[0]) == course:
+                    fallback = fallback[1:]
+                if len(fallback) > len(numeric_values):
+                    numeric_values = fallback
+            if len(numeric_values) < 11:
+                continue
+            px = f"c{course}"
+            try: data[f"{px}_races"] = int(numeric_values[0])
             except: pass
-            try: data[f"{px}_win_rate"]    = float(m[3])     # 1着率
+            try: data[f"{px}_win_rate"] = float(numeric_values[2])
             except: pass
-            try: data[f"{px}_place2_rate"] = float(m[4])     # 2連対率
+            try: data[f"{px}_place2_rate"] = float(numeric_values[3])
             except: pass
-            try: data[f"{px}_tricast_rate"]= float(m[5])     # 3連対率
+            try: data[f"{px}_tricast_rate"] = float(numeric_values[4])
             except: pass
-            try: data[f"{px}_nige"]        = int(m[8])
+            try: data[f"{px}_nige"] = int(numeric_values[7])
             except: pass
-            try: data[f"{px}_sashi"]       = int(m[9])
+            try: data[f"{px}_sashi"] = int(numeric_values[8])
             except: pass
-            try: data[f"{px}_makuri"]      = int(m[10])
+            try: data[f"{px}_makuri"] = int(numeric_values[9])
             except: pass
-            try: data[f"{px}_makurizashi"] = int(m[11])
+            try: data[f"{px}_makurizashi"] = int(numeric_values[10])
             except: pass
         if data:
             break
@@ -1081,7 +1112,7 @@ async def scrape_profile(date, venues):
                     stats["makurisashi_count"] = sum(stats.get(f"c{c}_makurizashi", 0) or 0 for c in range(1, 7))
 
                     # v58.7 発生率（gen_rate）：進入コースの決まり手に占める捲り＋捲差の比率
-                    c0 = int(boat.get("lane") or 0)
+                    c0 = safe_int(boat.get("entry_course") or boat.get("lane") or 0, 0)
                     if 1 <= c0 <= 6:
                         mk = (stats.get(f"c{c0}_makuri", 0) or 0) + (stats.get(f"c{c0}_makurizashi", 0) or 0)
                         totc = sum(stats.get(f"c{c0}_{k}", 0) or 0
@@ -1139,7 +1170,7 @@ class ScrapeRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status":"ok","service":"boatrace-sakura-scraper","version":"6.2-v58.7"}
+    return {"status":"ok","service":"boatrace-sakura-scraper","version":"6.2-v59.0"}
 
 @app.post("/migrate")
 async def migrate(req: dict = None):
