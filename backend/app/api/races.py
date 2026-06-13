@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, List
 from datetime import date
 from fastapi import APIRouter, Query, HTTPException
@@ -6,6 +7,7 @@ from backend.app.llm.predictor import run_prediction
 from backend.app.prediction.engine import run_system_prediction
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def _compute_escape_calibration(race: dict, sb) -> dict:
@@ -227,15 +229,33 @@ async def scrape_races(target_date: Optional[str] = Query(None)):
 async def get_race_result(race_id: int):
     """race_winner_log から実結果（1〜3着・3連単・2連単・払戻）を取得"""
     sb = get_supabase()
-    race_resp = sb.table("races").select("date, venue, race_no").eq("id", race_id).single().execute()
+    try:
+        race_resp = sb.table("races").select("date, venue, race_no").eq("id", race_id).single().execute()
+    except Exception:
+        logger.exception("Failed to fetch race for result lookup", extra={"race_id": race_id})
+        raise HTTPException(status_code=502, detail="Failed to fetch race")
+
     if not race_resp.data:
         raise HTTPException(status_code=404, detail="Race not found")
+
     race = race_resp.data
-    result_resp = sb.table("race_winner_log").select(
-        "race_key, winner_lane, winner_course, place2_lane, place3_lane, "
-        "trifecta_result, exacta_result, trifecta_payout, exacta_payout, "
-        "trifecta_place_payout, result_all"
-    ).eq("date", race["date"]).eq("venue", race["venue"]).eq("race_no", race["race_no"]).maybe_single().execute()
+    if race.get("race_no") is None:
+        logger.warning("Race result lookup skipped because race_no is missing", extra={"race_id": race_id, "race": race})
+        return {}
+
+    try:
+        result_resp = sb.table("race_winner_log").select(
+            "race_key, winner_lane, winner_course, place2_lane, place3_lane, "
+            "trifecta_result, exacta_result, trifecta_payout, exacta_payout, "
+            "trifecta_place_payout, result_all"
+        ).eq("date", race["date"]).eq("venue", race["venue"]).eq("race_no", race["race_no"]).maybe_single().execute()
+    except Exception:
+        logger.exception(
+            "Failed to fetch race result from race_winner_log",
+            extra={"race_id": race_id, "date": race.get("date"), "venue": race.get("venue"), "race_no": race.get("race_no")},
+        )
+        return {}
+
     return result_resp.data or {}
 
 
