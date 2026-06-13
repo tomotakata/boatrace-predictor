@@ -1099,6 +1099,10 @@ class BoatracePredictor:
 
         # 本線の組番生成
         combos = self._gen_honsen_combos()
+        if self.race.race_id == 1198:
+            self.out.notes.append(
+                f"DBG-HONSEN-MARKER-20260614 fmt={self.out.fmt} head={self.out.head_boats} combos={combos[:3]}"
+            )
 
         if not odds3:
             # 改正56：ODDS_T取得不能 → 全枝見送り
