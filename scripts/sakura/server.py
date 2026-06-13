@@ -29,13 +29,6 @@ VENUE_CODE_MAP = {
     "尼崎":"13","鳴門":"14","丸亀":"15","児島":"16","宮島":"17","徳山":"18",
     "下関":"19","若松":"20","芦屋":"21","福岡":"22","唐津":"23","大村":"24"
 }
-# boaters-boatrace.com の会場slug(ローマ字)
-BOATERS_SLUG_MAP = {
-    "桐生":"kiryu","戸田":"toda","江戸川":"edogawa","平和島":"heiwajima","多摩川":"tamagawa","浜名湖":"hamanako",
-    "蒲郡":"gamagori","常滑":"tokoname","津":"tsu","三国":"mikuni","びわこ":"biwako","住之江":"suminoe",
-    "尼崎":"amagasaki","鳴門":"naruto","丸亀":"marugame","児島":"kojima","宮島":"miyajima","徳山":"tokuyama",
-    "下関":"shimonoseki","若松":"wakamatsu","芦屋":"ashiya","福岡":"fukuoka","唐津":"karatsu","大村":"omura"
-}
 # 数字コード→会場名の逆引きマップ
 VENUE_NAME_MAP = {v: k for k, v in VENUE_CODE_MAP.items()}
 # 1桁/2桁どちらでも対応するヘルパー
@@ -911,9 +904,7 @@ async def scrape_odds(date, venues):
 
 
 async def scrape_results(date, venues):
-    """boaters-boatrace.com から確定着順を取得して race_winner_log に保存。
-    asyncio.gather で全会場×全Rを並列取得（セマフォ20で同時接続数制御）。
-    """
+    """boatrace.jp公式の結果ページから確定着順と払戻を取得して保存する。"""
     import asyncio
     import json as _json
     sb = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -926,29 +917,28 @@ async def scrape_results(date, venues):
         digits = re.sub(r"[^\d]", "", str(text))
         return int(digits) if digits else None
 
-    def extract_payouts(html):
+    def extract_payouts(soup):
         payouts = {
             "trifecta_payout": None,
             "exacta_payout": None,
             "trifecta_place_payout": None,
         }
-        if not html:
+        if not soup:
             return payouts
-        table_match = re.search(
-            r'<table[^>]*class="[^"]*is-payout[^"]*"[^>]*>(.*?)</table>',
-            html,
-            re.S,
-        )
-        if not table_match:
+        payout_table = None
+        for table in soup.find_all("table"):
+            headers = [th.get_text(" ", strip=True) for th in table.find_all("th")]
+            if {"勝式", "組番", "払戻金"}.issubset(set(headers)):
+                payout_table = table
+                break
+        if payout_table is None:
             return payouts
-        table_html = table_match.group(1)
-        row_matches = re.findall(r"<tr[^>]*>(.*?)</tr>", table_html, re.S)
-        for row_html in row_matches:
-            cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row_html, re.S)
+        for row in payout_table.find_all("tr"):
+            cells = row.find_all(["th", "td"])
             if len(cells) < 3:
                 continue
-            bet_type = re.sub(r"<.*?>", "", cells[0], flags=re.S).strip()
-            payout = parse_payout_amount(re.sub(r"<.*?>", "", cells[2], flags=re.S).strip())
+            bet_type = cells[0].get_text(" ", strip=True)
+            payout = parse_payout_amount(cells[2].get_text(" ", strip=True))
             if bet_type == "3連単":
                 payouts["trifecta_payout"] = payout
             elif bet_type == "2連単":
@@ -957,76 +947,74 @@ async def scrape_results(date, venues):
                 payouts["trifecta_place_payout"] = payout
         return payouts
 
-    async def fetch_race(client, vname, slug, rno):
-        url = f"https://boaters-boatrace.com/race/{slug}/{date_fmt}/{rno}R"
+    def extract_result_rows(soup):
+        result_table = None
+        for table in soup.find_all("table"):
+            headers = [th.get_text(" ", strip=True) for th in table.find_all("th")]
+            if {"着", "枠", "ボートレーサー", "レースタイム"}.issubset(set(headers)):
+                result_table = table
+                break
+        if result_table is None:
+            return []
+        rows = []
+        for row in result_table.find_all("tr"):
+            cells = row.find_all("td")
+            if len(cells) < 4:
+                continue
+            pos_text = cells[0].get_text(" ", strip=True)
+            lane_text = cells[1].get_text(" ", strip=True)
+            pos_digits = re.sub(r"[^\d]", "", pos_text)
+            lane_digits = re.sub(r"[^\d]", "", lane_text)
+            if not pos_digits or not lane_digits:
+                continue
+            rows.append({
+                "pos": int(pos_digits),
+                "lane": int(lane_digits),
+                "course": int(lane_digits),
+            })
+        return sorted(rows, key=lambda item: item["pos"])
+
+    async def fetch_race(client, vname, jcd, rno):
         official_url = (
             "https://www.boatrace.jp/owpc/pc/race/raceresult"
-            f"?rno={rno}&jcd={VENUE_CODE_MAP.get(vname, '')}&hd={date_fmt}"
+            f"?rno={rno}&jcd={jcd}&hd={date_fmt}"
         )
         async with sem:
             try:
-                resp, official_resp = await asyncio.gather(
-                    client.get(url, timeout=20),
-                    client.get(official_url, timeout=20),
-                )
+                resp = await client.get(official_url, timeout=20)
                 if resp.status_code != 200:
                     return []
-                m = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', resp.text, re.S)
-                if not m:
+                soup = BeautifulSoup(resp.text, "html.parser")
+                if "データがありません" in soup.get_text(" ", strip=True):
                     return []
-                apollo = _json.loads(m.group(1)).get("props", {}).get("pageProps", {}).get("initialApolloState", {})
-                payouts = extract_payouts(official_resp.text if official_resp.status_code == 200 else "")
-                groups = {}
-                for k, val in apollo.items():
-                    if not k.startswith("CrawledRaceResultRacer:") or not isinstance(val, dict):
-                        continue
-                    ref = (val.get("result") or {}).get("__ref")
-                    if not ref or not ref.startswith("CrawledRaceResult:"):
-                        continue
-                    rid = ref.split(":", 1)[1]
-                    chaku = str(val.get("chakuPosition") or "")
-                    if not chaku or chaku == "None":
-                        continue
-                    groups.setdefault(rid, {})[chaku] = (
-                        val.get("startSinnyu"), val.get("boatNumber"))
-                rows = []
-                for rid, chmap in groups.items():
-                    if len(rid) != 12 or "1" not in chmap:
-                        continue
-                    course1, lane1 = chmap["1"]
-                    if course1 is None and lane1 is None:
-                        continue
-                    r_date = f"{rid[0:4]}-{rid[4:6]}-{rid[6:8]}"
-                    r_vname = VENUE_NAME_MAP.get(rid[8:10], vname)
-                    try:
-                        r_no = int(rid[10:12])
-                    except ValueError:
-                        continue
-                    result_all = []
-                    for pos in range(1, 7):
-                        if str(pos) in chmap:
-                            c, l = chmap[str(pos)]
-                            result_all.append({"pos": pos,
-                                               "lane": int(l) if l is not None else None,
-                                               "course": int(c) if c is not None else None})
-                    place2_lane = int(chmap["2"][1]) if "2" in chmap and chmap["2"][1] is not None else None
-                    place3_lane = int(chmap["3"][1]) if "3" in chmap and chmap["3"][1] is not None else None
-                    trifecta_result = (f"{int(lane1)}-{place2_lane}-{place3_lane}"
-                                       if lane1 is not None and place2_lane and place3_lane else None)
-                    exacta_result = (f"{int(lane1)}-{place2_lane}"
-                                     if lane1 is not None and place2_lane else None)
-                    rows.append({
-                        "race_key": rid, "venue": r_vname, "date": r_date, "race_no": r_no,
-                        "winner_course": int(course1) if course1 is not None else None,
-                        "winner_lane": int(lane1) if lane1 is not None else None,
-                        "place2_lane": place2_lane, "place3_lane": place3_lane,
-                        "trifecta_result": trifecta_result, "exacta_result": exacta_result,
-                        "trifecta_payout": payouts["trifecta_payout"],
-                        "exacta_payout": payouts["exacta_payout"],
-                        "trifecta_place_payout": payouts["trifecta_place_payout"],
-                        "result_all": _json.dumps(result_all, ensure_ascii=False),
-                    })
-                return rows
+                result_all = extract_result_rows(soup)
+                if not result_all or not any(item["pos"] == 1 for item in result_all):
+                    return []
+                payouts = extract_payouts(soup)
+                lane_by_pos = {item["pos"]: item["lane"] for item in result_all}
+                course_by_pos = {item["pos"]: item["course"] for item in result_all}
+                winner_lane = lane_by_pos.get(1)
+                winner_course = course_by_pos.get(1)
+                place2_lane = lane_by_pos.get(2)
+                place3_lane = lane_by_pos.get(3)
+                race_key = f"{date}{jcd}{str(rno).zfill(2)}"
+                row = {
+                    "race_key": race_key,
+                    "venue": vname,
+                    "date": date_fmt,
+                    "race_no": rno,
+                    "winner_course": winner_course,
+                    "winner_lane": winner_lane,
+                    "place2_lane": place2_lane,
+                    "place3_lane": place3_lane,
+                    "trifecta_result": f"{winner_lane}-{place2_lane}-{place3_lane}" if winner_lane and place2_lane and place3_lane else None,
+                    "exacta_result": f"{winner_lane}-{place2_lane}" if winner_lane and place2_lane else None,
+                    "trifecta_payout": payouts["trifecta_payout"],
+                    "exacta_payout": payouts["exacta_payout"],
+                    "trifecta_place_payout": payouts["trifecta_place_payout"],
+                    "result_all": _json.dumps(result_all, ensure_ascii=False),
+                }
+                return [row]
             except Exception as e:
                 print(f"results {vname} {rno}R err: {e}")
                 return []
@@ -1039,15 +1027,14 @@ async def scrape_results(date, venues):
     ) as client:
         # 全会場 × 1〜12R のタスクを一斉生成
         tasks = []
-        venue_map = {}
         for v in venues:
-            vname, vc = resolve_venue(v)
-            slug = BOATERS_SLUG_MAP.get(vname)
-            if not slug:
+            vname, venue_code = resolve_venue(v)
+            jcd = normalize_venue_code(venue_code)
+            if not jcd:
                 results.append({"venue": v, "item": "results", "status": "error", "message": "unknown venue"})
                 continue
             for rno in range(1, 13):
-                t = asyncio.create_task(fetch_race(client, vname, slug, rno))
+                t = asyncio.create_task(fetch_race(client, vname, jcd, rno))
                 tasks.append((v, vname, t))
 
         # 全タスク完了待ち
