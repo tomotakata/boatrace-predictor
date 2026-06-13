@@ -105,7 +105,7 @@ function parseNumericRate(value: unknown): number | null {
 }
 
 function normalizeBetPattern(value?: string | null) {
-  if (!value) return null
+  if (!value || typeof value !== 'string') return null
   const normalized = value.replace(/[→ー－]/g, '-').replace(/\s+/g, '')
   return normalized || null
 }
@@ -113,6 +113,11 @@ function normalizeBetPattern(value?: string | null) {
 function formatPayout(value?: number | null) {
   if (value == null) return null
   return `¥${Math.round(value).toLocaleString()}`
+}
+
+function ensureBetList(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string')
 }
 
 // ───── セクションテーブル ─────
@@ -1296,7 +1301,7 @@ function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number
   const betChecks = [
     {
       label: '本線F1',
-      bets: systemDetail?.trifecta_f1 || [],
+      bets: ensureBetList(systemDetail?.trifecta_f1),
       resultValue: trifecta,
       payout: result?.trifecta_payout ?? null,
       accent: '#60a5fa',
@@ -1304,7 +1309,7 @@ function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number
     },
     {
       label: '本線F2',
-      bets: systemDetail?.trifecta_f2 || [],
+      bets: ensureBetList(systemDetail?.trifecta_f2),
       resultValue: trifecta,
       payout: result?.trifecta_payout ?? null,
       accent: '#a78bfa',
@@ -1312,7 +1317,7 @@ function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number
     },
     {
       label: '二連単',
-      bets: systemDetail?.exacta || [],
+      bets: ensureBetList(systemDetail?.exacta),
       resultValue: exacta,
       payout: result?.exacta_payout ?? null,
       accent: '#34d399',
@@ -1320,14 +1325,17 @@ function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number
     },
     {
       label: '万舟',
-      bets: systemDetail?.manshu || [],
+      bets: ensureBetList(systemDetail?.manshu),
       resultValue: trifecta,
       payout: result?.trifecta_payout ?? null,
       accent: '#f59e0b',
       background: '#241507',
     },
   ].map((item) => {
-    const normalizedBets = item.bets.map(normalizeBetPattern).filter((value): value is string => !!value)
+    const safeBets = Array.isArray(item.bets) ? item.bets : []
+    const normalizedBets = safeBets
+      .map((bet) => normalizeBetPattern(typeof bet === 'string' ? bet : null))
+      .filter((value): value is string => !!value)
     const isHit = item.resultValue ? normalizedBets.includes(item.resultValue) : null
     return {
       ...item,
@@ -1366,62 +1374,57 @@ function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'grid', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, color: '#94a3b8', minWidth: 48 }}>3連単結果</span>
-                  <span style={{ fontSize: 12, color: '#fcd34d', background: '#1a1000', padding: '3px 8px', borderRadius: 5, fontFamily: 'monospace', fontWeight: 700 }}>
-                    {trifecta || '—'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, color: '#94a3b8', minWidth: 48 }}>2連単結果</span>
-                  <span style={{ fontSize: 12, color: '#6ee7b7', background: '#001a0f', padding: '3px 8px', borderRadius: 5, fontFamily: 'monospace', fontWeight: 700 }}>
-                    {exacta || '—'}
-                  </span>
-                </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {trifecta && <span style={{ fontSize: 12, color: '#fcd34d', background: '#1a1000', padding: '2px 8px', borderRadius: 5, fontFamily: 'monospace' }}>3連単 {trifecta}</span>}
+                {typeof result?.trifecta_payout === 'number' && <span style={{ fontSize: 12, color: '#fbbf24', background: '#2a1a00', padding: '2px 8px', borderRadius: 5 }}>払戻 {formatPayout(result?.trifecta_payout)}</span>}
+                {exacta && <span style={{ fontSize: 12, color: '#6ee7b7', background: '#001a0f', padding: '2px 8px', borderRadius: 5, fontFamily: 'monospace' }}>2連単 {exacta}</span>}
+                {typeof result?.exacta_payout === 'number' && <span style={{ fontSize: 12, color: '#86efac', background: '#052e16', padding: '2px 8px', borderRadius: 5 }}>払戻 {formatPayout(result?.exacta_payout)}</span>}
+                {typeof result?.trifecta_place_payout === 'number' && <span style={{ fontSize: 12, color: '#c4b5fd', background: '#1e1b4b', padding: '2px 8px', borderRadius: 5 }}>3連複 {formatPayout(result?.trifecta_place_payout)}</span>}
               </div>
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8, fontWeight: 700 }}>買い目別判定</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8, fontWeight: 700 }}>買い目別的中判定</div>
                 <div style={{ display: 'grid', gap: 8 }}>
-                  {betChecks.map((item) => {
-                    const badgeStyle = item.isHit
-                      ? { background: '#0f2d1a', color: '#22c55e', border: '1px solid #22c55e' }
-                      : { background: '#2a1515', color: '#f87171', border: '1px solid #7f1d1d' }
-                    return (
-                      <div key={item.label} style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: 12,
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        background: item.background,
-                        border: `1px solid ${item.accent}33`,
-                        flexWrap: 'wrap'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: item.accent, minWidth: 52 }}>{item.label}</span>
-                          <span style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'monospace' }}>
-                            {item.normalizedBets.length > 0 ? item.normalizedBets.join(', ') : '買い目なし'}
+                  {betChecks.map((item) => (
+                    <div key={item.label} style={{ border: `1px solid ${item.accent}55`, background: item.background, borderRadius: 8, padding: '10px 12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                        <span style={{ color: item.accent, fontWeight: 700, fontSize: 13 }}>{item.label}</span>
+                        <span style={{
+                          padding: '2px 8px',
+                          borderRadius: 999,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          background: item.isHit ? '#0f2d1a' : '#2d0f0f',
+                          color: item.isHit ? '#22c55e' : '#f87171',
+                          border: `1px solid ${item.isHit ? '#166534' : '#7f1d1d'}`
+                        }}>
+                          {item.isHit ? '的中' : '不的中'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {item.normalizedBets.length > 0 ? item.normalizedBets.map((bet) => (
+                          <span key={`${item.label}-${bet}`} style={{
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                            color: item.resultValue && bet === item.resultValue ? '#f8fafc' : '#cbd5e1',
+                            background: item.resultValue && bet === item.resultValue ? `${item.accent}cc` : '#0b1220',
+                            border: `1px solid ${item.resultValue && bet === item.resultValue ? item.accent : '#1e3a5f'}`,
+                            borderRadius: 5,
+                            padding: '2px 6px'
+                          }}>
+                            {bet}
                           </span>
-                        </div>
-                        {item.isHit != null && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700, ...badgeStyle }}>
-                              {item.isHit ? '的中' : '不的中'}
-                            </span>
-                            {item.payoutLabel && (
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#fcd34d' }}>{item.payoutLabel}</span>
-                            )}
-                          </div>
+                        )) : (
+                          <span style={{ fontSize: 12, color: '#64748b' }}>買い目なし</span>
                         )}
                       </div>
-                    )
-                  })}
+                      {item.payoutLabel && (
+                        <div style={{ marginTop: 6, fontSize: 11, color: '#f8fafc' }}>払戻 {item.payoutLabel}</div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-            {/* 改善コメント */}
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6, fontWeight: 700 }}>改善コメント</div>
               <textarea
