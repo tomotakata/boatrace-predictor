@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getRace, predictRace, predictRaceSystem, getVenueConfig, getRaceResult, savePredictionMemo, type Race, type Boat, type Prediction, type SystemPredictionDetail, type VenueConfig, type RaceResult } from '../lib/api'
+import { getRace, predictRace, predictRaceSystem, getVenueConfig, getRaceResult, savePredictionMemo, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult } from '../lib/api'
 
 // 進入順ラベルの色
 const LANE_BG: Record<number, string> = {
@@ -102,6 +102,17 @@ function parseNumericRate(value: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null
   }
   return null
+}
+
+function normalizeBetPattern(value?: string | null) {
+  if (!value) return null
+  const normalized = value.replace(/[→ー－]/g, '-').replace(/\s+/g, '')
+  return normalized || null
+}
+
+function formatPayout(value?: number | null) {
+  if (value == null) return null
+  return `¥${Math.round(value).toLocaleString()}`
 }
 
 // ───── セクションテーブル ─────
@@ -1242,86 +1253,6 @@ function SectionExhibit({ boats }: { boats: Boat[] }) {
   return <SectionTable title="展示データ" lanes={lanes} rows={rows} />
 }
 
-// ───── 予測パネル ─────
-const SOURCE_CONFIG = {
-  claude: { label: 'Claude', color: '#f59e0b' },
-  gemini: { label: 'Gemini', color: '#34d399' },
-  ensemble: { label: 'Ensemble', color: '#a78bfa' },
-  system_v56: { label: 'システム v56.3', color: '#60a5fa' },
-  system_v58: { label: 'システム v60.0', color: '#60a5fa' },
-}
-
-function PredictionPanel({ prediction }: { prediction: Prediction }) {
-  const src = prediction.source as keyof typeof SOURCE_CONFIG
-  const srcCfg = SOURCE_CONFIG[src] || SOURCE_CONFIG.ensemble
-
-  return (
-    <div style={{ border: `1px solid ${srcCfg.color}44`, borderRadius: 10, marginBottom: 16, overflow: 'hidden' }}>
-      <div style={{ background: `${srcCfg.color}18`, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: `1px solid ${srcCfg.color}33` }}>
-        <span style={{ fontWeight: 700, color: srcCfg.color, fontSize: 14 }}>{srcCfg.label}</span>
-        {prediction.confidence != null && (
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>信頼度: {Math.round(prediction.confidence * 100)}%</span>
-        )}
-      </div>
-      <div style={{ padding: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div>
-          {prediction.trifecta && (
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>本命3連単</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#fcd34d', fontFamily: 'monospace' }}>{prediction.trifecta}</div>
-            </div>
-          )}
-          {prediction.exacta && (
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>本命2連単</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#34d399', fontFamily: 'monospace' }}>{prediction.exacta}</div>
-            </div>
-          )}
-          {prediction.honmei_trifecta && prediction.honmei_trifecta.length > 0 && (
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>本命党 3連単</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {prediction.honmei_trifecta.map((b, i) => (
-                  <span key={i} style={{ background: '#1e3a5f', color: '#93c5fd', padding: '2px 8px', borderRadius: 5, fontFamily: 'monospace', fontSize: 12 }}>{b}</span>
-                ))}
-              </div>
-            </div>
-          )}
-          {prediction.ana_trifecta && prediction.ana_trifecta.length > 0 && (
-            <div>
-              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>穴党 3連単</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {prediction.ana_trifecta.map((b, i) => (
-                  <span key={i} style={{ background: '#2d1a1a', color: '#fca5a5', padding: '2px 8px', borderRadius: 5, fontFamily: 'monospace', fontSize: 12 }}>{b}</span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        <div>
-          {prediction.pattern && <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 8 }}><strong style={{ color: '#60a5fa' }}>展開:</strong> {prediction.pattern}</p>}
-          {prediction.main_attack && <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 8 }}><strong style={{ color: '#60a5fa' }}>主攻め:</strong> {prediction.main_attack}</p>}
-          {prediction.sink_candidate && <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 8 }}><strong style={{ color: '#f87171' }}>沈み:</strong> {prediction.sink_candidate}</p>}
-          {prediction.suji && <p style={{ fontSize: 12, color: '#64748b' }}>{prediction.suji}</p>}
-        </div>
-      </div>
-      {prediction.ei && (
-        <div style={{ padding: '8px 14px', borderTop: '1px solid #1e3a5f', display: 'flex', gap: 4 }}>
-          {[1,2,3,4,5,6].map((l, i) => (
-            <div key={l} style={{ flex: 1, textAlign: 'center', background: '#0a1520', borderRadius: 6, padding: 6 }}>
-              <div style={{ fontSize: 10, color: '#64748b' }}>{l}号</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: prediction.judgement?.[i] === '頭' ? '#fcd34d' : prediction.judgement?.[i] === '軸' ? '#60a5fa' : '#94a3b8' }}>
-                {prediction.judgement?.[i] || '—'}
-              </div>
-              <div style={{ fontSize: 11, color: '#94a3b8' }}>EI:{prediction.ei?.[i]?.toFixed(0) ?? '—'}</div>
-              <div style={{ fontSize: 11, color: '#94a3b8' }}>TI:{prediction.ti?.[i]?.toFixed(0) ?? '—'}</div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ───── 結果確認・改善コメントパネル ─────
 function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number; raceDate: string; systemDetail: SystemPredictionDetail | null }) {
@@ -1355,13 +1286,56 @@ function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number
     setSaving(false)
   }
 
-  // 的中判定（3連単・2連単）
-  const trifecta = result?.trifecta_result
-  const exacta = result?.exacta_result
-  const predTrifecta = systemDetail?.trifecta_f1?.concat(systemDetail?.trifecta_f2 || []) || []
-  const predExacta = systemDetail?.exacta || []
-  const hitTrifecta = trifecta ? predTrifecta.some(t => t.replace(/-/g, '') === trifecta.replace(/-/g, '').replace(/→/g, '')) : null
-  const hitExacta = exacta ? predExacta.some(e => e.replace(/-/g, '') === exacta.replace(/-/g, '').replace(/→/g, '')) : null
+  const trifecta = normalizeBetPattern(result?.trifecta_result)
+  const exacta = normalizeBetPattern(result?.exacta_result)
+  const podium = [
+    { label: '1着', lane: result?.winner_lane ?? null },
+    { label: '2着', lane: result?.place2_lane ?? null },
+    { label: '3着', lane: result?.place3_lane ?? null },
+  ].filter((item): item is { label: string; lane: number } => item.lane != null)
+  const betChecks = [
+    {
+      label: '本線F1',
+      bets: systemDetail?.trifecta_f1 || [],
+      resultValue: trifecta,
+      payout: result?.trifecta_payout ?? null,
+      accent: '#60a5fa',
+      background: '#0f172a',
+    },
+    {
+      label: '本線F2',
+      bets: systemDetail?.trifecta_f2 || [],
+      resultValue: trifecta,
+      payout: result?.trifecta_payout ?? null,
+      accent: '#a78bfa',
+      background: '#1f1638',
+    },
+    {
+      label: '二連単',
+      bets: systemDetail?.exacta || [],
+      resultValue: exacta,
+      payout: result?.exacta_payout ?? null,
+      accent: '#34d399',
+      background: '#0b1f1a',
+    },
+    {
+      label: '万舟',
+      bets: systemDetail?.manshu || [],
+      resultValue: trifecta,
+      payout: result?.trifecta_payout ?? null,
+      accent: '#f59e0b',
+      background: '#241507',
+    },
+  ].map((item) => {
+    const normalizedBets = item.bets.map(normalizeBetPattern).filter((value): value is string => !!value)
+    const isHit = item.resultValue ? normalizedBets.includes(item.resultValue) : null
+    return {
+      ...item,
+      normalizedBets,
+      isHit,
+      payoutLabel: isHit ? formatPayout(item.payout) : null,
+    }
+  })
 
   return (
     <div style={{ border: '1px solid #1e3a5f', borderRadius: 10, marginTop: 12, overflow: 'hidden' }}>
@@ -1378,36 +1352,73 @@ function ResultAndMemoPanel({ raceId, raceDate, systemDetail }: { raceId: number
         ) : result && (result.trifecta_result || result.winner_lane) ? (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
             {/* 結果表示 */}
-            <div style={{ minWidth: 200 }}>
+            <div style={{ minWidth: 280, flex: '1 1 320px' }}>
               <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6, fontWeight: 700 }}>確定結果</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {[result.winner_lane, result.place2_lane, result.place3_lane].filter(Boolean).map((lane, i) => (
-                  <div key={i} style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 11, color: '#64748b' }}>{i + 1}着</div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                {podium.map(({ label, lane }) => (
+                  <div key={label} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 11, color: '#64748b' }}>{label}</div>
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: LANE_BG[lane as number] || '#1e3a5f', color: LANE_TEXT[lane as number] || '#e2e8f0',
+                      background: LANE_BG[lane] || '#1e3a5f', color: LANE_TEXT[lane] || '#e2e8f0',
                       fontWeight: 700, fontSize: 16, border: '2px solid #1e3a5f'
                     }}>{lane}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {trifecta && <span style={{ fontSize: 12, color: '#fcd34d', background: '#1a1000', padding: '2px 8px', borderRadius: 5, fontFamily: 'monospace' }}>3連単 {trifecta}</span>}
-                {exacta && <span style={{ fontSize: 12, color: '#6ee7b7', background: '#001a0f', padding: '2px 8px', borderRadius: 5, fontFamily: 'monospace' }}>2連単 {exacta}</span>}
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, color: '#94a3b8', minWidth: 48 }}>3連単結果</span>
+                  <span style={{ fontSize: 12, color: '#fcd34d', background: '#1a1000', padding: '3px 8px', borderRadius: 5, fontFamily: 'monospace', fontWeight: 700 }}>
+                    {trifecta || '—'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, color: '#94a3b8', minWidth: 48 }}>2連単結果</span>
+                  <span style={{ fontSize: 12, color: '#6ee7b7', background: '#001a0f', padding: '3px 8px', borderRadius: 5, fontFamily: 'monospace', fontWeight: 700 }}>
+                    {exacta || '—'}
+                  </span>
+                </div>
               </div>
-              {/* 的中バッジ */}
-              <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {hitTrifecta != null && (
-                  <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700, background: hitTrifecta ? '#0f2d1a' : '#2d0f0f', color: hitTrifecta ? '#22c55e' : '#ef4444', border: `1px solid ${hitTrifecta ? '#22c55e' : '#ef4444'}` }}>
-                    3連単 {hitTrifecta ? '的中' : '外れ'}
-                  </span>
-                )}
-                {hitExacta != null && (
-                  <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700, background: hitExacta ? '#0f2d1a' : '#2d0f0f', color: hitExacta ? '#22c55e' : '#ef4444', border: `1px solid ${hitExacta ? '#22c55e' : '#ef4444'}` }}>
-                    2連単 {hitExacta ? '的中' : '外れ'}
-                  </span>
-                )}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8, fontWeight: 700 }}>買い目別判定</div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {betChecks.map((item) => {
+                    const badgeStyle = item.isHit
+                      ? { background: '#0f2d1a', color: '#22c55e', border: '1px solid #22c55e' }
+                      : { background: '#2a1515', color: '#f87171', border: '1px solid #7f1d1d' }
+                    return (
+                      <div key={item.label} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        background: item.background,
+                        border: `1px solid ${item.accent}33`,
+                        flexWrap: 'wrap'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: item.accent, minWidth: 52 }}>{item.label}</span>
+                          <span style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'monospace' }}>
+                            {item.normalizedBets.length > 0 ? item.normalizedBets.join(', ') : '買い目なし'}
+                          </span>
+                        </div>
+                        {item.isHit != null && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700, ...badgeStyle }}>
+                              {item.isHit ? '的中' : '不的中'}
+                            </span>
+                            {item.payoutLabel && (
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#fcd34d' }}>{item.payoutLabel}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
             {/* 改善コメント */}
@@ -1655,7 +1666,6 @@ export default function RaceDetail() {
   const [loading, setLoading] = useState(true)
   const [predicting, setPredicting] = useState(false)
   const [systemDetail, setSystemDetail] = useState<SystemPredictionDetail | null>(null)
-  const [activePredIdx, setActivePredIdx] = useState(0)
   const [venueConfig, setVenueConfig] = useState<VenueConfig | null>(null)
 
   async function fetchRace() {
@@ -1686,7 +1696,6 @@ export default function RaceDetail() {
     try {
       const res = await predictRace(parseInt(id), source)
       setRace(res.data)
-      setActivePredIdx(0)
     } catch { /* ignore */ } finally { setPredicting(false) }
   }
 
@@ -1697,7 +1706,6 @@ export default function RaceDetail() {
       const res = await predictRaceSystem(parseInt(id))
       setRace(res.data)
       setSystemDetail(res.data.system_prediction_detail || null)
-      setActivePredIdx(0)
     } catch { /* ignore */ } finally { setPredicting(false) }
   }
 
@@ -1712,7 +1720,6 @@ export default function RaceDetail() {
 
   const boats = race.boats || []
   const predictions = race.predictions || []
-  const activePred = predictions[activePredIdx]
   const sc = { scheduled: '発売中', running: '発走中', finished: '確定' }[race.status || 'scheduled'] || '発売中'
   const scCls = { scheduled: '#3b82f6', running: '#f59e0b', finished: '#34d399' }[race.status || 'scheduled'] || '#3b82f6'
 
@@ -1821,21 +1828,6 @@ export default function RaceDetail() {
           {systemDetail && <SystemPredictionPanel detail={systemDetail} />}
           {/* 過去レース：確定結果取得 & 改善コメント */}
           <ResultAndMemoPanel raceId={race.id!} raceDate={race.date} systemDetail={systemDetail} />
-          {predictions.length > 1 && (
-            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-              {predictions.map((p, i) => {
-                const src = p.source as keyof typeof SOURCE_CONFIG
-                const cfg = SOURCE_CONFIG[src] || SOURCE_CONFIG.ensemble
-                return (
-                  <button key={i} onClick={() => setActivePredIdx(i)}
-                    style={{ padding: '5px 14px', borderRadius: 7, border: `1px solid ${i === activePredIdx ? cfg.color : '#1e3a5f'}`, background: i === activePredIdx ? cfg.color + '22' : 'transparent', color: i === activePredIdx ? cfg.color : '#64748b', cursor: 'pointer', fontSize: 12 }}>
-                    {cfg.label}
-                  </button>
-                )
-              })}
-            </div>
-          )}
-          {activePred && <PredictionPanel prediction={activePred} />}
         </div>
       )}
 

@@ -920,17 +920,62 @@ async def scrape_results(date, venues):
     date_fmt = fmt(date)
     sem = asyncio.Semaphore(20)  # 同時接続数上限
 
+    def parse_payout_amount(text):
+        if text is None:
+            return None
+        digits = re.sub(r"[^\d]", "", str(text))
+        return int(digits) if digits else None
+
+    def extract_payouts(html):
+        payouts = {
+            "trifecta_payout": None,
+            "exacta_payout": None,
+            "trifecta_place_payout": None,
+        }
+        if not html:
+            return payouts
+        table_match = re.search(
+            r'<table[^>]*class="[^"]*is-payout[^"]*"[^>]*>(.*?)</table>',
+            html,
+            re.S,
+        )
+        if not table_match:
+            return payouts
+        table_html = table_match.group(1)
+        row_matches = re.findall(r"<tr[^>]*>(.*?)</tr>", table_html, re.S)
+        for row_html in row_matches:
+            cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row_html, re.S)
+            if len(cells) < 3:
+                continue
+            bet_type = re.sub(r"<.*?>", "", cells[0], flags=re.S).strip()
+            payout = parse_payout_amount(re.sub(r"<.*?>", "", cells[2], flags=re.S).strip())
+            if bet_type == "3連単":
+                payouts["trifecta_payout"] = payout
+            elif bet_type == "2連単":
+                payouts["exacta_payout"] = payout
+            elif bet_type == "3連複":
+                payouts["trifecta_place_payout"] = payout
+        return payouts
+
     async def fetch_race(client, vname, slug, rno):
         url = f"https://boaters-boatrace.com/race/{slug}/{date_fmt}/{rno}R"
+        official_url = (
+            "https://www.boatrace.jp/owpc/pc/race/raceresult"
+            f"?rno={rno}&jcd={VENUE_CODE_MAP.get(vname, '')}&hd={date_fmt}"
+        )
         async with sem:
             try:
-                resp = await client.get(url, timeout=20)
+                resp, official_resp = await asyncio.gather(
+                    client.get(url, timeout=20),
+                    client.get(official_url, timeout=20),
+                )
                 if resp.status_code != 200:
                     return []
                 m = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', resp.text, re.S)
                 if not m:
                     return []
                 apollo = _json.loads(m.group(1)).get("props", {}).get("pageProps", {}).get("initialApolloState", {})
+                payouts = extract_payouts(official_resp.text if official_resp.status_code == 200 else "")
                 groups = {}
                 for k, val in apollo.items():
                     if not k.startswith("CrawledRaceResultRacer:") or not isinstance(val, dict):
@@ -976,6 +1021,9 @@ async def scrape_results(date, venues):
                         "winner_lane": int(lane1) if lane1 is not None else None,
                         "place2_lane": place2_lane, "place3_lane": place3_lane,
                         "trifecta_result": trifecta_result, "exacta_result": exacta_result,
+                        "trifecta_payout": payouts["trifecta_payout"],
+                        "exacta_payout": payouts["exacta_payout"],
+                        "trifecta_place_payout": payouts["trifecta_place_payout"],
                         "result_all": _json.dumps(result_all, ensure_ascii=False),
                     })
                 return rows
@@ -1012,7 +1060,10 @@ async def scrape_results(date, venues):
                     venue_saved[v] = venue_saved.get(v, 0) + 1
                 except Exception as ue:
                     err_s = str(ue)
-                    if any(c in err_s for c in ["place2_lane","place3_lane","trifecta_result","exacta_result","result_all"]):
+                    if any(c in err_s for c in [
+                        "place2_lane", "place3_lane", "trifecta_result", "exacta_result",
+                        "trifecta_payout", "exacta_payout", "trifecta_place_payout", "result_all"
+                    ]):
                         old_row = {k: val for k, val in row.items()
                                    if k in ("race_key","venue","date","race_no","winner_course","winner_lane")}
                         try:
@@ -1232,6 +1283,16 @@ async def migrate(req: dict = None):
         CREATE INDEX IF NOT EXISTS idx_race_winner_log_venue_date
           ON race_winner_log (venue, date DESC);
         """)
+        await conn.execute("""
+        ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS place2_lane INTEGER;
+        ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS place3_lane INTEGER;
+        ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS trifecta_result TEXT;
+        ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS exacta_result TEXT;
+        ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS trifecta_payout INTEGER;
+        ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS exacta_payout INTEGER;
+        ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS trifecta_place_payout INTEGER;
+        ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS result_all JSONB;
+        """)
         await conn.close()
         return {"status": "ok", "message": "Migration completed (gen_rate/hit_rate added)"}
     except Exception as e:
@@ -1240,6 +1301,14 @@ async def migrate(req: dict = None):
 -- Supabase Dashboard > SQL Editor で以下を実行してください:
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS gen_rate FLOAT DEFAULT 0;
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS hit_rate FLOAT DEFAULT 0;
+ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS place2_lane INTEGER;
+ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS place3_lane INTEGER;
+ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS trifecta_result TEXT;
+ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS exacta_result TEXT;
+ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS trifecta_payout INTEGER;
+ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS exacta_payout INTEGER;
+ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS trifecta_place_payout INTEGER;
+ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS result_all JSONB;
 """
         return {"status": "error", "message": str(e),
                 "manual_migration_sql": manual_sql,

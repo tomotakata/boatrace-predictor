@@ -361,6 +361,9 @@ export interface RaceResult {
   place3_lane?: number | null
   trifecta_result?: string | null
   exacta_result?: string | null
+  trifecta_payout?: number | null
+  exacta_payout?: number | null
+  trifecta_place_payout?: number | null
   result_all?: Record<string, number> | null
 }
 

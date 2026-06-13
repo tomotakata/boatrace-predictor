@@ -225,7 +225,7 @@ async def scrape_races(target_date: Optional[str] = Query(None)):
 
 @router.get("/{race_id}/result")
 async def get_race_result(race_id: int):
-    """race_winner_log から実結果（1〜3着・3連単・2連単）を取得"""
+    """race_winner_log から実結果（1〜3着・3連単・2連単・払戻）を取得"""
     sb = get_supabase()
     race_resp = sb.table("races").select("date, venue, race_no").eq("id", race_id).single().execute()
     if not race_resp.data:
@@ -233,7 +233,8 @@ async def get_race_result(race_id: int):
     race = race_resp.data
     result_resp = sb.table("race_winner_log").select(
         "race_key, winner_lane, winner_course, place2_lane, place3_lane, "
-        "trifecta_result, exacta_result, result_all"
+        "trifecta_result, exacta_result, trifecta_payout, exacta_payout, "
+        "trifecta_place_payout, result_all"
     ).eq("date", race["date"]).eq("venue", race["venue"]).eq("race_no", race["race_no"]).maybe_single().execute()
     return result_resp.data or {}
 
