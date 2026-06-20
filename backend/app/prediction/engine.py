@@ -829,18 +829,6 @@ class BoatracePredictor:
         self._mark_sink(c)
 
     def _build_pdf_templates(self, attack_course: int) -> List[Tuple[int, List[int], List[int]]]:
-        if self.out.fmt == "B":
-            lane1 = self._lane_of_course(1)
-            if lane1:
-                lane2 = self._lane_of_course(2)
-                lane3 = self._lane_of_course(3)
-                lane4 = self._lane_of_course(4)
-                lane5 = self._lane_of_course(5)
-                return [(
-                    lane1,
-                    [ln for ln in (lane2, lane3, lane5) if ln],
-                    [ln for ln in (lane2, lane3, lane4, lane5) if ln],
-                )]
         if attack_course == 1:
             lane1 = self._lane_of_course(1)
             lane2 = self._lane_of_course(2)
@@ -976,11 +964,11 @@ class BoatracePredictor:
             self.out.axis_boats = axis_src[:3]
             self.out.hus_boats = (axis_src[:3] + [x for x in hus_src if x not in axis_src[:3]])[:4]
         else:
-            lane1 = lane1_boat.lane
-            second_head = self._select_b_second_head(lane1, a_lane)
-            self.out.head_boats = [lane1]
-            self.out.head_type = "B"
-            axis4 = list(dict.fromkeys([second_head] + axis_src))
+            # B型：頭2枚（AB＝攻め主体＋もう1枚。1号固定でない：PDF定義 B=AB-ABCD-ABCD）
+            second_head = top1.lane if top1.lane != a_lane else top2.lane
+            self.out.head_boats = [a_lane, second_head]
+            self.out.head_type = "AB"
+            axis4 = list(dict.fromkeys([a_lane, second_head] + axis_src))[:4]
             self.out.axis_boats = axis4
             # 3着側に攻め成立側の外艇6を必ず1枚（改正42）
             hus4 = list(dict.fromkeys(axis4 + hus_src))
@@ -1495,11 +1483,10 @@ class BoatracePredictor:
 
         subject_ok = False
         if self.out.fmt == "B":
-            lane1 = self._lane_of_course(1)
             subject_ok = bool(
-                lane1
+                attack_lane
                 and self.out.head_boats
-                and self.out.head_boats[0] == lane1
+                and attack_lane in self.out.head_boats
             )
         elif attack_lane and self.out.head_boats:
             subject_ok = attack_lane in self.out.head_boats
@@ -1507,22 +1494,22 @@ class BoatracePredictor:
             subject_ok = any(point.combo.startswith(f"{attack_lane}-") for point in self.out.honsen)
         if not subject_ok and attack_lane:
             if self.out.fmt == "B":
-                lane1 = self._lane_of_course(1)
-                if lane1:
-                    second_head = self._select_b_second_head(lane1, attack_lane)
-                    self.out.head_boats = [lane1, second_head]
+                others = [b for b in sorted(self.boats, key=lambda b: b.p1, reverse=True)
+                          if b.lane != attack_lane]
+                second_head = others[0].lane if others else attack_lane
+                self.out.head_boats = [attack_lane, second_head]
             elif attack_lane not in self.out.head_boats:
                 self.out.head_boats = [attack_lane] + [lane for lane in self.out.head_boats if lane != attack_lane]
                 self.out.head_boats = self.out.head_boats[:1]
             self.out.head_type = "AB" if self.out.fmt == "B" else "A"
             if self.out.fmt == "B":
-                notes_to_add.append("4M主体整合是正：Bフォーマット頭を1号艇へ復帰")
-                summary_parts.append("主体=是正(B=1号頭)")
+                notes_to_add.append(f"4M主体整合是正：攻め主体{attack_course}号をBフォーマット頭へ復帰（AB頭）")
+                summary_parts.append(f"主体=是正(B=AB頭/{attack_course}号)")
             else:
                 notes_to_add.append(f"4M主体整合是正：攻め主体{attack_course}号を頭候補へ復帰")
                 summary_parts.append(f"主体=是正({attack_course}号)")
         else:
-            summary_parts.append("主体=適合(B=1号頭)" if self.out.fmt == "B" else f"主体=適合({attack_course}号)")
+            summary_parts.append("主体=適合(B=AB頭)" if self.out.fmt == "B" else f"主体=適合({attack_course}号)")
 
         beneficiary_conflicts: List[str] = []
         if primary:
@@ -1544,8 +1531,11 @@ class BoatracePredictor:
 
         template_violations: List[str] = []
         if template:
-            expected_head = self._lane_of_course(1) if self.out.fmt == "B" else attack_lane
-            invalid_heads = [lane for lane in self.out.head_boats if lane != expected_head and lane not in template_seconds]
+            # B=AB頭（攻め主体＋もう1枚）。攻め主体laneを頭の必須軸とし、
+            # AB頭の2枚目はテンプレ2着集合に含まれる場合のみ頭として許容。
+            expected_head = attack_lane
+            allowed_heads = {expected_head} | set(template_seconds)
+            invalid_heads = [lane for lane in self.out.head_boats if lane not in allowed_heads]
             if invalid_heads:
                 self.out.head_boats = [lane for lane in self.out.head_boats if lane not in invalid_heads]
                 if expected_head and expected_head not in self.out.head_boats:
