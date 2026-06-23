@@ -1,9 +1,10 @@
-scripts/
+scripts/dot/
+scripts/sakura/
 tmp/
-data/
-*.md
 .git/
 __pycache__/
 *.pyc
 .env
 .env.*
+README.md
+CHANGELOG.md

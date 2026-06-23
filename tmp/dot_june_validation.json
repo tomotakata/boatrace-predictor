@@ -1,0 +1,397 @@
+{
+  "model": "LightGBM rank採用(extra)",
+  "train_months": [
+    "2026-04",
+    "2026-05"
+  ],
+  "test_month": "2026-06",
+  "leak_free": true,
+  "leak_self_check": {
+    "leak_month": false,
+    "leaked_cols": [],
+    "not_allowed": [],
+    "fold_train_valid_overlap": 0
+  },
+  "used_races": 4594,
+  "months": {
+    "2026-04": 2570,
+    "2026-05": 623,
+    "2026-06": 1401
+  },
+  "n_features": 59,
+  "features": [
+    "age",
+    "avg_st",
+    "avg_st_rank",
+    "avg_st_z",
+    "c1_win_rate",
+    "c2_win_rate",
+    "c3_win_rate",
+    "c4_win_rate",
+    "c5_win_rate",
+    "c6_win_rate",
+    "course1y_st",
+    "course1y_st_rank",
+    "course1y_st_z",
+    "course_aggr_ratio",
+    "course_kim_total",
+    "course_nige_ratio",
+    "course_sashi_ratio",
+    "exhibition_st",
+    "exhibition_st_rank",
+    "exhibition_st_z",
+    "exhibition_time",
+    "f_count",
+    "gen_rate",
+    "general1y_place2_rate",
+    "general1y_tricast_rate",
+    "general1y_win_rate",
+    "general1y_win_rate_rank",
+    "general1y_win_rate_z",
+    "hit_rate",
+    "is_local",
+    "lane",
+    "local5y_aggr_ratio",
+    "local5y_kim_total",
+    "local5y_place2_rate",
+    "local5y_tricast_rate",
+    "local5y_win_rate",
+    "local5y_win_rate_rank",
+    "local5y_win_rate_z",
+    "local_place2_rate",
+    "local_win_rate",
+    "motor_place2_rate",
+    "motor_place2_rate_rank",
+    "motor_place2_rate_z",
+    "national_place2_rate",
+    "national_place2_rate_rank",
+    "national_place2_rate_z",
+    "national_win_rate",
+    "national_win_rate_rank",
+    "national_win_rate_z",
+    "rank_ord",
+    "rank_ord_rank",
+    "rank_ord_z",
+    "standard_st",
+    "today_st",
+    "today_st_rank",
+    "today_st_z",
+    "weight",
+    "weight_rank",
+    "weight_z"
+  ],
+  "feature_groups": {
+    "base": [
+      "lane",
+      "age",
+      "weight",
+      "f_count",
+      "avg_st",
+      "today_st",
+      "exhibition_st",
+      "standard_st",
+      "course1y_st",
+      "national_win_rate",
+      "national_place2_rate",
+      "local_win_rate",
+      "local_place2_rate",
+      "general1y_win_rate",
+      "general1y_place2_rate",
+      "general1y_tricast_rate",
+      "local5y_win_rate",
+      "local5y_place2_rate",
+      "local5y_tricast_rate",
+      "c1_win_rate",
+      "c2_win_rate",
+      "c3_win_rate",
+      "c4_win_rate",
+      "c5_win_rate",
+      "c6_win_rate",
+      "motor_place2_rate",
+      "gen_rate",
+      "hit_rate",
+      "exhibition_time"
+    ],
+    "base_relative": [
+      "national_win_rate_z",
+      "national_win_rate_rank",
+      "national_place2_rate_z",
+      "national_place2_rate_rank",
+      "local5y_win_rate_z",
+      "local5y_win_rate_rank",
+      "general1y_win_rate_z",
+      "general1y_win_rate_rank",
+      "avg_st_z",
+      "avg_st_rank",
+      "motor_place2_rate_z",
+      "motor_place2_rate_rank",
+      "weight_z",
+      "weight_rank"
+    ],
+    "g1_rank": [
+      "rank_ord",
+      "rank_ord_z",
+      "rank_ord_rank"
+    ],
+    "g2_kimarite": [
+      "course_nige_ratio",
+      "course_aggr_ratio",
+      "course_sashi_ratio",
+      "course_kim_total",
+      "local5y_aggr_ratio",
+      "local5y_kim_total"
+    ],
+    "g3_islocal": [
+      "is_local"
+    ],
+    "g4_st_rel": [
+      "today_st_z",
+      "today_st_rank",
+      "exhibition_st_z",
+      "exhibition_st_rank",
+      "course1y_st_z",
+      "course1y_st_rank"
+    ]
+  },
+  "join_key": "date|venue|race_no (races x boats x race_winner_log INNER JOIN)",
+  "oof_races": 1401,
+  "june_total_races": 1401,
+  "coverage_note": "6月 1401/1401R を照合(boats6艇揃い & race_winner_logにtrifecta結果あり の交差)",
+  "classification": {
+    "logloss": 0.3354924691352621,
+    "auc": 0.8340897014012119,
+    "top1_hit_rate": 0.5560314061384726,
+    "top1_hit": 779,
+    "n_races": 1401
+  },
+  "baselines_top1": {
+    "lane1_top1": 0.5389007851534618,
+    "national_top1": 0.3454675231977159
+  },
+  "bet_backtest_full": {
+    "3連単 上位3その順(1点)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.6607423269093504,
+      "hit_rate": 0.07851534618129907,
+      "avg_points_per_race": 1.0,
+      "spent": 140100.0,
+      "returned": 92570.0,
+      "net": -47530.0,
+      "profit_std_per_race": 265.4857080073695,
+      "profit_mean_per_race": -33.92576730906495
+    },
+    "3連複 上位3(1点)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.7663811563169165,
+      "hit_rate": 0.22555317630264096,
+      "avg_points_per_race": 1.0,
+      "spent": 140100.0,
+      "returned": 107370.0,
+      "net": -32730.0,
+      "profit_std_per_race": 163.67013343928178,
+      "profit_mean_per_race": -23.361884368308353
+    },
+    "3連複 上位4BOX(4点)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.7534975017844396,
+      "hit_rate": 0.5224839400428265,
+      "avg_points_per_race": 4.0,
+      "spent": 560400.0,
+      "returned": 422260.0,
+      "net": -138140.0,
+      "profit_std_per_race": 542.2485095234213,
+      "profit_mean_per_race": -98.60099928622412
+    },
+    "参考:1号頭 3連単(1点)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.7689507494646681,
+      "hit_rate": 0.07066381156316917,
+      "avg_points_per_race": 1.0,
+      "spent": 140100.0,
+      "returned": 107730.0,
+      "net": -32370.0,
+      "profit_std_per_race": 358.484789706786,
+      "profit_mean_per_race": -23.10492505353319
+    }
+  },
+  "selective_voting": {
+    "seeds": [
+      42,
+      1,
+      7,
+      13,
+      21,
+      99,
+      123,
+      2024
+    ],
+    "fixed_cov30_in_sample": {
+      "3連単上位3その順": {
+        "coverage": 0.3,
+        "n_seeds": 8,
+        "wagered_races_median": 420.0,
+        "roi_min": 0.7016666666666667,
+        "roi_median": 0.7380952380952381,
+        "roi_mean": 0.7399702380952381,
+        "roi_max": 0.7938095238095239,
+        "hit_rate_median": 0.09642857142857142,
+        "frac_over_takeout": 0.375,
+        "frac_over_100": 0.0
+      },
+      "3連複上位4BOX": {
+        "coverage": 0.3,
+        "n_seeds": 8,
+        "wagered_races_median": 420.0,
+        "roi_min": 0.7633928571428571,
+        "roi_median": 0.7760416666666667,
+        "roi_mean": 0.7839806547619048,
+        "roi_max": 0.8360119047619048,
+        "hit_rate_median": 0.5261904761904762,
+        "frac_over_takeout": 1.0,
+        "frac_over_100": 0.0
+      }
+    },
+    "train_test_oos": {
+      "3連単上位3その順": {
+        "n_seeds": 8,
+        "test_roi_min": 0.655,
+        "test_roi_median": 0.7996604258443465,
+        "test_roi_mean": 0.7827793413545521,
+        "test_roi_max": 0.9061538461538462,
+        "test_wagered_median": 224.5,
+        "test_coverage_median": 0.4686847599164927,
+        "frac_over_takeout": 0.625,
+        "frac_over_100": 0.0
+      },
+      "3連複上位4BOX": {
+        "n_seeds": 8,
+        "test_roi_min": 0.6133093525179856,
+        "test_roi_median": 0.6625534188034188,
+        "test_roi_mean": 0.6688025066911981,
+        "test_roi_max": 0.7388888888888889,
+        "test_wagered_median": 230.5,
+        "test_coverage_median": 0.4812108559498956,
+        "frac_over_takeout": 0.0,
+        "frac_over_100": 0.0
+      }
+    },
+    "takeout": 0.25
+  },
+  "timeseries": {
+    "daily": [
+      {
+        "date": "2026-06-01",
+        "n_races": 84,
+        "top1_hit": 40,
+        "top1_hit_rate": 0.47619047619047616
+      },
+      {
+        "date": "2026-06-02",
+        "n_races": 96,
+        "top1_hit": 53,
+        "top1_hit_rate": 0.5520833333333334
+      },
+      {
+        "date": "2026-06-03",
+        "n_races": 72,
+        "top1_hit": 42,
+        "top1_hit_rate": 0.5833333333333334
+      },
+      {
+        "date": "2026-06-04",
+        "n_races": 108,
+        "top1_hit": 55,
+        "top1_hit_rate": 0.5092592592592593
+      },
+      {
+        "date": "2026-06-05",
+        "n_races": 132,
+        "top1_hit": 65,
+        "top1_hit_rate": 0.49242424242424243
+      },
+      {
+        "date": "2026-06-06",
+        "n_races": 131,
+        "top1_hit": 67,
+        "top1_hit_rate": 0.5114503816793893
+      },
+      {
+        "date": "2026-06-07",
+        "n_races": 156,
+        "top1_hit": 91,
+        "top1_hit_rate": 0.5833333333333334
+      },
+      {
+        "date": "2026-06-08",
+        "n_races": 143,
+        "top1_hit": 83,
+        "top1_hit_rate": 0.5804195804195804
+      },
+      {
+        "date": "2026-06-09",
+        "n_races": 144,
+        "top1_hit": 93,
+        "top1_hit_rate": 0.6458333333333334
+      },
+      {
+        "date": "2026-06-10",
+        "n_races": 144,
+        "top1_hit": 79,
+        "top1_hit_rate": 0.5486111111111112
+      },
+      {
+        "date": "2026-06-11",
+        "n_races": 143,
+        "top1_hit": 80,
+        "top1_hit_rate": 0.5594405594405595
+      },
+      {
+        "date": "2026-06-12",
+        "n_races": 24,
+        "top1_hit": 16,
+        "top1_hit_rate": 0.6666666666666666
+      },
+      {
+        "date": "2026-06-13",
+        "n_races": 24,
+        "top1_hit": 15,
+        "top1_hit_rate": 0.625
+      }
+    ],
+    "weekly": [
+      {
+        "week": "2026-W23",
+        "n_races": 779,
+        "top1_hit_rate": 0.5301668806161746,
+        "date_min": "2026-06-01",
+        "date_max": "2026-06-07"
+      },
+      {
+        "week": "2026-W24",
+        "n_races": 622,
+        "top1_hit_rate": 0.5884244372990354,
+        "date_min": "2026-06-08",
+        "date_max": "2026-06-13"
+      }
+    ],
+    "weekly_summary": {
+      "n_weeks": 2,
+      "min": 0.5301668806161746,
+      "max": 0.5884244372990354,
+      "mean": 0.559295658957605,
+      "std": 0.029128778341430406,
+      "spread": 0.05825755668286081
+    }
+  },
+  "honesty_notes": [
+    "6月はtest/OOF専用。train(4+5月)に6月情報は一切混入していない(月排他+fold内重複0を自己検査)。",
+    "回収は全てDB実払戻(trifecta/exacta/trifecta_place=3連複)。購入判定のみモデルP(win)。",
+    "選択的投票のROIは標本が小さく(特にOOS test)高配当1本で大きく動く=分散大。",
+    "control率25%(回収率75%)を安定的に超えるかを正直に評価する。",
+    "engine.py不変更・本番DBはSELECTのみ。"
+  ]
+}

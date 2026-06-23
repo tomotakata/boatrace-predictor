@@ -1,0 +1,25 @@
+{
+  "baseline_join": 0,
+  "rwl_rows": 0,
+  "rwl_valid_keys": 0,
+  "races_rows": 0,
+  "races_boats_keys": 0,
+  "entry_gap_races": 0,
+  "entry_gap_dv": 0,
+  "gap_by_venue": {},
+  "gap_by_month": {},
+  "gap_by_venue_month": {},
+  "gap_entry_dv_list": [],
+  "result_gap_races": 0,
+  "date_range": {
+    "race_winner_log": [
+      null,
+      null
+    ],
+    "races": [
+      null,
+      null
+    ]
+  },
+  "vmap": {}
+}

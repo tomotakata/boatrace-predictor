@@ -1,0 +1,27 @@
+{
+  "baseline_join": 264,
+  "rwl_rows": 264,
+  "rwl_valid_keys": 264,
+  "races_rows": 264,
+  "races_boats_keys": 264,
+  "entry_gap_races": 0,
+  "entry_gap_dv": 0,
+  "gap_by_venue": {},
+  "gap_by_month": {},
+  "gap_by_venue_month": {},
+  "gap_entry_dv_list": [],
+  "result_gap_races": 0,
+  "date_range": {
+    "race_winner_log": [
+      "2026-04-01",
+      "2026-04-30"
+    ],
+    "races": [
+      "2026-04-01",
+      "2026-04-30"
+    ]
+  },
+  "vmap": {
+    "丸亀": "15"
+  }
+}

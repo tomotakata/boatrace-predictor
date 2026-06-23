@@ -1,0 +1,1132 @@
+{
+  "used_races": 4594,
+  "n_boats": 27564,
+  "months": [
+    "2026-04",
+    "2026-05",
+    "2026-06"
+  ],
+  "coverage": [
+    {
+      "column": "win_rate",
+      "grain": "players数値(艇行)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    },
+    {
+      "column": "place_rate_2",
+      "grain": "players数値(艇行)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    },
+    {
+      "column": "place_rate_3",
+      "grain": "players数値(艇行)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    },
+    {
+      "column": "rank",
+      "grain": "players文字列(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "branch",
+      "grain": "players文字列(艇行)",
+      "exists": true,
+      "overall": 0.48643157741982296,
+      "nonnull": 13408,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.5070687418936446,
+        "2026-05": 0.4127875869448903,
+        "2026-06": 0.48132286462050916
+      }
+    },
+    {
+      "column": "birth_place",
+      "grain": "players文字列(艇行)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    },
+    {
+      "column": "c1_place2_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c2_place2_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c3_place2_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c4_place2_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c5_place2_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c6_place2_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c1_tricast_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c2_tricast_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c3_tricast_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c4_tricast_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c5_tricast_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c6_tricast_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.031925700188651866,
+      "nonnull": 880,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.1046871282417321
+      }
+    },
+    {
+      "column": "c1_races",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 864,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "c2_races",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 864,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "c3_races",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 864,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "c4_races",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 864,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "c5_races",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 864,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "c6_races",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 864,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "c1_nige",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c1_sashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c1_makuri",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c1_makurizashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c2_nige",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c2_sashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c2_makuri",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c2_makurizashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c3_nige",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c3_sashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c3_makuri",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c3_makurizashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c4_nige",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c4_sashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c4_makuri",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c4_makurizashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c5_nige",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c5_sashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c5_makuri",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c5_makurizashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c6_nige",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c6_sashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c6_makuri",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "c6_makurizashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "local5y_sashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "local5y_makuri",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "local5y_makurizashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "local5y_races",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.0348280365694384,
+      "nonnull": 960,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.11420413990007137
+      }
+    },
+    {
+      "column": "general1y_sashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.02089682194166304,
+      "nonnull": 576,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.06852248394004283
+      }
+    },
+    {
+      "column": "general1y_makuri",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.02089682194166304,
+      "nonnull": 576,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.06852248394004283
+      }
+    },
+    {
+      "column": "general1y_makurizashi",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.02089682194166304,
+      "nonnull": 576,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.06852248394004283
+      }
+    },
+    {
+      "column": "general1y_races",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.02089682194166304,
+      "nonnull": 576,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.06852248394004283
+      }
+    },
+    {
+      "column": "escape1y_place2_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.0174140182847192,
+      "nonnull": 480,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.05710206995003569
+      }
+    },
+    {
+      "column": "escape1y_tricast_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.0174140182847192,
+      "nonnull": 480,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.05710206995003569
+      }
+    },
+    {
+      "column": "today_st_rank",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.0348280365694384,
+      "nonnull": 960,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.11420413990007137
+      }
+    },
+    {
+      "column": "course1y_st_rank",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.02089682194166304,
+      "nonnull": 576,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.06852248394004283
+      }
+    },
+    {
+      "column": "st_advantage_rank",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03072848643157742,
+      "nonnull": 847,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10076136093266715
+      }
+    },
+    {
+      "column": "motor_dashfoot",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.0348280365694384,
+      "nonnull": 960,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.11420413990007137
+      }
+    },
+    {
+      "column": "motor_extfoot",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.0348280365694384,
+      "nonnull": 960,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.11420413990007137
+      }
+    },
+    {
+      "column": "motor_dashfoot_score",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    },
+    {
+      "column": "motor_extfoot_score",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    },
+    {
+      "column": "motor_rank_order",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    },
+    {
+      "column": "nige_count",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 864,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "sashi_count",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 864,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "makuri_count",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 864,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "makurisashi_count",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 864,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "nigiri_rate",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    },
+    {
+      "column": "is_local",
+      "grain": "boats数値(艇行)",
+      "exists": true,
+      "overall": 1.0,
+      "nonnull": 27564,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 1.0,
+        "2026-05": 1.0,
+        "2026-06": 1.0
+      }
+    },
+    {
+      "column": "motor_eval",
+      "grain": "boats文字列(艇行)",
+      "exists": true,
+      "overall": 0.0348280365694384,
+      "nonnull": 960,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.11420413990007137
+      }
+    },
+    {
+      "column": "motor_rank_letter",
+      "grain": "boats文字列(艇行)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 27564,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    },
+    {
+      "column": "temperature",
+      "grain": "races数値(レース)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 144,
+      "total": 4594,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "water_temperature",
+      "grain": "races数値(レース)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 144,
+      "total": 4594,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "wind_speed",
+      "grain": "races数値(レース)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 144,
+      "total": 4594,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "wave_height",
+      "grain": "races数値(レース)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 144,
+      "total": 4594,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "tide_score",
+      "grain": "races数値(レース)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 4594,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    },
+    {
+      "column": "weather",
+      "grain": "races文字列(レース)",
+      "exists": true,
+      "overall": 0.03134523291249456,
+      "nonnull": 144,
+      "total": 4594,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.10278372591006424
+      }
+    },
+    {
+      "column": "wind_direction",
+      "grain": "races文字列(レース)",
+      "exists": true,
+      "overall": 0.030474531998258596,
+      "nonnull": 140,
+      "total": 4594,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.09992862241256245
+      }
+    },
+    {
+      "column": "tide_type",
+      "grain": "races文字列(レース)",
+      "exists": true,
+      "overall": 0.0,
+      "nonnull": 0,
+      "total": 4594,
+      "by_month": {
+        "2026-04": 0.0,
+        "2026-05": 0.0,
+        "2026-06": 0.0
+      }
+    }
+  ],
+  "string_value_counts": {
+    "motor_eval": {
+      "A": 443,
+      "C": 247,
+      "B": 193,
+      "D": 75,
+      "S": 2
+    },
+    "motor_rank_letter": {},
+    "weather": {
+      "晴": 73,
+      "曇り": 59,
+      "雨": 12
+    },
+    "wind_direction": {
+      "南東": 50,
+      "西": 20,
+      "南西": 15,
+      "東": 15,
+      "北東": 14,
+      "東北東": 9,
+      "南": 8,
+      "北西": 5,
+      "東南東": 3,
+      "北": 1
+    },
+    "tide_type": {},
+    "rank": {
+      "B1": 12182,
+      "A1": 6798,
+      "A2": 6628,
+      "B2": 1956
+    },
+    "branch": {
+      "愛知": 1703,
+      "埼玉": 1266,
+      "大阪": 1261,
+      "静岡": 1154,
+      "福岡": 1052,
+      "東京": 1016,
+      "群馬": 893,
+      "兵庫": 831,
+      "岡山": 773,
+      "三重": 681,
+      "滋賀": 650,
+      "広島": 590,
+      "福井": 472,
+      "佐賀": 425,
+      "香川": 344,
+      "長崎": 110,
+      "徳島": 106,
+      "山口": 81
+    },
+    "birth_place": {}
+  }
+}

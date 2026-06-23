@@ -1,0 +1,11 @@
+VPS接続情報（診断用・読み取りのみ）
+
+host: 153.121.51.74
+user: ubuntu
+対象ファイル: /home/ubuntu/boatrace/server.py
+サービス名: boatrace-scraper.service
+sudoパスワード（必要時のみ）: koko_race2024
+
+注意:
+- 今回は診断のみ。server.py / DB の変更、サービス再起動は一切しないこと。
+- 読み取りたいのは: 結果スクレイピング処理、race_winner_log への書き込み、race_key の生成ロジック。

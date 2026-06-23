@@ -20,11 +20,14 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-from dotenv import load_dotenv
-
-# プロジェクトルートの .env を読み込む
-_project_root = Path(__file__).resolve().parents[2]
-load_dotenv(_project_root / ".env")
+try:
+    from dotenv import load_dotenv
+    # プロジェクトルートの .env を読み込む
+    _project_root = Path(__file__).resolve().parents[2]
+    load_dotenv(_project_root / ".env")
+except ImportError:
+    # Vercel 環境では dotenv 不要（環境変数は設定済み）
+    pass
 
 from supabase import create_client, Client
 

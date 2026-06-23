@@ -1,0 +1,377 @@
+{
+  "counts": {
+    "races_rows": 1404,
+    "boats_rows": 4464,
+    "race_winner_log_rows": 1989,
+    "races_unique_dates": 10,
+    "results_unique_dates": 39,
+    "races_unique_venues": 24,
+    "results_unique_venues": 24,
+    "boats_unique_races": 744,
+    "results_unique_races": 1989
+  },
+  "ranges": {
+    "races_min_date": "2026-05-05",
+    "races_max_date": "2026-06-13",
+    "results_min_date": "2026-05-03",
+    "results_max_date": "2026-06-13"
+  },
+  "missing": {
+    "trifecta_filled": 151,
+    "trifecta_missing": 1838,
+    "trifecta_fill_rate": 0.0759175465057818,
+    "result_all_filled": 1271,
+    "result_all_missing": 718,
+    "result_all_fill_rate": 0.6390145801910507,
+    "one_winner_only_rows": 1398,
+    "one_winner_only_rate": 0.702865761689291,
+    "complete_result_rows": 151,
+    "complete_result_rate": 0.0759175465057818
+  },
+  "joined": {
+    "complete_joined_races": 0,
+    "complete_joined_boat_rows": 0
+  },
+  "venues": {
+    "races_top": [
+      [
+        "びわこ",
+        120
+      ],
+      [
+        "丸亀",
+        72
+      ],
+      [
+        "徳山",
+        72
+      ],
+      [
+        "唐津",
+        72
+      ],
+      [
+        "桐生",
+        60
+      ],
+      [
+        "戸田",
+        60
+      ],
+      [
+        "平和島",
+        60
+      ],
+      [
+        "浜名湖",
+        60
+      ],
+      [
+        "蒲郡",
+        60
+      ],
+      [
+        "常滑",
+        60
+      ],
+      [
+        "津",
+        60
+      ],
+      [
+        "三国",
+        60
+      ],
+      [
+        "住之江",
+        60
+      ],
+      [
+        "尼崎",
+        60
+      ],
+      [
+        "児島",
+        60
+      ],
+      [
+        "若松",
+        60
+      ],
+      [
+        "宮島",
+        48
+      ],
+      [
+        "多摩川",
+        48
+      ],
+      [
+        "芦屋",
+        48
+      ],
+      [
+        "鳴門",
+        48
+      ],
+      [
+        "大村",
+        48
+      ],
+      [
+        "江戸川",
+        36
+      ],
+      [
+        "下関",
+        36
+      ],
+      [
+        "福岡",
+        36
+      ]
+    ],
+    "results_top": [
+      [
+        "蒲郡",
+        165
+      ],
+      [
+        "児島",
+        142
+      ],
+      [
+        "平和島",
+        131
+      ],
+      [
+        "びわこ",
+        127
+      ],
+      [
+        "尼崎",
+        120
+      ],
+      [
+        "鳴門",
+        104
+      ],
+      [
+        "唐津",
+        96
+      ],
+      [
+        "三国",
+        77
+      ],
+      [
+        "若松",
+        75
+      ],
+      [
+        "桐生",
+        72
+      ],
+      [
+        "丸亀",
+        72
+      ],
+      [
+        "徳山",
+        72
+      ],
+      [
+        "福岡",
+        72
+      ],
+      [
+        "宮島",
+        72
+      ],
+      [
+        "芦屋",
+        72
+      ],
+      [
+        "多摩川",
+        60
+      ],
+      [
+        "浜名湖",
+        60
+      ],
+      [
+        "津",
+        60
+      ],
+      [
+        "大村",
+        60
+      ],
+      [
+        "常滑",
+        60
+      ],
+      [
+        "下関",
+        60
+      ],
+      [
+        "住之江",
+        59
+      ],
+      [
+        "江戸川",
+        53
+      ],
+      [
+        "戸田",
+        48
+      ]
+    ],
+    "joined_top": []
+  },
+  "corrs_top": [],
+  "lane_stats": [],
+  "bins": {
+    "national_win_rate": [],
+    "motor_place2_rate": [],
+    "avg_st": [],
+    "exhibition_time": [],
+    "local_win_rate": []
+  },
+  "boat_columns": [
+    "id",
+    "race_id",
+    "player_id",
+    "lane",
+    "motor_no",
+    "boat_no",
+    "motor_ratio",
+    "boat_ratio",
+    "exhibition_time",
+    "start_timing",
+    "odds_win",
+    "created_at",
+    "motor_dashfoot",
+    "motor_extfoot",
+    "motor_eval",
+    "entry_course",
+    "avg_st",
+    "national_win_rate",
+    "national_place2_rate",
+    "national_place3_rate",
+    "local_win_rate",
+    "local_place2_rate",
+    "motor_place2_rate",
+    "f_count",
+    "age",
+    "weight",
+    "is_local",
+    "motor_dashfoot_score",
+    "motor_extfoot_score",
+    "motor_rank_letter",
+    "motor_rank_order",
+    "c1_races",
+    "c1_win_rate",
+    "c1_tricast_rate",
+    "c2_races",
+    "c2_win_rate",
+    "c2_tricast_rate",
+    "c3_races",
+    "c3_win_rate",
+    "c3_tricast_rate",
+    "c4_races",
+    "c4_win_rate",
+    "c4_tricast_rate",
+    "c5_races",
+    "c5_win_rate",
+    "c5_tricast_rate",
+    "c6_races",
+    "c6_win_rate",
+    "c6_tricast_rate",
+    "local5y_races",
+    "local5y_win_rate",
+    "local5y_tricast_rate",
+    "today_st",
+    "today_st_rank",
+    "exhibition_st",
+    "standard_st",
+    "st_advantage_rank",
+    "exhibition_1lap",
+    "exhibition_turning",
+    "exhibition_straight",
+    "nige_count",
+    "sashi_count",
+    "makuri_count",
+    "makurisashi_count",
+    "nigiri_rate",
+    "nigiri_occurrence",
+    "c1_nige",
+    "c1_sashi",
+    "c1_makuri",
+    "c1_makurizashi",
+    "c2_nige",
+    "c2_sashi",
+    "c2_makuri",
+    "c2_makurizashi",
+    "c3_nige",
+    "c3_sashi",
+    "c3_makuri",
+    "c3_makurizashi",
+    "c4_nige",
+    "c4_sashi",
+    "c4_makuri",
+    "c4_makurizashi",
+    "c5_nige",
+    "c5_sashi",
+    "c5_makuri",
+    "c5_makurizashi",
+    "c6_nige",
+    "c6_sashi",
+    "c6_makuri",
+    "c6_makurizashi",
+    "c1_place2_rate",
+    "c2_place2_rate",
+    "c3_place2_rate",
+    "c4_place2_rate",
+    "c5_place2_rate",
+    "c6_place2_rate",
+    "season_st",
+    "lap1_time",
+    "turn_time",
+    "deashi",
+    "nobashi",
+    "course1y_st",
+    "course1y_st_rank",
+    "local5y_place2_rate",
+    "local5y_sashi",
+    "local5y_makuri",
+    "local5y_makurizashi",
+    "general1y_races",
+    "general1y_win_rate",
+    "general1y_place2_rate",
+    "general1y_tricast_rate",
+    "general1y_sashi",
+    "general1y_makuri",
+    "general1y_makurizashi",
+    "escape1y_place2_rate",
+    "escape1y_tricast_rate",
+    "gen_rate",
+    "hit_rate"
+  ],
+  "result_columns": [
+    "race_key",
+    "venue",
+    "date",
+    "race_no",
+    "winner_course",
+    "winner_lane",
+    "created_at",
+    "place2_lane",
+    "place3_lane",
+    "trifecta_result",
+    "exacta_result",
+    "result_all"
+  ]
+}

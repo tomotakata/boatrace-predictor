@@ -1,0 +1,1417 @@
+{
+  "results": {
+    "びわこ": [
+      {
+        "race_no": 1,
+        "actual": "1-3-2",
+        "honsen_12": [
+          "1-3-2",
+          "1-3-4",
+          "1-2-3",
+          "1-2-4",
+          "1-4-3",
+          "1-4-2",
+          "3-1-2",
+          "3-1-4",
+          "3-2-1",
+          "3-2-4",
+          "3-4-1",
+          "3-4-2"
+        ],
+        "head": [
+          1,
+          3
+        ],
+        "exacta_top": [
+          "1-3",
+          "1-2"
+        ],
+        "box": [
+          1,
+          3,
+          2,
+          4
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      },
+      {
+        "race_no": 2,
+        "actual": "5-3-1",
+        "honsen_12": [
+          "3-2-1",
+          "3-2-5",
+          "3-1-2",
+          "3-1-5",
+          "3-5-1",
+          "3-5-2",
+          "2-3-1",
+          "2-3-5",
+          "2-1-3",
+          "2-1-5",
+          "2-5-1",
+          "2-5-3"
+        ],
+        "head": [
+          3,
+          2
+        ],
+        "exacta_top": [
+          "3-2",
+          "2-3"
+        ],
+        "box": [
+          3,
+          2,
+          1,
+          5
+        ],
+        "attack_type": "3コース γ (捲差)",
+        "trifecta_hit": false,
+        "head_hit": false,
+        "head2_hit": false,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 3,
+        "actual": "5-1-3",
+        "honsen_12": [
+          "5-1-2",
+          "5-1-3",
+          "5-2-1",
+          "5-2-3",
+          "5-3-1",
+          "5-3-2",
+          "1-5-2",
+          "1-5-3",
+          "1-2-5",
+          "1-3-5",
+          "1-2-3",
+          "1-3-2"
+        ],
+        "head": [
+          5,
+          1
+        ],
+        "exacta_top": [
+          "5-1",
+          "1-5"
+        ],
+        "box": [
+          5,
+          1,
+          2,
+          3
+        ],
+        "attack_type": "5コース ε (捲差)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      },
+      {
+        "race_no": 4,
+        "actual": "1-3-2",
+        "honsen_12": [
+          "1-2-4",
+          "1-2-3",
+          "1-4-2",
+          "1-4-3",
+          "1-3-2",
+          "1-3-4",
+          "2-1-4",
+          "2-1-3",
+          "2-4-1",
+          "2-4-3",
+          "2-3-1",
+          "2-3-4"
+        ],
+        "head": [
+          1,
+          2
+        ],
+        "exacta_top": [
+          "1-2",
+          "2-1"
+        ],
+        "box": [
+          1,
+          2,
+          4,
+          3
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 5,
+        "actual": "3-1-5",
+        "honsen_12": [
+          "3-5-2",
+          "3-5-1",
+          "3-2-5",
+          "3-2-1",
+          "3-1-5",
+          "3-1-2",
+          "5-3-2",
+          "5-3-1",
+          "5-2-3",
+          "5-2-1",
+          "5-1-3",
+          "5-1-2"
+        ],
+        "head": [
+          3,
+          5
+        ],
+        "exacta_top": [
+          "3-5",
+          "3-2"
+        ],
+        "box": [
+          3,
+          5,
+          2,
+          1
+        ],
+        "attack_type": "3コース γ (捲差)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 6,
+        "actual": "1-4-3",
+        "honsen_12": [
+          "1-4-2",
+          "1-4-3",
+          "1-2-4",
+          "1-2-3",
+          "1-3-4",
+          "1-3-2",
+          "4-1-2",
+          "4-1-3",
+          "4-2-1",
+          "4-2-3",
+          "4-3-1",
+          "4-3-2"
+        ],
+        "head": [
+          1,
+          4
+        ],
+        "exacta_top": [
+          "1-4",
+          "1-2"
+        ],
+        "box": [
+          1,
+          4,
+          2,
+          3
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      },
+      {
+        "race_no": 7,
+        "actual": "1-3-2",
+        "honsen_12": [
+          "1-3-2",
+          "1-3-5",
+          "1-2-3",
+          "1-2-5",
+          "1-5-3",
+          "1-5-2",
+          "3-1-2",
+          "3-1-5",
+          "3-2-1",
+          "3-2-5",
+          "3-5-1",
+          "3-5-2"
+        ],
+        "head": [
+          1,
+          3
+        ],
+        "exacta_top": [
+          "1-3",
+          "3-1"
+        ],
+        "box": [
+          1,
+          3,
+          2,
+          5
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      },
+      {
+        "race_no": 8,
+        "actual": "6-1-2",
+        "honsen_12": [
+          "2-1-3",
+          "2-1-6",
+          "2-3-1",
+          "2-3-6",
+          "2-6-1",
+          "2-6-3",
+          "1-2-3",
+          "1-2-6",
+          "1-3-2",
+          "1-3-6",
+          "1-6-2",
+          "1-6-3"
+        ],
+        "head": [
+          2,
+          1
+        ],
+        "exacta_top": [
+          "2-1",
+          "1-2"
+        ],
+        "box": [
+          2,
+          1,
+          3,
+          6
+        ],
+        "attack_type": "2コース β (捲)",
+        "trifecta_hit": false,
+        "head_hit": false,
+        "head2_hit": false,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 9,
+        "actual": "1-2-5",
+        "honsen_12": [
+          "1-2-4",
+          "1-2-6",
+          "1-4-2",
+          "1-4-6",
+          "1-6-2",
+          "1-6-4",
+          "2-1-4",
+          "2-1-6",
+          "2-4-1",
+          "2-4-6",
+          "2-6-1",
+          "2-6-4"
+        ],
+        "head": [
+          1,
+          2
+        ],
+        "exacta_top": [
+          "1-2",
+          "2-1"
+        ],
+        "box": [
+          1,
+          2,
+          4,
+          6
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": false,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": false
+      },
+      {
+        "race_no": 10,
+        "actual": "1-6-2",
+        "honsen_12": [
+          "4-1-2",
+          "4-1-3",
+          "4-2-1",
+          "4-2-3",
+          "4-3-1",
+          "4-3-2",
+          "1-4-2",
+          "1-4-3",
+          "1-2-4",
+          "1-2-3",
+          "1-3-4",
+          "1-3-2"
+        ],
+        "head": [
+          4,
+          1
+        ],
+        "exacta_top": [
+          "4-1",
+          "1-4"
+        ],
+        "box": [
+          4,
+          1,
+          2,
+          3
+        ],
+        "attack_type": "4コース ε (捲)",
+        "trifecta_hit": false,
+        "head_hit": false,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": false
+      },
+      {
+        "race_no": 11,
+        "actual": "1-2-5",
+        "honsen_12": [
+          "2-1-3",
+          "2-1-5",
+          "2-3-1",
+          "2-3-5",
+          "2-5-1",
+          "2-5-3",
+          "1-2-3",
+          "1-2-5",
+          "1-3-2",
+          "1-3-5",
+          "1-5-2",
+          "1-5-3"
+        ],
+        "head": [
+          2,
+          1
+        ],
+        "exacta_top": [
+          "2-1",
+          "1-2"
+        ],
+        "box": [
+          2,
+          1,
+          3,
+          5
+        ],
+        "attack_type": "2コース β (捲)",
+        "trifecta_hit": true,
+        "head_hit": false,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      },
+      {
+        "race_no": 12,
+        "actual": "1-4-3",
+        "honsen_12": [
+          "1-2-4",
+          "1-2-6",
+          "1-4-2",
+          "1-4-6",
+          "1-6-2",
+          "1-6-4",
+          "2-1-4",
+          "2-1-6",
+          "2-4-1",
+          "2-4-6",
+          "2-6-1",
+          "2-6-4"
+        ],
+        "head": [
+          1,
+          2
+        ],
+        "exacta_top": [
+          "1-2",
+          "2-1"
+        ],
+        "box": [
+          1,
+          2,
+          4,
+          6
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": false,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": false
+      }
+    ],
+    "丸亀": [
+      {
+        "race_no": 1,
+        "actual": "1-2-4",
+        "honsen_12": [
+          "3-1-2",
+          "3-1-4",
+          "3-2-1",
+          "3-2-4",
+          "3-4-1",
+          "3-4-2",
+          "1-3-2",
+          "1-3-4",
+          "1-2-3",
+          "1-2-4",
+          "1-4-3",
+          "1-4-2"
+        ],
+        "head": [
+          3,
+          1
+        ],
+        "exacta_top": [
+          "3-1",
+          "1-3"
+        ],
+        "box": [
+          3,
+          1,
+          2,
+          4
+        ],
+        "attack_type": "3コース ε (捲)",
+        "trifecta_hit": true,
+        "head_hit": false,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 2,
+        "actual": "1-2-5",
+        "honsen_12": [
+          "4-2-3",
+          "4-2-1",
+          "4-3-2",
+          "4-3-1",
+          "2-4-3",
+          "2-4-1",
+          "2-3-4",
+          "2-3-1",
+          "4-1-2",
+          "4-1-3",
+          "2-1-4",
+          "2-1-3"
+        ],
+        "head": [
+          4,
+          2
+        ],
+        "exacta_top": [
+          "4-2",
+          "4-3"
+        ],
+        "box": [
+          4,
+          2,
+          3,
+          1
+        ],
+        "attack_type": "4コース ε (捲)",
+        "trifecta_hit": false,
+        "head_hit": false,
+        "head2_hit": false,
+        "exacta_hit": false,
+        "box_hit": false
+      },
+      {
+        "race_no": 3,
+        "actual": "3-6-5",
+        "honsen_12": [
+          "3-1-2",
+          "3-1-6",
+          "3-2-1",
+          "3-2-6",
+          "3-6-1",
+          "3-6-2",
+          "1-3-2",
+          "1-3-6",
+          "1-2-3",
+          "1-2-6",
+          "1-6-3",
+          "1-6-2"
+        ],
+        "head": [
+          3,
+          1
+        ],
+        "exacta_top": [
+          "3-1",
+          "1-3"
+        ],
+        "box": [
+          3,
+          1,
+          2,
+          6
+        ],
+        "attack_type": "3コース ε (捲差)",
+        "trifecta_hit": false,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": false
+      },
+      {
+        "race_no": 4,
+        "actual": "2-4-5",
+        "honsen_12": [
+          "3-2-1",
+          "3-2-5",
+          "3-1-2",
+          "3-1-5",
+          "3-5-2",
+          "3-5-1",
+          "2-3-1",
+          "2-3-5",
+          "2-1-3",
+          "2-1-5",
+          "2-5-3",
+          "2-5-1"
+        ],
+        "head": [
+          3,
+          2
+        ],
+        "exacta_top": [
+          "3-2",
+          "2-3"
+        ],
+        "box": [
+          3,
+          2,
+          1,
+          5
+        ],
+        "attack_type": "3コース ε (捲差)",
+        "trifecta_hit": false,
+        "head_hit": false,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": false
+      },
+      {
+        "race_no": 5,
+        "actual": "1-4-2",
+        "honsen_12": [
+          "4-1-5",
+          "4-1-2",
+          "4-5-1",
+          "4-5-2",
+          "4-2-1",
+          "4-2-5",
+          "1-4-5",
+          "1-4-2",
+          "1-5-4",
+          "1-5-2",
+          "1-2-4",
+          "1-2-5"
+        ],
+        "head": [
+          4,
+          1
+        ],
+        "exacta_top": [
+          "4-1",
+          "1-4"
+        ],
+        "box": [
+          4,
+          1,
+          5,
+          2
+        ],
+        "attack_type": "4コース ε (捲)",
+        "trifecta_hit": true,
+        "head_hit": false,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      },
+      {
+        "race_no": 6,
+        "actual": "2-1-5",
+        "honsen_12": [
+          "3-2-5",
+          "3-2-1",
+          "3-5-2",
+          "3-5-1",
+          "3-1-2",
+          "3-1-5",
+          "2-3-5",
+          "2-3-1",
+          "2-5-3",
+          "2-5-1",
+          "2-1-3",
+          "2-1-5"
+        ],
+        "head": [
+          3,
+          2
+        ],
+        "exacta_top": [
+          "3-2",
+          "2-3"
+        ],
+        "box": [
+          3,
+          2,
+          5,
+          1
+        ],
+        "attack_type": "3コース ε (捲)",
+        "trifecta_hit": true,
+        "head_hit": false,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 7,
+        "actual": "2-4-3",
+        "honsen_12": [
+          "2-4-1",
+          "2-4-3",
+          "2-1-4",
+          "2-1-3",
+          "2-3-4",
+          "2-3-1",
+          "4-2-1",
+          "4-2-3",
+          "4-1-2",
+          "4-1-3",
+          "4-3-2",
+          "4-3-1"
+        ],
+        "head": [
+          2,
+          4
+        ],
+        "exacta_top": [
+          "2-4",
+          "2-1"
+        ],
+        "box": [
+          2,
+          4,
+          1,
+          3
+        ],
+        "attack_type": "2コース β (捲)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      },
+      {
+        "race_no": 8,
+        "actual": "1-4-5",
+        "honsen_12": [
+          "1-4-3",
+          "1-4-2",
+          "1-3-4",
+          "1-3-2",
+          "1-2-4",
+          "1-2-3",
+          "4-1-3",
+          "4-1-2",
+          "4-3-1",
+          "4-3-2",
+          "4-2-1",
+          "4-2-3"
+        ],
+        "head": [
+          1,
+          4
+        ],
+        "exacta_top": [
+          "1-4",
+          "1-3"
+        ],
+        "box": [
+          1,
+          4,
+          3,
+          2
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": false,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": false
+      },
+      {
+        "race_no": 9,
+        "actual": "6-1-2",
+        "honsen_12": [
+          "1-5-6",
+          "1-5-2",
+          "1-6-5",
+          "1-6-2",
+          "1-2-5",
+          "1-2-6",
+          "5-1-6",
+          "5-1-2",
+          "5-6-1",
+          "5-6-2",
+          "5-2-1",
+          "5-2-6"
+        ],
+        "head": [
+          1,
+          5
+        ],
+        "exacta_top": [
+          "1-5",
+          "5-1"
+        ],
+        "box": [
+          1,
+          5,
+          6,
+          2
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": false,
+        "head_hit": false,
+        "head2_hit": false,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 10,
+        "actual": "1-2-3",
+        "honsen_12": [
+          "1-5-3",
+          "1-5-2",
+          "1-3-5",
+          "1-3-2",
+          "1-2-5",
+          "1-2-3",
+          "5-1-3",
+          "5-1-2",
+          "5-3-1",
+          "5-3-2",
+          "5-2-1",
+          "5-2-3"
+        ],
+        "head": [
+          1,
+          5
+        ],
+        "exacta_top": [
+          "1-5",
+          "5-1"
+        ],
+        "box": [
+          1,
+          5,
+          3,
+          2
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 11,
+        "actual": "1-2-4",
+        "honsen_12": [
+          "1-2-4",
+          "1-2-3",
+          "1-4-2",
+          "1-4-3",
+          "1-3-2",
+          "1-3-4",
+          "2-1-4",
+          "2-1-3",
+          "2-4-1",
+          "2-4-3",
+          "2-3-1",
+          "2-3-4"
+        ],
+        "head": [
+          1,
+          2
+        ],
+        "exacta_top": [
+          "1-2",
+          "1-4"
+        ],
+        "box": [
+          1,
+          2,
+          4,
+          3
+        ],
+        "attack_type": "1コース α (逃)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      },
+      {
+        "race_no": 12,
+        "actual": "1-3-4",
+        "honsen_12": [
+          "1-2-3",
+          "1-2-4",
+          "1-3-2",
+          "1-3-4",
+          "1-4-2",
+          "1-4-3",
+          "2-1-3",
+          "2-1-4",
+          "2-3-1",
+          "2-3-4",
+          "2-4-1",
+          "2-4-3"
+        ],
+        "head": [
+          1,
+          2
+        ],
+        "exacta_top": [
+          "1-2",
+          "1-3"
+        ],
+        "box": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "attack_type": "1コース α (逃)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      }
+    ],
+    "福岡": [
+      {
+        "race_no": 1,
+        "actual": "1-2-3",
+        "honsen_12": [
+          "1-2-3",
+          "1-2-4",
+          "1-3-2",
+          "1-3-4",
+          "1-4-2",
+          "1-4-3",
+          "2-1-3",
+          "2-1-4",
+          "2-3-1",
+          "2-3-4",
+          "2-4-1",
+          "2-4-3"
+        ],
+        "head": [
+          1,
+          2
+        ],
+        "exacta_top": [
+          "1-2",
+          "2-1"
+        ],
+        "box": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      },
+      {
+        "race_no": 2,
+        "actual": "4-5-6",
+        "honsen_12": [
+          "4-2-1",
+          "4-2-5",
+          "4-1-2",
+          "4-1-5",
+          "4-5-2",
+          "4-5-1",
+          "2-4-1",
+          "2-4-5",
+          "2-1-4",
+          "2-1-5",
+          "2-5-4",
+          "2-5-1"
+        ],
+        "head": [
+          4,
+          2
+        ],
+        "exacta_top": [
+          "4-2",
+          "2-4"
+        ],
+        "box": [
+          4,
+          2,
+          1,
+          5
+        ],
+        "attack_type": "4コース ε (捲)",
+        "trifecta_hit": false,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": false
+      },
+      {
+        "race_no": 3,
+        "actual": "3-4-5",
+        "honsen_12": [
+          "1-3-2",
+          "1-3-4",
+          "1-2-3",
+          "1-2-4",
+          "1-4-3",
+          "1-4-2",
+          "3-1-2",
+          "3-1-4",
+          "3-2-1",
+          "3-2-4",
+          "3-4-1",
+          "3-4-2"
+        ],
+        "head": [
+          1,
+          3
+        ],
+        "exacta_top": [
+          "1-3",
+          "3-1"
+        ],
+        "box": [
+          1,
+          3,
+          2,
+          4
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": false,
+        "head_hit": false,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": false
+      },
+      {
+        "race_no": 4,
+        "actual": "1-4-2",
+        "honsen_12": [
+          "2-4-1",
+          "2-4-3",
+          "2-1-4",
+          "2-1-3",
+          "2-3-4",
+          "2-3-1",
+          "4-2-1",
+          "4-2-3",
+          "4-1-2",
+          "4-1-3",
+          "4-3-2",
+          "4-3-1"
+        ],
+        "head": [
+          2,
+          4
+        ],
+        "exacta_top": [
+          "2-4",
+          "2-1"
+        ],
+        "box": [
+          2,
+          4,
+          1,
+          3
+        ],
+        "attack_type": "2コース β (捲)",
+        "trifecta_hit": false,
+        "head_hit": false,
+        "head2_hit": false,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 5,
+        "actual": "3-2-4",
+        "honsen_12": [
+          "4-3-1",
+          "4-3-2",
+          "4-1-3",
+          "4-1-2",
+          "4-2-3",
+          "4-2-1",
+          "3-4-1",
+          "3-4-2",
+          "3-1-4",
+          "3-1-2",
+          "3-2-4",
+          "3-2-1"
+        ],
+        "head": [
+          4,
+          3
+        ],
+        "exacta_top": [
+          "4-3",
+          "4-1"
+        ],
+        "box": [
+          4,
+          3,
+          1,
+          2
+        ],
+        "attack_type": "4コース γ (捲)",
+        "trifecta_hit": true,
+        "head_hit": false,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 6,
+        "actual": "2-1-4",
+        "honsen_12": [
+          "2-6-1",
+          "2-6-3",
+          "2-1-6",
+          "2-1-3",
+          "2-3-6",
+          "2-3-1",
+          "6-2-1",
+          "6-2-3",
+          "6-1-2",
+          "6-1-3",
+          "6-3-2",
+          "6-3-1"
+        ],
+        "head": [
+          2,
+          6
+        ],
+        "exacta_top": [
+          "2-6",
+          "2-1"
+        ],
+        "box": [
+          2,
+          6,
+          1,
+          3
+        ],
+        "attack_type": "2コース β (捲)",
+        "trifecta_hit": false,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": false
+      },
+      {
+        "race_no": 7,
+        "actual": "1-2-5",
+        "honsen_12": [
+          "1-2-3",
+          "1-2-4",
+          "1-3-2",
+          "1-3-4",
+          "1-4-2",
+          "1-4-3",
+          "2-1-3",
+          "2-1-4",
+          "2-3-1",
+          "2-3-4",
+          "2-4-1",
+          "2-4-3"
+        ],
+        "head": [
+          1,
+          2
+        ],
+        "exacta_top": [
+          "1-2",
+          "2-1"
+        ],
+        "box": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": false,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": false
+      },
+      {
+        "race_no": 8,
+        "actual": "4-1-2",
+        "honsen_12": [
+          "1-2-4",
+          "1-2-3",
+          "1-4-2",
+          "1-4-3",
+          "1-3-2",
+          "1-3-4",
+          "2-1-4",
+          "2-1-3",
+          "2-4-1",
+          "2-4-3",
+          "2-3-1",
+          "2-3-4"
+        ],
+        "head": [
+          1,
+          2
+        ],
+        "exacta_top": [
+          "1-2",
+          "2-1"
+        ],
+        "box": [
+          1,
+          2,
+          4,
+          3
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": false,
+        "head_hit": false,
+        "head2_hit": false,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 9,
+        "actual": "1-2-4",
+        "honsen_12": [
+          "1-2-4",
+          "1-2-5",
+          "1-4-2",
+          "1-4-5",
+          "1-5-2",
+          "1-5-4",
+          "2-1-4",
+          "2-1-5",
+          "2-4-1",
+          "2-4-5",
+          "2-5-1",
+          "2-5-4"
+        ],
+        "head": [
+          1,
+          2
+        ],
+        "exacta_top": [
+          "1-2",
+          "2-1"
+        ],
+        "box": [
+          1,
+          2,
+          4,
+          5
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      },
+      {
+        "race_no": 10,
+        "actual": "4-1-6",
+        "honsen_12": [
+          "1-6-4",
+          "1-6-2",
+          "1-4-6",
+          "1-4-2",
+          "1-2-6",
+          "1-2-4",
+          "6-1-4",
+          "6-1-2",
+          "6-4-1",
+          "6-4-2",
+          "6-2-1",
+          "6-2-4"
+        ],
+        "head": [
+          1,
+          6
+        ],
+        "exacta_top": [
+          "1-6",
+          "1-4"
+        ],
+        "box": [
+          1,
+          6,
+          4,
+          2
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": false,
+        "head_hit": false,
+        "head2_hit": false,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 11,
+        "actual": "3-4-1",
+        "honsen_12": [
+          "3-2-1",
+          "3-2-4",
+          "3-1-2",
+          "3-1-4",
+          "3-4-2",
+          "3-4-1",
+          "2-3-1",
+          "2-3-4",
+          "2-1-3",
+          "2-1-4",
+          "2-4-3",
+          "2-4-1"
+        ],
+        "head": [
+          3,
+          2
+        ],
+        "exacta_top": [
+          "3-2",
+          "2-3"
+        ],
+        "box": [
+          3,
+          2,
+          1,
+          4
+        ],
+        "attack_type": "3コース ε (捲)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": false,
+        "box_hit": true
+      },
+      {
+        "race_no": 12,
+        "actual": "1-2-3",
+        "honsen_12": [
+          "1-2-3",
+          "1-2-4",
+          "1-3-2",
+          "1-3-4",
+          "1-4-2",
+          "1-4-3",
+          "2-1-3",
+          "2-1-4",
+          "2-3-1",
+          "2-3-4",
+          "2-4-1",
+          "2-4-3"
+        ],
+        "head": [
+          1,
+          2
+        ],
+        "exacta_top": [
+          "1-2",
+          "2-1"
+        ],
+        "box": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "attack_type": "1コース δ (逃)",
+        "trifecta_hit": true,
+        "head_hit": true,
+        "head2_hit": true,
+        "exacta_hit": true,
+        "box_hit": true
+      }
+    ]
+  },
+  "totals": {
+    "trifecta_hit": 19,
+    "head_hit": 21,
+    "exacta_hit": 16,
+    "total": 36,
+    "head2_hit": 29,
+    "box_hit": 25
+  },
+  "type_analysis": {
+    "counts": {
+      "δ": 16,
+      "γ": 3,
+      "ε": 10,
+      "β": 5,
+      "α": 2
+    },
+    "hits": {
+      "δ": {
+        "tri": 8,
+        "head": 12
+      },
+      "γ": {
+        "tri": 2,
+        "head": 1
+      },
+      "ε": {
+        "tri": 5,
+        "head": 4
+      },
+      "β": {
+        "tri": 2,
+        "head": 2
+      },
+      "α": {
+        "tri": 2,
+        "head": 2
+      }
+    }
+  }
+}

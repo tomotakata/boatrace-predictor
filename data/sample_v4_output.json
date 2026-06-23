@@ -1,0 +1,425 @@
+{
+  "venue": "びわこ",
+  "date": "2026-06-23",
+  "race_no": 1,
+  "race_id": 5669,
+  "day": "不明",
+  "status": "scheduled",
+  "entries": [
+    {
+      "course": 1,
+      "frame": 1,
+      "name": "池本  輝明",
+      "class": "B1",
+      "age": 59,
+      "branch": "不明",
+      "f_count": "0",
+      "motor": {
+        "deashi": 3.0,
+        "nobi": 3.0,
+        "eval": "C",
+        "motor_no": 43,
+        "place2_rate": 34.21
+      },
+      "start": {
+        "average_st": 0.18,
+        "course_average_st": 0.16,
+        "current_st": 0.18,
+        "current_order": 5,
+        "standard_st": 0.17,
+        "st_advantage_rank": 4
+      },
+      "course_stats": {
+        "starts": 0,
+        "win_rate": 46.42,
+        "top2_rate": 67.85,
+        "top3_rate": 67.85,
+        "nige": 0,
+        "makuri": 0,
+        "makuri_sashi": 0,
+        "sashi": 0
+      },
+      "local_stats": {
+        "starts": 4,
+        "win_rate": 50.0,
+        "top2_rate": 50.0,
+        "top3_rate": 75.0,
+        "sashi": 0,
+        "makuri": 0,
+        "makuri_sashi": 0
+      },
+      "national": {
+        "win_rate": 4.63,
+        "top2_rate": 24.75,
+        "top3_rate": 0.0
+      },
+      "ippan": {
+        "starts": 28,
+        "win_rate": 46.42,
+        "top2_rate": 67.85,
+        "top3_rate": 67.85,
+        "sashi": 0,
+        "makuri": 0,
+        "makuri_sashi": 0
+      },
+      "escape1y": {
+        "top2_rate": 0.0,
+        "top3_rate": 0.0
+      },
+      "exhibition": {
+        "time": 0.0,
+        "st": 0.0,
+        "lap1": 0.0,
+        "turning": 0.0,
+        "straight": 0.0
+      }
+    },
+    {
+      "course": 2,
+      "frame": 2,
+      "name": "長野 壮志郎",
+      "class": "A1",
+      "age": 45,
+      "branch": "不明",
+      "f_count": "0",
+      "motor": {
+        "deashi": 4.0,
+        "nobi": 4.0,
+        "eval": "B",
+        "motor_no": 20,
+        "place2_rate": 27.91
+      },
+      "start": {
+        "average_st": 0.17,
+        "course_average_st": 0.17,
+        "current_st": 0.14,
+        "current_order": 4,
+        "standard_st": 0.17,
+        "st_advantage_rank": 3
+      },
+      "course_stats": {
+        "starts": 0,
+        "win_rate": 29.41,
+        "top2_rate": 50.0,
+        "top3_rate": 73.52,
+        "nige": 0,
+        "makuri": 3,
+        "makuri_sashi": 0,
+        "sashi": 7
+      },
+      "local_stats": {
+        "starts": 3,
+        "win_rate": 0.0,
+        "top2_rate": 33.33,
+        "top3_rate": 66.66,
+        "sashi": 0,
+        "makuri": 0,
+        "makuri_sashi": 0
+      },
+      "national": {
+        "win_rate": 6.03,
+        "top2_rate": 45.05,
+        "top3_rate": 0.0
+      },
+      "ippan": {
+        "starts": 34,
+        "win_rate": 29.41,
+        "top2_rate": 50.0,
+        "top3_rate": 73.52,
+        "sashi": 7,
+        "makuri": 3,
+        "makuri_sashi": 0
+      },
+      "escape1y": {
+        "top2_rate": 35.29,
+        "top3_rate": 58.82
+      },
+      "exhibition": {
+        "time": 0.0,
+        "st": 0.0,
+        "lap1": 0.0,
+        "turning": 0.0,
+        "straight": 0.0
+      }
+    },
+    {
+      "course": 3,
+      "frame": 3,
+      "name": "吉田   光",
+      "class": "B1",
+      "age": 51,
+      "branch": "佐賀",
+      "f_count": "0",
+      "motor": {
+        "deashi": 3.0,
+        "nobi": 4.0,
+        "eval": "C",
+        "motor_no": 29,
+        "place2_rate": 52.27
+      },
+      "start": {
+        "average_st": 0.16,
+        "course_average_st": 0.16,
+        "current_st": 0.24,
+        "current_order": 4,
+        "standard_st": 0.17,
+        "st_advantage_rank": 2
+      },
+      "course_stats": {
+        "starts": 0,
+        "win_rate": 6.25,
+        "top2_rate": 25.0,
+        "top3_rate": 46.87,
+        "nige": 0,
+        "makuri": 1,
+        "makuri_sashi": 0,
+        "sashi": 0
+      },
+      "local_stats": {
+        "starts": 7,
+        "win_rate": 0.0,
+        "top2_rate": 14.28,
+        "top3_rate": 42.85,
+        "sashi": 0,
+        "makuri": 0,
+        "makuri_sashi": 0
+      },
+      "national": {
+        "win_rate": 4.14,
+        "top2_rate": 14.04,
+        "top3_rate": 0.0
+      },
+      "ippan": {
+        "starts": 32,
+        "win_rate": 6.25,
+        "top2_rate": 25.0,
+        "top3_rate": 46.87,
+        "sashi": 0,
+        "makuri": 1,
+        "makuri_sashi": 0
+      },
+      "escape1y": {
+        "top2_rate": 20.0,
+        "top3_rate": 50.0
+      },
+      "exhibition": {
+        "time": 0.0,
+        "st": 0.0,
+        "lap1": 0.0,
+        "turning": 0.0,
+        "straight": 0.0
+      }
+    },
+    {
+      "course": 4,
+      "frame": 4,
+      "name": "山崎  義明",
+      "class": "B1",
+      "age": 59,
+      "branch": "不明",
+      "f_count": "0",
+      "motor": {
+        "deashi": 4.0,
+        "nobi": 3.0,
+        "eval": "C",
+        "motor_no": 67,
+        "place2_rate": 36.96
+      },
+      "start": {
+        "average_st": 0.15,
+        "course_average_st": 0.14,
+        "current_st": 0.14,
+        "current_order": 4,
+        "standard_st": 0.17,
+        "st_advantage_rank": 1
+      },
+      "course_stats": {
+        "starts": 0,
+        "win_rate": 9.3,
+        "top2_rate": 34.88,
+        "top3_rate": 58.13,
+        "nige": 0,
+        "makuri": 2,
+        "makuri_sashi": 2,
+        "sashi": 0
+      },
+      "local_stats": {
+        "starts": 4,
+        "win_rate": 0.0,
+        "top2_rate": 0.0,
+        "top3_rate": 25.0,
+        "sashi": 0,
+        "makuri": 0,
+        "makuri_sashi": 0
+      },
+      "national": {
+        "win_rate": 5.41,
+        "top2_rate": 37.86,
+        "top3_rate": 0.0
+      },
+      "ippan": {
+        "starts": 43,
+        "win_rate": 9.3,
+        "top2_rate": 34.88,
+        "top3_rate": 58.13,
+        "sashi": 0,
+        "makuri": 2,
+        "makuri_sashi": 2
+      },
+      "escape1y": {
+        "top2_rate": 23.08,
+        "top3_rate": 50.0
+      },
+      "exhibition": {
+        "time": 0.0,
+        "st": 0.0,
+        "lap1": 0.0,
+        "turning": 0.0,
+        "straight": 0.0
+      }
+    },
+    {
+      "course": 5,
+      "frame": 5,
+      "name": "三原   司",
+      "class": "B1",
+      "age": 40,
+      "branch": "不明",
+      "f_count": "0",
+      "motor": {
+        "deashi": 3.0,
+        "nobi": 3.0,
+        "eval": "C",
+        "motor_no": 32,
+        "place2_rate": 34.09
+      },
+      "start": {
+        "average_st": 0.18,
+        "course_average_st": 0.17,
+        "current_st": 0.18,
+        "current_order": 4,
+        "standard_st": 0.17,
+        "st_advantage_rank": 4
+      },
+      "course_stats": {
+        "starts": 0,
+        "win_rate": 2.77,
+        "top2_rate": 8.33,
+        "top3_rate": 27.77,
+        "nige": 0,
+        "makuri": 0,
+        "makuri_sashi": 1,
+        "sashi": 0
+      },
+      "local_stats": {
+        "starts": 8,
+        "win_rate": 0.0,
+        "top2_rate": 25.0,
+        "top3_rate": 25.0,
+        "sashi": 0,
+        "makuri": 0,
+        "makuri_sashi": 0
+      },
+      "national": {
+        "win_rate": 4.8,
+        "top2_rate": 26.37,
+        "top3_rate": 0.0
+      },
+      "ippan": {
+        "starts": 36,
+        "win_rate": 2.77,
+        "top2_rate": 8.33,
+        "top3_rate": 27.77,
+        "sashi": 0,
+        "makuri": 0,
+        "makuri_sashi": 1
+      },
+      "escape1y": {
+        "top2_rate": 4.76,
+        "top3_rate": 28.57
+      },
+      "exhibition": {
+        "time": 0.0,
+        "st": 0.0,
+        "lap1": 0.0,
+        "turning": 0.0,
+        "straight": 0.0
+      }
+    },
+    {
+      "course": 6,
+      "frame": 6,
+      "name": "田中   結",
+      "class": "B2",
+      "age": 17,
+      "branch": "不明",
+      "f_count": "0",
+      "motor": {
+        "deashi": 2.0,
+        "nobi": 3.0,
+        "eval": "D",
+        "motor_no": 70,
+        "place2_rate": 36.84
+      },
+      "start": {
+        "average_st": 0.0,
+        "course_average_st": 0.21,
+        "current_st": 0.21,
+        "current_order": 4,
+        "standard_st": 0.0,
+        "st_advantage_rank": 0
+      },
+      "course_stats": {
+        "starts": 0,
+        "win_rate": 0.0,
+        "top2_rate": 0.0,
+        "top3_rate": 0.0,
+        "nige": 0,
+        "makuri": 0,
+        "makuri_sashi": 0,
+        "sashi": 0
+      },
+      "local_stats": {
+        "starts": 5,
+        "win_rate": 0.0,
+        "top2_rate": 0.0,
+        "top3_rate": 0.0,
+        "sashi": 0,
+        "makuri": 0,
+        "makuri_sashi": 0
+      },
+      "national": {
+        "win_rate": 1.33,
+        "top2_rate": 0.0,
+        "top3_rate": 0.0
+      },
+      "ippan": {
+        "starts": 29,
+        "win_rate": 0.0,
+        "top2_rate": 0.0,
+        "top3_rate": 0.0,
+        "sashi": 0,
+        "makuri": 0,
+        "makuri_sashi": 0
+      },
+      "escape1y": {
+        "top2_rate": 0.0,
+        "top3_rate": 0.0
+      },
+      "exhibition": {
+        "time": 0.0,
+        "st": 0.0,
+        "lap1": 0.0,
+        "turning": 0.0,
+        "straight": 0.0
+      }
+    }
+  ],
+  "environment": {
+    "weather": "不明",
+    "wind_speed_mps": 0.0,
+    "wind_direction": "不明",
+    "wind_effect": "不明",
+    "wave_height_cm": 0.0
+  }
+}

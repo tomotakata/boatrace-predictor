@@ -1,0 +1,201 @@
+{
+  "step": "4-2",
+  "target": "is_win",
+  "folds": 5,
+  "seed": 42,
+  "takeout": 0.25,
+  "oof_races": 1401,
+  "n_boats": 27564,
+  "leak_free": true,
+  "consistency_eval_roi_trifecta": {
+    "roi": 0.6115631691648822,
+    "trifecta_hit": 0.07209136331192005
+  },
+  "strategies": {
+    "A: 3連単 上位3艇その順(既存BL)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.6115631691648822,
+      "hit_rate": 0.07209136331192005,
+      "avg_points_per_race": 1.0,
+      "spent": 140100.0,
+      "returned": 85680.0,
+      "net": -54420.0,
+      "profit_std_per_race": 256.06633738357476,
+      "profit_mean_per_race": -38.84368308351178
+    },
+    "B: 3連単 1着固定×2-3着F(上位4)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.8037830121341899,
+      "hit_rate": 0.32548179871520344,
+      "avg_points_per_race": 6.0,
+      "spent": 840600.0,
+      "returned": 675660.0,
+      "net": -164940.0,
+      "profit_std_per_race": 1043.9385498872277,
+      "profit_mean_per_race": -117.73019271948608
+    },
+    "C: 3連単 上位3艇BOX(6点)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.7203069236259815,
+      "hit_rate": 0.21199143468950749,
+      "avg_points_per_race": 6.0,
+      "spent": 840600.0,
+      "returned": 605490.0,
+      "net": -235110.0,
+      "profit_std_per_race": 1482.9271833238624,
+      "profit_mean_per_race": -167.81584582441113
+    },
+    "D: 3連複 上位3艇(1点)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.7512491077801571,
+      "hit_rate": 0.21199143468950749,
+      "avg_points_per_race": 1.0,
+      "spent": 140100.0,
+      "returned": 105250.0,
+      "net": -34850.0,
+      "profit_std_per_race": 171.16430269125723,
+      "profit_mean_per_race": -24.875089221984297
+    },
+    "E: 3連複 上位4艇BOX(4点)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.7946109921484654,
+      "hit_rate": 0.529621698786581,
+      "avg_points_per_race": 4.0,
+      "spent": 560400.0,
+      "returned": 445300.0,
+      "net": -115100.0,
+      "profit_std_per_race": 584.4987176617774,
+      "profit_mean_per_race": -82.15560314061385
+    },
+    "F: 2連単 上位2艇その順(1点)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.6476088508208423,
+      "hit_rate": 0.1827266238401142,
+      "avg_points_per_race": 1.0,
+      "spent": 140100.0,
+      "returned": 90730.0,
+      "net": -49370.0,
+      "profit_std_per_race": 162.43099868464765,
+      "profit_mean_per_race": -35.23911491791578
+    },
+    "G: EV>0 3連単(最大6点)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.5352456077447114,
+      "hit_rate": 0.10635260528194147,
+      "avg_points_per_race": 5.972162740899358,
+      "spent": 836700.0,
+      "returned": 447840.0,
+      "net": -388860.0,
+      "profit_std_per_race": 1627.7822722662438,
+      "profit_mean_per_race": -277.55888650963595
+    },
+    "H: EV>50 3連単(最大4点)": {
+      "n_races": 1401,
+      "wagered_races": 1390,
+      "roi": 0.5118875807064185,
+      "hit_rate": 0.06138472519628837,
+      "avg_points_per_race": 3.7587437544610993,
+      "spent": 526600.0,
+      "returned": 269560.0,
+      "net": -257040.0,
+      "profit_std_per_race": 1244.788749108358,
+      "profit_mean_per_race": -183.46895074946468
+    },
+    "I: PL確率上位3点 3連単": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.7551034975017844,
+      "hit_rate": 0.20057102069950036,
+      "avg_points_per_race": 3.0,
+      "spent": 420300.0,
+      "returned": 317370.0,
+      "net": -102930.0,
+      "profit_std_per_race": 745.0258276517712,
+      "profit_mean_per_race": -73.46895074946467
+    },
+    "J: PL確率上位6点 3連単": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.7737211515584107,
+      "hit_rate": 0.331192005710207,
+      "avg_points_per_race": 6.0,
+      "spent": 840600.0,
+      "returned": 650390.0,
+      "net": -190210.0,
+      "profit_std_per_race": 1025.515590853022,
+      "profit_mean_per_race": -135.7673090649536
+    },
+    "参考: 1号頭固定 3連単(1点)": {
+      "n_races": 1401,
+      "wagered_races": 1401,
+      "roi": 0.7689507494646681,
+      "hit_rate": 0.07066381156316917,
+      "avg_points_per_race": 1.0,
+      "spent": 140100.0,
+      "returned": 107730.0,
+      "net": -32370.0,
+      "profit_std_per_race": 358.484789706786,
+      "profit_mean_per_race": -23.10492505353319
+    }
+  },
+  "recommended": {
+    "name": "B: 3連単 1着固定×2-3着F(上位4)",
+    "n_races": 1401,
+    "wagered_races": 1401,
+    "roi": 0.8037830121341899,
+    "hit_rate": 0.32548179871520344,
+    "avg_points_per_race": 6.0,
+    "spent": 840600.0,
+    "returned": 675660.0,
+    "net": -164940.0,
+    "profit_std_per_race": 1043.9385498872277,
+    "profit_mean_per_race": -117.73019271948608
+  },
+  "baseline_A": {
+    "n_races": 1401,
+    "wagered_races": 1401,
+    "roi": 0.6115631691648822,
+    "hit_rate": 0.07209136331192005,
+    "avg_points_per_race": 1.0,
+    "spent": 140100.0,
+    "returned": 85680.0,
+    "net": -54420.0,
+    "profit_std_per_race": 256.06633738357476,
+    "profit_mean_per_race": -38.84368308351178
+  },
+  "lane1": {
+    "n_races": 1401,
+    "wagered_races": 1401,
+    "roi": 0.7689507494646681,
+    "hit_rate": 0.07066381156316917,
+    "avg_points_per_race": 1.0,
+    "spent": 140100.0,
+    "returned": 107730.0,
+    "net": -32370.0,
+    "profit_std_per_race": 358.484789706786,
+    "profit_mean_per_race": -23.10492505353319
+  },
+  "payout_availability": {
+    "trifecta_payout": "DB実値100% (3連単・順序)",
+    "exacta_payout": "DB実値100% (2連単・順序)",
+    "trifecta_place_payout": "DB実値100% (3連複・順不同, resultは実着順集合で判定)",
+    "unavailable": [
+      "2連複",
+      "拡連複",
+      "単勝",
+      "複勝"
+    ],
+    "ev_payout_approx": "est_odds=odds_k/market_P, market_P=枠番着順頻度(母集団), odds_k=47.3(実払戻の中央値校正). 全オッズ盤がDBに無いため近似"
+  },
+  "ev_calibration": {
+    "odds_k_median": 47.323340471092074,
+    "n_market_patterns": 118
+  }
+}

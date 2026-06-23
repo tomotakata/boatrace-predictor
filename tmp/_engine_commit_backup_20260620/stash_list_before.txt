@@ -1,0 +1,2 @@
+stash@{0}: WIP on main: 3c44cde fix: Bフォーマット本線を1号頭に固定
+stash@{1}: WIP on main: 174ae35 deploy: 結果取得改善を反映

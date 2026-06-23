@@ -1,0 +1,3372 @@
+{
+  "step": "4-4",
+  "target": "is_win",
+  "folds": 5,
+  "seed": 42,
+  "train_frac": 0.6,
+  "train_months": [
+    "2026-04",
+    "2026-05"
+  ],
+  "test_month": "2026-06",
+  "oof_races": 1401,
+  "n_boats": 27564,
+  "leak_free": true,
+  "metrics": [
+    "p_top",
+    "gap",
+    "neg_entropy",
+    "variance",
+    "approx_ev"
+  ],
+  "metric_labels": {
+    "p_top": "本命P(win)絶対値",
+    "gap": "1位-2位P差(突出度)",
+    "neg_entropy": "−エントロピー(荒れの低さ)",
+    "variance": "P分散(集中度)",
+    "approx_ev": "近似EV最大(参考・近似限界)"
+  },
+  "coverages": [
+    1.0,
+    0.9,
+    0.8,
+    0.7,
+    0.6,
+    0.5,
+    0.4,
+    0.3,
+    0.2,
+    0.1
+  ],
+  "ev_calibration": {
+    "odds_k_median": 47.323340471092074,
+    "n_market_patterns": 118
+  },
+  "baseline_full_coverage": {
+    "A_3連単上位3その順": {
+      "wagered_races": 1401,
+      "roi": 0.6607423269093504,
+      "hit_rate": 0.07851534618129907,
+      "spent": 140100.0,
+      "returned": 92570.0,
+      "net": -47530.0,
+      "profit_std_per_race": 265.4857080073695,
+      "profit_mean_per_race": -33.92576730906495
+    },
+    "D_3連複上位3(1点)": {
+      "wagered_races": 1401,
+      "roi": 0.7663811563169165,
+      "hit_rate": 0.22555317630264096,
+      "spent": 140100.0,
+      "returned": 107370.0,
+      "net": -32730.0,
+      "profit_std_per_race": 163.67013343928178,
+      "profit_mean_per_race": -23.361884368308353
+    },
+    "E_3連複上位4BOX(4点)": {
+      "wagered_races": 1401,
+      "roi": 0.7534975017844396,
+      "hit_rate": 0.5224839400428265,
+      "spent": 560400.0,
+      "returned": 422260.0,
+      "net": -138140.0,
+      "profit_std_per_race": 542.2485095234213,
+      "profit_mean_per_race": -98.60099928622412
+    },
+    "I_PL上位3点3連単": {
+      "wagered_races": 1401,
+      "roi": 0.7850582916964073,
+      "hit_rate": 0.21484653818700927,
+      "spent": 420300.0,
+      "returned": 329960.0,
+      "net": -90340.0,
+      "profit_std_per_race": 675.3123103450795,
+      "profit_mean_per_race": -64.4825124910778
+    }
+  },
+  "insample_curves": {
+    "A_3連単上位3その順": {
+      "p_top": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.07851534618129907,
+          "roi": 0.6607423269093504,
+          "net": -47530.0,
+          "profit_std_per_race": 265.4857080073695
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.08564631245043616,
+          "roi": 0.7084853291038858,
+          "net": -36760.0,
+          "profit_std_per_race": 269.6350987810667
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.08831400535236396,
+          "roi": 0.6938447814451383,
+          "net": -34320.0,
+          "profit_std_per_race": 261.15176732181516
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.09072375127421,
+          "roi": 0.6939857288481142,
+          "net": -30020.0,
+          "profit_std_per_race": 259.5843638495005
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.09631391200951249,
+          "roi": 0.7297265160523186,
+          "net": -22730.0,
+          "profit_std_per_race": 264.479315652155
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.09857142857142857,
+          "roi": 0.7534285714285714,
+          "net": -17260.0,
+          "profit_std_per_race": 272.32705577324197
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.1,
+          "roi": 0.7883928571428571,
+          "net": -11850.0,
+          "profit_std_per_race": 287.4647355258004
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.09761904761904762,
+          "roi": 0.7016666666666667,
+          "net": -12530.0,
+          "profit_std_per_race": 230.46685710145442
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.08928571428571429,
+          "roi": 0.6614285714285715,
+          "net": -9480.0,
+          "profit_std_per_race": 227.7344497256327
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.11428571428571428,
+          "roi": 0.8478571428571429,
+          "net": -2130.0,
+          "profit_std_per_race": 258.34768338462817
+        }
+      ],
+      "gap": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.07851534618129907,
+          "roi": 0.6607423269093504,
+          "net": -47530.0,
+          "profit_std_per_race": 265.4857080073695
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.08247422680412371,
+          "roi": 0.6738302934179223,
+          "net": -41130.0,
+          "profit_std_per_race": 264.71052223952165
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.0847457627118644,
+          "roi": 0.6695807314897413,
+          "net": -37040.0,
+          "profit_std_per_race": 258.84311173701394
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.08766564729867482,
+          "roi": 0.6749235474006117,
+          "net": -31890.0,
+          "profit_std_per_race": 257.7563966874404
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.089179548156956,
+          "roi": 0.681807372175981,
+          "net": -26760.0,
+          "profit_std_per_race": 258.3182519606546
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.09,
+          "roi": 0.6748571428571428,
+          "net": -22760.0,
+          "profit_std_per_race": 241.70222192117444
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.08571428571428572,
+          "roi": 0.6423214285714286,
+          "net": -20030.0,
+          "profit_std_per_race": 234.21475882734424
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.09047619047619047,
+          "roi": 0.7228571428571429,
+          "net": -11640.0,
+          "profit_std_per_race": 255.2310144717905
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.08571428571428572,
+          "roi": 0.6296428571428572,
+          "net": -10370.0,
+          "profit_std_per_race": 220.95118758657617
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.10714285714285714,
+          "roi": 0.8185714285714286,
+          "net": -2540.0,
+          "profit_std_per_race": 252.91891900733074
+        }
+      ],
+      "neg_entropy": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.07851534618129907,
+          "roi": 0.6607423269093504,
+          "net": -47530.0,
+          "profit_std_per_race": 265.4857080073695
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.08485329103885805,
+          "roi": 0.7090404440919905,
+          "net": -36690.0,
+          "profit_std_per_race": 274.3753187420338
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.0936663693131133,
+          "roi": 0.7621766280107047,
+          "net": -26660.0,
+          "profit_std_per_race": 277.4693896053294
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.09785932721712538,
+          "roi": 0.7504587155963303,
+          "net": -24480.0,
+          "profit_std_per_race": 265.11614006413765
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.10582639714625446,
+          "roi": 0.8019024970273484,
+          "net": -16660.0,
+          "profit_std_per_race": 273.9962105157456
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.11142857142857143,
+          "roi": 0.8167142857142857,
+          "net": -12830.0,
+          "profit_std_per_race": 272.6602921181579
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.1125,
+          "roi": 0.8033928571428571,
+          "net": -11010.0,
+          "profit_std_per_race": 268.11123602938403
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.11666666666666667,
+          "roi": 0.7738095238095238,
+          "net": -9500.0,
+          "profit_std_per_race": 232.70315777227478
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.11785714285714285,
+          "roi": 0.7971428571428572,
+          "net": -5680.0,
+          "profit_std_per_race": 238.38726852732378
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.12142857142857143,
+          "roi": 0.8371428571428572,
+          "net": -2280.0,
+          "profit_std_per_race": 252.1602179373346
+        }
+      ],
+      "variance": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.07851534618129907,
+          "roi": 0.6607423269093504,
+          "net": -47530.0,
+          "profit_std_per_race": 265.4857080073695
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.08564631245043616,
+          "roi": 0.7150674068199842,
+          "net": -35930.0,
+          "profit_std_per_race": 275.05278448461354
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.09099018733273863,
+          "roi": 0.731935771632471,
+          "net": -30050.0,
+          "profit_std_per_race": 270.6070207390927
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.09582059123343527,
+          "roi": 0.7259938837920489,
+          "net": -26880.0,
+          "profit_std_per_race": 259.89347688397845
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.10107015457788347,
+          "roi": 0.7615933412604042,
+          "net": -20050.0,
+          "profit_std_per_race": 268.1373072071889
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.10285714285714286,
+          "roi": 0.7828571428571428,
+          "net": -15200.0,
+          "profit_std_per_race": 276.3050665404425
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.1,
+          "roi": 0.73875,
+          "net": -14630.0,
+          "profit_std_per_race": 266.21718862210446
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.1,
+          "roi": 0.699047619047619,
+          "net": -12640.0,
+          "profit_std_per_race": 228.08622111613528
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.09642857142857143,
+          "roi": 0.6896428571428571,
+          "net": -8690.0,
+          "profit_std_per_race": 229.38582316121227
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.11428571428571428,
+          "roi": 0.8478571428571429,
+          "net": -2130.0,
+          "profit_std_per_race": 258.34768338462817
+        }
+      ],
+      "approx_ev": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.07851534618129907,
+          "roi": 0.6607423269093504,
+          "net": -47530.0,
+          "profit_std_per_race": 265.4857080073695
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.07375099127676447,
+          "roi": 0.6452022204599525,
+          "net": -44740.0,
+          "profit_std_per_race": 266.6945056525016
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.0695807314897413,
+          "roi": 0.639964317573595,
+          "net": -40360.0,
+          "profit_std_per_race": 272.66664119741455
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.06422018348623854,
+          "roi": 0.608053007135576,
+          "net": -38450.0,
+          "profit_std_per_race": 269.05782645747115
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.059453032104637336,
+          "roi": 0.5906064209274673,
+          "net": -34430.0,
+          "profit_std_per_race": 272.93175965933517
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.05285714285714286,
+          "roi": 0.511,
+          "net": -34230.0,
+          "profit_std_per_race": 242.71574497164963
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.05,
+          "roi": 0.49375,
+          "net": -28350.0,
+          "profit_std_per_race": 235.8430215282433
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.04285714285714286,
+          "roi": 0.41214285714285714,
+          "net": -24690.0,
+          "profit_std_per_race": 209.27585300999544
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.02857142857142857,
+          "roi": 0.2907142857142857,
+          "net": -19860.0,
+          "profit_std_per_race": 187.90155640110908
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.05,
+          "roi": 0.4764285714285714,
+          "net": -7330.0,
+          "profit_std_per_race": 233.6652389157425
+        }
+      ]
+    },
+    "D_3連複上位3(1点)": {
+      "p_top": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.22555317630264096,
+          "roi": 0.7663811563169165,
+          "net": -32730.0,
+          "profit_std_per_race": 163.67013343928178
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.23473433782712133,
+          "roi": 0.7881046788263283,
+          "net": -26720.0,
+          "profit_std_per_race": 162.02675419081683
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.24264049955396966,
+          "roi": 0.8059768064228368,
+          "net": -21750.0,
+          "profit_std_per_race": 159.83795193182573
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.24464831804281345,
+          "roi": 0.8155963302752294,
+          "net": -18090.0,
+          "profit_std_per_race": 161.6508670405203
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.2437574316290131,
+          "roi": 0.810820451843044,
+          "net": -15910.0,
+          "profit_std_per_race": 161.7844727497908
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.22714285714285715,
+          "roi": 0.7645714285714286,
+          "net": -16480.0,
+          "profit_std_per_race": 160.05362366713098
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.24107142857142858,
+          "roi": 0.8294642857142858,
+          "net": -9550.0,
+          "profit_std_per_race": 168.70958983273775
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.2357142857142857,
+          "roi": 0.8247619047619048,
+          "net": -7360.0,
+          "profit_std_per_race": 168.69262525095445
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.22857142857142856,
+          "roi": 0.7667857142857143,
+          "net": -6530.0,
+          "profit_std_per_race": 155.32467230459753
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.2785714285714286,
+          "roi": 0.905,
+          "net": -1330.0,
+          "profit_std_per_race": 166.1897581509935
+        }
+      ],
+      "gap": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.22555317630264096,
+          "roi": 0.7663811563169165,
+          "net": -32730.0,
+          "profit_std_per_race": 163.67013343928178
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.2315622521808089,
+          "roi": 0.7828707375099128,
+          "net": -27380.0,
+          "profit_std_per_race": 165.53687936307182
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.23639607493309545,
+          "roi": 0.7932203389830509,
+          "net": -23180.0,
+          "profit_std_per_race": 163.241814648526
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.23649337410805302,
+          "roi": 0.7977573904179409,
+          "net": -19840.0,
+          "profit_std_per_race": 161.33032152327237
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.2318668252080856,
+          "roi": 0.7958382877526754,
+          "net": -17170.0,
+          "profit_std_per_race": 163.60735144235596
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.22142857142857142,
+          "roi": 0.7724285714285715,
+          "net": -15930.0,
+          "profit_std_per_race": 163.87006487844357
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.22142857142857142,
+          "roi": 0.7858928571428572,
+          "net": -11990.0,
+          "profit_std_per_race": 165.85269677657107
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.21428571428571427,
+          "roi": 0.7830952380952381,
+          "net": -9110.0,
+          "profit_std_per_race": 169.4086336270743
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.225,
+          "roi": 0.7703571428571429,
+          "net": -6430.0,
+          "profit_std_per_race": 160.38613721330182
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.24285714285714285,
+          "roi": 0.8064285714285714,
+          "net": -2710.0,
+          "profit_std_per_race": 155.49097683644223
+        }
+      ],
+      "neg_entropy": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.22555317630264096,
+          "roi": 0.7663811563169165,
+          "net": -32730.0,
+          "profit_std_per_race": 163.67013343928178
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.23711340206185566,
+          "roi": 0.7812053925455987,
+          "net": -27590.0,
+          "profit_std_per_race": 156.96528677199365
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.24977698483496877,
+          "roi": 0.815700267618198,
+          "net": -20660.0,
+          "profit_std_per_race": 159.13357276570147
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.25076452599388377,
+          "roi": 0.8011213047910296,
+          "net": -19510.0,
+          "profit_std_per_race": 155.9087257015954
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.25802615933412604,
+          "roi": 0.8256837098692034,
+          "net": -14660.0,
+          "profit_std_per_race": 159.0535784161353
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.26285714285714284,
+          "roi": 0.8437142857142857,
+          "net": -10940.0,
+          "profit_std_per_race": 161.680564379146
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.26607142857142857,
+          "roi": 0.8510714285714286,
+          "net": -8340.0,
+          "profit_std_per_race": 159.73635405292828
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.2714285714285714,
+          "roi": 0.84,
+          "net": -6720.0,
+          "profit_std_per_race": 152.0798662357569
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.275,
+          "roi": 0.8557142857142858,
+          "net": -4040.0,
+          "profit_std_per_race": 154.60443270567922
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.29285714285714287,
+          "roi": 0.9178571428571428,
+          "net": -1150.0,
+          "profit_std_per_race": 163.6165720612103
+        }
+      ],
+      "variance": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.22555317630264096,
+          "roi": 0.7663811563169165,
+          "net": -32730.0,
+          "profit_std_per_race": 163.67013343928178
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.23711340206185566,
+          "roi": 0.7809674861221253,
+          "net": -27620.0,
+          "profit_std_per_race": 156.90057110242617
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.24442462087421946,
+          "roi": 0.807850133809099,
+          "net": -21540.0,
+          "profit_std_per_race": 159.68721989080368
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.24770642201834864,
+          "roi": 0.8095820591233436,
+          "net": -18680.0,
+          "profit_std_per_race": 159.1583984801652
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.24851367419738407,
+          "roi": 0.8092746730083235,
+          "net": -16040.0,
+          "profit_std_per_race": 158.91904689719436
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.24571428571428572,
+          "roi": 0.8102857142857143,
+          "net": -13280.0,
+          "profit_std_per_race": 161.84145428947002
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.24821428571428572,
+          "roi": 0.8291071428571428,
+          "net": -9570.0,
+          "profit_std_per_race": 164.42407896152844
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.24523809523809523,
+          "roi": 0.830952380952381,
+          "net": -7100.0,
+          "profit_std_per_race": 166.9785856706253
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.2357142857142857,
+          "roi": 0.7853571428571429,
+          "net": -6010.0,
+          "profit_std_per_race": 156.30669991646394
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.2857142857142857,
+          "roi": 0.9285714285714286,
+          "net": -1000.0,
+          "profit_std_per_race": 167.22647481051266
+        }
+      ],
+      "approx_ev": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.22555317630264096,
+          "roi": 0.7663811563169165,
+          "net": -32730.0,
+          "profit_std_per_race": 163.67013343928178
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.2212529738302934,
+          "roi": 0.7547184773988898,
+          "net": -30930.0,
+          "profit_std_per_race": 163.77932448796506
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.21231043710972347,
+          "roi": 0.7292595896520964,
+          "net": -30350.0,
+          "profit_std_per_race": 162.35500044112402
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.2018348623853211,
+          "roi": 0.6977573904179408,
+          "net": -29650.0,
+          "profit_std_per_race": 160.43693735889542
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.19500594530321047,
+          "roi": 0.6871581450653983,
+          "net": -26310.0,
+          "profit_std_per_race": 161.8289237755514
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.18857142857142858,
+          "roi": 0.6401428571428571,
+          "net": -25190.0,
+          "profit_std_per_race": 145.59640820306197
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.19464285714285715,
+          "roi": 0.6730357142857143,
+          "net": -18310.0,
+          "profit_std_per_race": 150.01326365678196
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.1880952380952381,
+          "roi": 0.6390476190476191,
+          "net": -15160.0,
+          "profit_std_per_race": 145.595625510523
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.175,
+          "roi": 0.6028571428571429,
+          "net": -11120.0,
+          "profit_std_per_race": 141.28210308832902
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.15714285714285714,
+          "roi": 0.5271428571428571,
+          "net": -6620.0,
+          "profit_std_per_race": 127.49701877266922
+        }
+      ]
+    },
+    "E_3連複上位4BOX(4点)": {
+      "p_top": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.5224839400428265,
+          "roi": 0.7534975017844396,
+          "net": -138140.0,
+          "profit_std_per_race": 542.2485095234213
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.5265662172878668,
+          "roi": 0.7487509912767645,
+          "net": -126730.0,
+          "profit_std_per_race": 553.0278455716658
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.5245316681534344,
+          "roi": 0.7344112399643176,
+          "net": -119090.0,
+          "profit_std_per_race": 561.6910190808582
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.5300713557594292,
+          "roi": 0.7358562691131498,
+          "net": -103650.0,
+          "profit_std_per_race": 572.1507440543515
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.5231866825208086,
+          "roi": 0.7295778834720571,
+          "net": -90970.0,
+          "profit_std_per_race": 593.4170983252485
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.5142857142857142,
+          "roi": 0.7545357142857143,
+          "net": -68730.0,
+          "profit_std_per_race": 638.359947563333
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.5196428571428572,
+          "roi": 0.7741964285714286,
+          "net": -50580.0,
+          "profit_std_per_race": 665.4466037166011
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.5238095238095238,
+          "roi": 0.7901785714285714,
+          "net": -35250.0,
+          "profit_std_per_race": 685.2167155571378
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.525,
+          "roi": 0.7879464285714286,
+          "net": -23750.0,
+          "profit_std_per_race": 751.8044746556412
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.5571428571428572,
+          "roi": 0.9321428571428572,
+          "net": -3800.0,
+          "profit_std_per_race": 1002.9230747557616
+        }
+      ],
+      "gap": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.5224839400428265,
+          "roi": 0.7534975017844396,
+          "net": -138140.0,
+          "profit_std_per_race": 542.2485095234213
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.5154639175257731,
+          "roi": 0.7234734337827121,
+          "net": -139480.0,
+          "profit_std_per_race": 545.7647689648929
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.5191793041926851,
+          "roi": 0.724085637823372,
+          "net": -123720.0,
+          "profit_std_per_race": 553.957258376118
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.5198776758409785,
+          "roi": 0.7375637104994903,
+          "net": -102980.0,
+          "profit_std_per_race": 576.6134782730029
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.5148632580261593,
+          "roi": 0.7417954815695601,
+          "net": -86860.0,
+          "profit_std_per_race": 599.4791062454096
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.5114285714285715,
+          "roi": 0.76825,
+          "net": -64890.0,
+          "profit_std_per_race": 639.4292064020848
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.5035714285714286,
+          "roi": 0.7772321428571428,
+          "net": -49900.0,
+          "profit_std_per_race": 688.2259200958918
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.5119047619047619,
+          "roi": 0.814047619047619,
+          "net": -31240.0,
+          "profit_std_per_race": 737.3445583527597
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.5071428571428571,
+          "roi": 0.7852678571428572,
+          "net": -24050.0,
+          "profit_std_per_race": 778.200251463305
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.5214285714285715,
+          "roi": 0.92125,
+          "net": -4410.0,
+          "profit_std_per_race": 1007.4181462672644
+        }
+      ],
+      "neg_entropy": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.5224839400428265,
+          "roi": 0.7534975017844396,
+          "net": -138140.0,
+          "profit_std_per_race": 542.2485095234213
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.5297383029341792,
+          "roi": 0.7489690721649485,
+          "net": -126620.0,
+          "profit_std_per_race": 552.425396635372
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.5396966993755575,
+          "roi": 0.745249776984835,
+          "net": -114230.0,
+          "profit_std_per_race": 559.5514426378197
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.5443425076452599,
+          "roi": 0.7470183486238532,
+          "net": -99270.0,
+          "profit_std_per_race": 577.128206691879
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.5434007134363853,
+          "roi": 0.741884661117717,
+          "net": -86830.0,
+          "profit_std_per_race": 584.9243963157965
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.5514285714285714,
+          "roi": 0.7390357142857142,
+          "net": -73070.0,
+          "profit_std_per_race": 573.2631356131852
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.55,
+          "roi": 0.7411607142857143,
+          "net": -57980.0,
+          "profit_std_per_race": 610.145473411456
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.55,
+          "roi": 0.7489880952380953,
+          "net": -42170.0,
+          "profit_std_per_race": 651.7592149429408
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.5535714285714286,
+          "roi": 0.7990178571428571,
+          "net": -22510.0,
+          "profit_std_per_race": 756.5925889560809
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.5571428571428572,
+          "roi": 0.7882142857142858,
+          "net": -11860.0,
+          "profit_std_per_race": 928.313711489158
+        }
+      ],
+      "variance": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.5224839400428265,
+          "roi": 0.7534975017844396,
+          "net": -138140.0,
+          "profit_std_per_race": 542.2485095234213
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.5297383029341792,
+          "roi": 0.7515265662172879,
+          "net": -125330.0,
+          "profit_std_per_race": 553.0578465367474
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.5289919714540589,
+          "roi": 0.7448037466547726,
+          "net": -114430.0,
+          "profit_std_per_race": 565.0592297957933
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.5331294597349643,
+          "roi": 0.7438837920489296,
+          "net": -100500.0,
+          "profit_std_per_race": 581.3621815854074
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.5338882282996433,
+          "roi": 0.7412009512485137,
+          "net": -87060.0,
+          "profit_std_per_race": 596.3232390088612
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.5314285714285715,
+          "roi": 0.7436428571428572,
+          "net": -71780.0,
+          "profit_std_per_race": 612.8137373906478
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.5232142857142857,
+          "roi": 0.7474553571428572,
+          "net": -56570.0,
+          "profit_std_per_race": 621.3690527223918
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.5261904761904762,
+          "roi": 0.7727380952380952,
+          "net": -38180.0,
+          "profit_std_per_race": 677.8763340485037
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.525,
+          "roi": 0.785,
+          "net": -24080.0,
+          "profit_std_per_race": 754.4712434167767
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.5642857142857143,
+          "roi": 0.9335714285714286,
+          "net": -3720.0,
+          "profit_std_per_race": 1002.1282862192927
+        }
+      ],
+      "approx_ev": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.5224839400428265,
+          "roi": 0.7534975017844396,
+          "net": -138140.0,
+          "profit_std_per_race": 542.2485095234213
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.5265662172878668,
+          "roi": 0.7719666931007138,
+          "net": -115020.0,
+          "profit_std_per_race": 557.8695480892567
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.5191793041926851,
+          "roi": 0.7595673505798395,
+          "net": -107810.0,
+          "profit_std_per_race": 539.9751228505045
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.5045871559633027,
+          "roi": 0.7580020387359837,
+          "net": -94960.0,
+          "profit_std_per_race": 554.9816551498363
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.49108204518430437,
+          "roi": 0.7351367419738407,
+          "net": -89100.0,
+          "profit_std_per_race": 552.3010706421978
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.48428571428571426,
+          "roi": 0.7279285714285715,
+          "net": -76180.0,
+          "profit_std_per_race": 566.5643822053003
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.49107142857142855,
+          "roi": 0.7420535714285714,
+          "net": -57780.0,
+          "profit_std_per_race": 590.8014262466721
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.4928571428571429,
+          "roi": 0.7331547619047619,
+          "net": -44830.0,
+          "profit_std_per_race": 611.2501459547517
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.4857142857142857,
+          "roi": 0.6728571428571428,
+          "net": -36640.0,
+          "profit_std_per_race": 372.78581693262214
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.4714285714285714,
+          "roi": 0.5896428571428571,
+          "net": -22980.0,
+          "profit_std_per_race": 296.857314725648
+        }
+      ]
+    },
+    "I_PL上位3点3連単": {
+      "p_top": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.21484653818700927,
+          "roi": 0.7850582916964073,
+          "net": -90340.0,
+          "profit_std_per_race": 675.3123103450795
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.22997620935765264,
+          "roi": 0.7985725614591594,
+          "net": -76200.0,
+          "profit_std_per_race": 588.8374605276598
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.23907225691347012,
+          "roi": 0.7988105857865001,
+          "net": -67660.0,
+          "profit_std_per_race": 584.4124944477419
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.24566768603465852,
+          "roi": 0.8011892626571525,
+          "net": -58510.0,
+          "profit_std_per_race": 585.8548169919592
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.2544589774078478,
+          "roi": 0.8298454221165279,
+          "net": -42930.0,
+          "profit_std_per_race": 607.8737031579909
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.25,
+          "roi": 0.8028571428571428,
+          "net": -41400.0,
+          "profit_std_per_race": 617.3321468964958
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.26607142857142857,
+          "roi": 0.8805357142857143,
+          "net": -20070.0,
+          "profit_std_per_race": 667.0425205119374
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.2785714285714286,
+          "roi": 0.9253968253968254,
+          "net": -9400.0,
+          "profit_std_per_race": 704.9100230451893
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.2785714285714286,
+          "roi": 0.866904761904762,
+          "net": -11180.0,
+          "profit_std_per_race": 544.3862814852959
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.3357142857142857,
+          "roi": 0.8688095238095238,
+          "net": -5510.0,
+          "profit_std_per_race": 402.14640318152385
+        }
+      ],
+      "gap": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.21484653818700927,
+          "roi": 0.7850582916964073,
+          "net": -90340.0,
+          "profit_std_per_race": 675.3123103450795
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.2268041237113402,
+          "roi": 0.7893470790378007,
+          "net": -79690.0,
+          "profit_std_per_race": 589.0245303871013
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.23728813559322035,
+          "roi": 0.8111210228962236,
+          "net": -63520.0,
+          "profit_std_per_race": 594.2411124647666
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.23751274209989806,
+          "roi": 0.8056065239551478,
+          "net": -57210.0,
+          "profit_std_per_race": 605.797613895659
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.2413793103448276,
+          "roi": 0.7968688069758224,
+          "net": -51250.0,
+          "profit_std_per_race": 604.6031883371993
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.23857142857142857,
+          "roi": 0.7844285714285715,
+          "net": -45270.0,
+          "profit_std_per_race": 615.0119910893392
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.24107142857142858,
+          "roi": 0.8120833333333334,
+          "net": -31570.0,
+          "profit_std_per_race": 651.7533238037884
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.25476190476190474,
+          "roi": 0.8738888888888889,
+          "net": -15890.0,
+          "profit_std_per_race": 705.2158202809997
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.2642857142857143,
+          "roi": 0.8077380952380953,
+          "net": -16150.0,
+          "profit_std_per_race": 504.4473322056404
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.30714285714285716,
+          "roi": 0.9195238095238095,
+          "net": -3380.0,
+          "profit_std_per_race": 497.63725416682166
+        }
+      ],
+      "neg_entropy": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.21484653818700927,
+          "roi": 0.7850582916964073,
+          "net": -90340.0,
+          "profit_std_per_race": 675.3123103450795
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.22918318794607453,
+          "roi": 0.79299497753106,
+          "net": -78310.0,
+          "profit_std_per_race": 586.4196199513347
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.24353256021409456,
+          "roi": 0.815462384775498,
+          "net": -62060.0,
+          "profit_std_per_race": 589.4104757319321
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.25076452599388377,
+          "roi": 0.7984709480122324,
+          "net": -59310.0,
+          "profit_std_per_race": 577.1423270085585
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.26397146254458975,
+          "roi": 0.838525564803805,
+          "net": -40740.0,
+          "profit_std_per_race": 600.9333401089485
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.27714285714285714,
+          "roi": 0.8680476190476191,
+          "net": -27710.0,
+          "profit_std_per_race": 621.7300515004688
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.29642857142857143,
+          "roi": 0.9201190476190476,
+          "net": -13420.0,
+          "profit_std_per_race": 648.478162543596
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.3047619047619048,
+          "roi": 0.9406349206349206,
+          "net": -7480.0,
+          "profit_std_per_race": 691.9898581040194
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.30714285714285716,
+          "roi": 0.8610714285714286,
+          "net": -11670.0,
+          "profit_std_per_race": 482.3880738850522
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.35,
+          "roi": 0.8459523809523809,
+          "net": -6470.0,
+          "profit_std_per_race": 378.8808102389812
+        }
+      ],
+      "variance": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.21484653818700927,
+          "roi": 0.7850582916964073,
+          "net": -90340.0,
+          "profit_std_per_race": 675.3123103450795
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.22997620935765264,
+          "roi": 0.7920169177901136,
+          "net": -78680.0,
+          "profit_std_per_race": 584.0795352613516
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.23996431757359502,
+          "roi": 0.7961938745168005,
+          "net": -68540.0,
+          "profit_std_per_race": 579.2515229964262
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.24770642201834864,
+          "roi": 0.7978593272171254,
+          "net": -59490.0,
+          "profit_std_per_race": 582.299823122947
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.2568370986920333,
+          "roi": 0.8220372572334522,
+          "net": -44900.0,
+          "profit_std_per_race": 599.8238364602488
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.2671428571428571,
+          "roi": 0.8505238095238096,
+          "net": -31390.0,
+          "profit_std_per_race": 622.4712072678952
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.2714285714285714,
+          "roi": 0.8681547619047619,
+          "net": -22150.0,
+          "profit_std_per_race": 651.9407680052268
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.28095238095238095,
+          "roi": 0.9242063492063493,
+          "net": -9550.0,
+          "profit_std_per_race": 704.2800295176091
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.2857142857142857,
+          "roi": 0.8789285714285714,
+          "net": -10170.0,
+          "profit_std_per_race": 545.2525989701227
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.34285714285714286,
+          "roi": 0.8711904761904762,
+          "net": -5410.0,
+          "profit_std_per_race": 393.7189184363559
+        }
+      ],
+      "approx_ev": [
+        {
+          "coverage": 1.0,
+          "n_races_target": 1401,
+          "wagered_races": 1401,
+          "hit_rate": 0.21484653818700927,
+          "roi": 0.7850582916964073,
+          "net": -90340.0,
+          "profit_std_per_race": 675.3123103450795
+        },
+        {
+          "coverage": 0.9,
+          "n_races_target": 1261,
+          "wagered_races": 1261,
+          "hit_rate": 0.21015067406819984,
+          "roi": 0.7649484536082474,
+          "net": -88920.0,
+          "profit_std_per_race": 635.0509760855138
+        },
+        {
+          "coverage": 0.8,
+          "n_races_target": 1121,
+          "wagered_races": 1121,
+          "hit_rate": 0.19714540588760035,
+          "roi": 0.7440677966101695,
+          "net": -86070.0,
+          "profit_std_per_race": 650.8078247671265
+        },
+        {
+          "coverage": 0.7,
+          "n_races_target": 981,
+          "wagered_races": 981,
+          "hit_rate": 0.18450560652395515,
+          "roi": 0.7299014610941217,
+          "net": -79490.0,
+          "profit_std_per_race": 671.6277639857399
+        },
+        {
+          "coverage": 0.6,
+          "n_races_target": 841,
+          "wagered_races": 841,
+          "hit_rate": 0.1807372175980975,
+          "roi": 0.7260800634165676,
+          "net": -69110.0,
+          "profit_std_per_race": 688.2687080296569
+        },
+        {
+          "coverage": 0.5,
+          "n_races_target": 700,
+          "wagered_races": 700,
+          "hit_rate": 0.18,
+          "roi": 0.7395238095238095,
+          "net": -54700.0,
+          "profit_std_per_race": 720.4119711410028
+        },
+        {
+          "coverage": 0.4,
+          "n_races_target": 560,
+          "wagered_races": 560,
+          "hit_rate": 0.18392857142857144,
+          "roi": 0.8019047619047619,
+          "net": -33280.0,
+          "profit_std_per_race": 781.6806723140771
+        },
+        {
+          "coverage": 0.3,
+          "n_races_target": 420,
+          "wagered_races": 420,
+          "hit_rate": 0.18333333333333332,
+          "roi": 0.8266666666666667,
+          "net": -21840.0,
+          "profit_std_per_race": 846.5773106203253
+        },
+        {
+          "coverage": 0.2,
+          "n_races_target": 280,
+          "wagered_races": 280,
+          "hit_rate": 0.14642857142857144,
+          "roi": 0.7508333333333334,
+          "net": -20930.0,
+          "profit_std_per_race": 939.700907013959
+        },
+        {
+          "coverage": 0.1,
+          "n_races_target": 140,
+          "wagered_races": 140,
+          "hit_rate": 0.1357142857142857,
+          "roi": 0.49833333333333335,
+          "net": -21070.0,
+          "profit_std_per_race": 409.91344905270637
+        }
+      ]
+    }
+  },
+  "insample_best": {
+    "roi": 0.9406349206349206,
+    "strategy": "I_PL上位3点3連単",
+    "metric": "neg_entropy",
+    "row": {
+      "coverage": 0.3,
+      "n_races_target": 420,
+      "wagered_races": 420,
+      "hit_rate": 0.3047619047619048,
+      "roi": 0.9406349206349206,
+      "net": -7480.0,
+      "profit_std_per_race": 691.9898581040194
+    }
+  },
+  "time_split": {
+    "cutoff_date": "2026-06-08",
+    "n_train": 922,
+    "n_test": 479
+  },
+  "oos_results": {
+    "A_3連単上位3その順": {
+      "p_top": {
+        "selected_coverage_train": 0.5,
+        "threshold_value": 0.5348080516190669,
+        "train_roi": 0.7147505422993492,
+        "train_hit_rate": 0.09978308026030369,
+        "train_wagered": 461,
+        "test_roi": 0.8120300751879699,
+        "test_hit_rate": 0.09774436090225563,
+        "test_wagered": 266,
+        "test_coverage_realized": 0.5553235908141962,
+        "test_net": -5000.0,
+        "test_profit_std_per_race": 315.0475261771679
+      },
+      "gap": {
+        "selected_coverage_train": 0.3,
+        "threshold_value": 0.42487325889089883,
+        "train_roi": 0.7548736462093862,
+        "train_hit_rate": 0.09386281588447654,
+        "train_wagered": 277,
+        "test_roi": 0.6096590909090909,
+        "test_hit_rate": 0.07954545454545454,
+        "test_wagered": 176,
+        "test_coverage_realized": 0.3674321503131524,
+        "test_net": -6870.0,
+        "test_profit_std_per_race": 224.53912135667608
+      },
+      "neg_entropy": {
+        "selected_coverage_train": 0.5,
+        "threshold_value": -1.320622237090583,
+        "train_roi": 0.7635574837310195,
+        "train_hit_rate": 0.11062906724511931,
+        "train_wagered": 461,
+        "test_roi": 0.884115523465704,
+        "test_hit_rate": 0.10830324909747292,
+        "test_wagered": 277,
+        "test_coverage_realized": 0.5782881002087683,
+        "test_net": -3210.0,
+        "test_profit_std_per_race": 319.2698183453213
+      },
+      "variance": {
+        "selected_coverage_train": 0.5,
+        "threshold_value": 0.03048731482853831,
+        "train_roi": 0.7329718004338395,
+        "train_hit_rate": 0.1019522776572668,
+        "train_wagered": 461,
+        "test_roi": 0.848,
+        "test_hit_rate": 0.10181818181818182,
+        "test_wagered": 275,
+        "test_coverage_realized": 0.5741127348643006,
+        "test_net": -4180.0,
+        "test_profit_std_per_race": 317.590153270761
+      },
+      "approx_ev": {
+        "selected_coverage_train": 0.9,
+        "threshold_value": 152.2338466536929,
+        "train_roi": 0.645421686746988,
+        "train_hit_rate": 0.0746987951807229,
+        "train_wagered": 830,
+        "test_roi": 0.6728813559322034,
+        "test_hit_rate": 0.07506053268765134,
+        "test_wagered": 413,
+        "test_coverage_realized": 0.8622129436325678,
+        "test_net": -13510.0,
+        "test_profit_std_per_race": 286.14141135573146
+      }
+    },
+    "D_3連複上位3(1点)": {
+      "p_top": {
+        "selected_coverage_train": 0.1,
+        "threshold_value": 0.6572343468152343,
+        "train_roi": 0.9271739130434783,
+        "train_hit_rate": 0.2826086956521739,
+        "train_wagered": 92,
+        "test_roi": 0.7433734939759036,
+        "test_hit_rate": 0.2289156626506024,
+        "test_wagered": 83,
+        "test_coverage_realized": 0.1732776617954071,
+        "test_net": -2130.0,
+        "test_profit_std_per_race": 147.70691242631972
+      },
+      "gap": {
+        "selected_coverage_train": 0.3,
+        "threshold_value": 0.42487325889089883,
+        "train_roi": 0.8498194945848375,
+        "train_hit_rate": 0.22021660649819494,
+        "train_wagered": 277,
+        "test_roi": 0.7426136363636363,
+        "test_hit_rate": 0.2215909090909091,
+        "test_wagered": 176,
+        "test_coverage_realized": 0.3674321503131524,
+        "test_net": -4530.0,
+        "test_profit_std_per_race": 149.98681717208757
+      },
+      "neg_entropy": {
+        "selected_coverage_train": 0.1,
+        "threshold_value": -1.1151176645875203,
+        "train_roi": 0.9945652173913043,
+        "train_hit_rate": 0.31521739130434784,
+        "train_wagered": 92,
+        "test_roi": 0.8078947368421052,
+        "test_hit_rate": 0.2631578947368421,
+        "test_wagered": 76,
+        "test_coverage_realized": 0.15866388308977036,
+        "test_net": -1460.0,
+        "test_profit_std_per_race": 146.39315448022276
+      },
+      "variance": {
+        "selected_coverage_train": 0.1,
+        "threshold_value": 0.04962347533750163,
+        "train_roi": 0.9271739130434783,
+        "train_hit_rate": 0.2826086956521739,
+        "train_wagered": 92,
+        "test_roi": 0.7804878048780488,
+        "test_hit_rate": 0.24390243902439024,
+        "test_wagered": 82,
+        "test_coverage_realized": 0.17118997912317327,
+        "test_net": -1800.0,
+        "test_profit_std_per_race": 149.09842079605886
+      },
+      "approx_ev": {
+        "selected_coverage_train": 0.9,
+        "threshold_value": 152.2338466536929,
+        "train_roi": 0.7533734939759036,
+        "train_hit_rate": 0.21807228915662652,
+        "train_wagered": 830,
+        "test_roi": 0.7641646489104116,
+        "test_hit_rate": 0.22760290556900725,
+        "test_wagered": 413,
+        "test_coverage_realized": 0.8622129436325678,
+        "test_net": -9740.0,
+        "test_profit_std_per_race": 162.4188854585719
+      }
+    },
+    "E_3連複上位4BOX(4点)": {
+      "p_top": {
+        "selected_coverage_train": 0.1,
+        "threshold_value": 0.6572343468152343,
+        "train_roi": 0.908695652173913,
+        "train_hit_rate": 0.5760869565217391,
+        "train_wagered": 92,
+        "test_roi": 0.8379518072289157,
+        "test_hit_rate": 0.5180722891566265,
+        "test_wagered": 83,
+        "test_coverage_realized": 0.1732776617954071,
+        "test_net": -5380.0,
+        "test_profit_std_per_race": 1112.085159092673
+      },
+      "gap": {
+        "selected_coverage_train": 0.3,
+        "threshold_value": 0.42487325889089883,
+        "train_roi": 0.9176895306859206,
+        "train_hit_rate": 0.51985559566787,
+        "train_wagered": 277,
+        "test_roi": 0.6816761363636363,
+        "test_hit_rate": 0.4943181818181818,
+        "test_wagered": 176,
+        "test_coverage_realized": 0.3674321503131524,
+        "test_net": -22410.0,
+        "test_profit_std_per_race": 790.8117409229656
+      },
+      "neg_entropy": {
+        "selected_coverage_train": 0.1,
+        "threshold_value": -1.1151176645875203,
+        "train_roi": 0.8519021739130435,
+        "train_hit_rate": 0.5869565217391305,
+        "train_wagered": 92,
+        "test_roi": 0.7950657894736842,
+        "test_hit_rate": 0.5263157894736842,
+        "test_wagered": 76,
+        "test_coverage_realized": 0.15866388308977036,
+        "test_net": -6230.0,
+        "test_profit_std_per_race": 1147.6291576628776
+      },
+      "variance": {
+        "selected_coverage_train": 0.1,
+        "threshold_value": 0.04962347533750163,
+        "train_roi": 0.908695652173913,
+        "train_hit_rate": 0.5760869565217391,
+        "train_wagered": 92,
+        "test_roi": 0.7951219512195122,
+        "test_hit_rate": 0.5121951219512195,
+        "test_wagered": 82,
+        "test_coverage_realized": 0.17118997912317327,
+        "test_net": -6720.0,
+        "test_profit_std_per_race": 1109.0145472053769
+      },
+      "approx_ev": {
+        "selected_coverage_train": 0.9,
+        "threshold_value": 152.2338466536929,
+        "train_roi": 0.8023795180722891,
+        "train_hit_rate": 0.5313253012048192,
+        "train_wagered": 830,
+        "test_roi": 0.7007869249394673,
+        "test_hit_rate": 0.5108958837772397,
+        "test_wagered": 413,
+        "test_coverage_realized": 0.8622129436325678,
+        "test_net": -49430.0,
+        "test_profit_std_per_race": 606.0019799548585
+      }
+    },
+    "I_PL上位3点3連単": {
+      "p_top": {
+        "selected_coverage_train": 0.2,
+        "threshold_value": 0.6183246350965075,
+        "train_roi": 0.8054347826086956,
+        "train_hit_rate": 0.266304347826087,
+        "train_wagered": 184,
+        "test_roi": 0.9936274509803922,
+        "test_hit_rate": 0.3235294117647059,
+        "test_wagered": 136,
+        "test_coverage_realized": 0.2839248434237996,
+        "test_net": -260.0,
+        "test_profit_std_per_race": 568.2345139137258
+      },
+      "gap": {
+        "selected_coverage_train": 0.2,
+        "threshold_value": 0.4748551256000553,
+        "train_roi": 0.7878623188405797,
+        "train_hit_rate": 0.24456521739130435,
+        "train_wagered": 184,
+        "test_roi": 0.8239583333333333,
+        "test_hit_rate": 0.28125,
+        "test_wagered": 128,
+        "test_coverage_realized": 0.267223382045929,
+        "test_net": -6760.0,
+        "test_profit_std_per_race": 482.60675227741064
+      },
+      "neg_entropy": {
+        "selected_coverage_train": 0.4,
+        "threshold_value": -1.2751683970407484,
+        "train_roi": 0.8210478771454381,
+        "train_hit_rate": 0.2764227642276423,
+        "train_wagered": 369,
+        "test_roi": 1.010204081632653,
+        "test_hit_rate": 0.3020408163265306,
+        "test_wagered": 245,
+        "test_coverage_realized": 0.511482254697286,
+        "test_net": 750.0,
+        "test_profit_std_per_race": 817.2827155078519
+      },
+      "variance": {
+        "selected_coverage_train": 0.3,
+        "threshold_value": 0.03848066255063385,
+        "train_roi": 0.7969915764139591,
+        "train_hit_rate": 0.259927797833935,
+        "train_wagered": 277,
+        "test_roi": 1.0757246376811593,
+        "test_hit_rate": 0.31521739130434784,
+        "test_wagered": 184,
+        "test_coverage_realized": 0.38413361169102295,
+        "test_net": 4180.0,
+        "test_profit_std_per_race": 888.4030656683074
+      },
+      "approx_ev": {
+        "selected_coverage_train": 0.9,
+        "threshold_value": 152.2338466536929,
+        "train_roi": 0.711285140562249,
+        "train_hit_rate": 0.19879518072289157,
+        "train_wagered": 830,
+        "test_roi": 0.8669895076674737,
+        "test_hit_rate": 0.2324455205811138,
+        "test_wagered": 413,
+        "test_coverage_realized": 0.8622129436325678,
+        "test_net": -16480.0,
+        "test_profit_std_per_race": 830.2559425182961
+      }
+    }
+  },
+  "oos_best": {
+    "test_roi": 1.0757246376811593,
+    "strategy": "I_PL上位3点3連単",
+    "metric": "variance",
+    "detail": {
+      "selected_coverage_train": 0.3,
+      "threshold_value": 0.03848066255063385,
+      "train_roi": 0.7969915764139591,
+      "train_hit_rate": 0.259927797833935,
+      "train_wagered": 277,
+      "test_roi": 1.0757246376811593,
+      "test_hit_rate": 0.31521739130434784,
+      "test_wagered": 184,
+      "test_coverage_realized": 0.38413361169102295,
+      "test_net": 4180.0,
+      "test_profit_std_per_race": 888.4030656683074
+    }
+  },
+  "robustness_seeds": [
+    42,
+    1,
+    7,
+    13,
+    21,
+    99,
+    123,
+    2024
+  ],
+  "robustness_summary": {
+    "A_3連単上位3その順|p_top": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6833333333333333,
+      "test_roi_median": 0.824196855775803,
+      "test_roi_mean": 0.8152787497657755,
+      "test_roi_max": 0.9123287671232877,
+      "frac_over_100": 0.0
+    },
+    "A_3連単上位3その順|gap": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6096590909090909,
+      "test_roi_median": 0.8098694306097725,
+      "test_roi_mean": 0.8136190379105779,
+      "test_roi_max": 1.065,
+      "frac_over_100": 0.125
+    },
+    "A_3連単上位3その順|neg_entropy": {
+      "n_seeds": 8,
+      "test_roi_min": 0.740909090909091,
+      "test_roi_median": 0.7931897060995421,
+      "test_roi_mean": 0.809487981384213,
+      "test_roi_max": 0.9,
+      "frac_over_100": 0.0
+    },
+    "A_3連単上位3その順|variance": {
+      "n_seeds": 8,
+      "test_roi_min": 0.7013333333333334,
+      "test_roi_median": 0.8512151898734177,
+      "test_roi_mean": 0.8505831347209243,
+      "test_roi_max": 1.0463114754098362,
+      "frac_over_100": 0.125
+    },
+    "D_3連複上位3(1点)|p_top": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6644444444444444,
+      "test_roi_median": 0.7271661990427463,
+      "test_roi_mean": 0.7824820860762229,
+      "test_roi_max": 1.0038961038961038,
+      "frac_over_100": 0.125
+    },
+    "D_3連複上位3(1点)|gap": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6592920353982301,
+      "test_roi_median": 0.7846138211382114,
+      "test_roi_mean": 0.8516430249616705,
+      "test_roi_max": 1.170731707317073,
+      "frac_over_100": 0.125
+    },
+    "D_3連複上位3(1点)|neg_entropy": {
+      "n_seeds": 8,
+      "test_roi_min": 0.7310344827586207,
+      "test_roi_median": 0.8610864745011086,
+      "test_roi_mean": 0.8800459279869495,
+      "test_roi_max": 1.1,
+      "frac_over_100": 0.125
+    },
+    "D_3連複上位3(1点)|variance": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6131868131868132,
+      "test_roi_median": 0.8109756097560976,
+      "test_roi_mean": 0.8138511896075404,
+      "test_roi_max": 1.0430379746835443,
+      "frac_over_100": 0.125
+    },
+    "E_3連複上位4BOX(4点)|p_top": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6133093525179856,
+      "test_roi_median": 0.69667862464369,
+      "test_roi_mean": 0.7248130604492166,
+      "test_roi_max": 0.8379518072289157,
+      "frac_over_100": 0.0
+    },
+    "E_3連複上位4BOX(4点)|gap": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6788690476190476,
+      "test_roi_median": 0.6976702508960573,
+      "test_roi_mean": 0.7442077491458137,
+      "test_roi_max": 0.8595394736842106,
+      "frac_over_100": 0.0
+    },
+    "E_3連複上位4BOX(4点)|neg_entropy": {
+      "n_seeds": 8,
+      "test_roi_min": 0.47175324675324676,
+      "test_roi_median": 0.7043786105199148,
+      "test_roi_mean": 0.6871543281071245,
+      "test_roi_max": 0.7950657894736842,
+      "frac_over_100": 0.0
+    },
+    "E_3連複上位4BOX(4点)|variance": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6042016806722689,
+      "test_roi_median": 0.699476911976912,
+      "test_roi_mean": 0.693975567242509,
+      "test_roi_max": 0.7951219512195122,
+      "frac_over_100": 0.0
+    },
+    "I_PL上位3点3連単|p_top": {
+      "n_seeds": 8,
+      "test_roi_min": 0.7674358974358975,
+      "test_roi_median": 0.8739300411522634,
+      "test_roi_mean": 0.8831153085899818,
+      "test_roi_max": 0.9944444444444445,
+      "frac_over_100": 0.0
+    },
+    "I_PL上位3点3連単|gap": {
+      "n_seeds": 8,
+      "test_roi_min": 0.7941002949852507,
+      "test_roi_median": 0.8475158084914183,
+      "test_roi_mean": 0.9072369426012282,
+      "test_roi_max": 1.2764227642276422,
+      "frac_over_100": 0.125
+    },
+    "I_PL上位3点3連単|neg_entropy": {
+      "n_seeds": 8,
+      "test_roi_min": 0.8666666666666667,
+      "test_roi_median": 0.9983327998292786,
+      "test_roi_mean": 0.9853582011866837,
+      "test_roi_max": 1.1182421227197346,
+      "frac_over_100": 0.5
+    },
+    "I_PL上位3点3連単|variance": {
+      "n_seeds": 8,
+      "test_roi_min": 0.7730392156862745,
+      "test_roi_median": 0.9257876016260163,
+      "test_roi_mean": 0.9597729222677096,
+      "test_roi_max": 1.2565400843881858,
+      "frac_over_100": 0.375
+    }
+  },
+  "robustness_full_test": {
+    "A_3連単上位3その順": {
+      "test_roi_median": 0.7331941544885178,
+      "test_roi_mean": 0.753027139874739
+    },
+    "D_3連複上位3(1点)": {
+      "test_roi_median": 0.7777661795407098,
+      "test_roi_mean": 0.778053235908142
+    },
+    "E_3連複上位4BOX(4点)": {
+      "test_roi_median": 0.7081158663883089,
+      "test_roi_mean": 0.7089705114822547
+    },
+    "I_PL上位3点3連単": {
+      "test_roi_median": 0.838517745302714,
+      "test_roi_mean": 0.840883785664579
+    }
+  },
+  "robustness_per_seed": [
+    {
+      "seed": 42,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.5,
+          "train_roi": 0.7147505422993492,
+          "test_cov": 0.5553235908141962,
+          "test_roi": 0.8120300751879699,
+          "test_wagered": 266
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.3,
+          "train_roi": 0.7548736462093862,
+          "test_cov": 0.3674321503131524,
+          "test_roi": 0.6096590909090909,
+          "test_wagered": 176
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.5,
+          "train_roi": 0.7635574837310195,
+          "test_cov": 0.5782881002087683,
+          "test_roi": 0.884115523465704,
+          "test_wagered": 277
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.5,
+          "train_roi": 0.7329718004338395,
+          "test_cov": 0.5741127348643006,
+          "test_roi": 0.848,
+          "test_wagered": 275
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9271739130434783,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.7433734939759036,
+          "test_wagered": 83
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.3,
+          "train_roi": 0.8498194945848375,
+          "test_cov": 0.3674321503131524,
+          "test_roi": 0.7426136363636363,
+          "test_wagered": 176
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9945652173913043,
+          "test_cov": 0.15866388308977036,
+          "test_roi": 0.8078947368421052,
+          "test_wagered": 76
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9271739130434783,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.7804878048780488,
+          "test_wagered": 82
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.908695652173913,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.8379518072289157,
+          "test_wagered": 83
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.3,
+          "train_roi": 0.9176895306859206,
+          "test_cov": 0.3674321503131524,
+          "test_roi": 0.6816761363636363,
+          "test_wagered": 176
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.8519021739130435,
+          "test_cov": 0.15866388308977036,
+          "test_roi": 0.7950657894736842,
+          "test_wagered": 76
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.908695652173913,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.7951219512195122,
+          "test_wagered": 82
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.8054347826086956,
+          "test_cov": 0.2839248434237996,
+          "test_roi": 0.9936274509803922,
+          "test_wagered": 136
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.7878623188405797,
+          "test_cov": 0.267223382045929,
+          "test_roi": 0.8239583333333333,
+          "test_wagered": 128
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.4,
+          "train_roi": 0.8210478771454381,
+          "test_cov": 0.511482254697286,
+          "test_roi": 1.010204081632653,
+          "test_wagered": 245
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.3,
+          "train_roi": 0.7969915764139591,
+          "test_cov": 0.38413361169102295,
+          "test_roi": 1.0757246376811593,
+          "test_wagered": 184
+        }
+      }
+    },
+    {
+      "seed": 1,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.7054347826086956,
+          "test_cov": 0.31315240083507306,
+          "test_roi": 0.7013333333333334,
+          "test_wagered": 150
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.7260869565217392,
+          "test_cov": 0.16701461377870563,
+          "test_roi": 1.065,
+          "test_wagered": 80
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.2,
+          "train_roi": 0.7945652173913044,
+          "test_cov": 0.3089770354906054,
+          "test_roi": 0.8087837837837838,
+          "test_wagered": 148
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.2,
+          "train_roi": 0.7027173913043478,
+          "test_cov": 0.31315240083507306,
+          "test_roi": 0.7013333333333334,
+          "test_wagered": 150
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.907608695652174,
+          "test_cov": 0.31315240083507306,
+          "test_roi": 0.71,
+          "test_wagered": 150
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9184782608695652,
+          "test_cov": 0.16701461377870563,
+          "test_roi": 0.805,
+          "test_wagered": 80
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9423913043478261,
+          "test_cov": 0.18162839248434237,
+          "test_roi": 0.7310344827586207,
+          "test_wagered": 87
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.908695652173913,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 0.7273809523809524,
+          "test_wagered": 84
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.5,
+          "train_roi": 0.874349240780911,
+          "test_cov": 0.5803757828810021,
+          "test_roi": 0.6133093525179856,
+          "test_wagered": 278
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.8907608695652174,
+          "test_cov": 0.2776617954070981,
+          "test_roi": 0.6847744360902256,
+          "test_wagered": 133
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.4,
+          "train_roi": 0.9248644986449864,
+          "test_cov": 0.5073068893528184,
+          "test_roi": 0.607201646090535,
+          "test_wagered": 243
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.4,
+          "train_roi": 0.9017615176151762,
+          "test_cov": 0.4968684759916493,
+          "test_roi": 0.6042016806722689,
+          "test_wagered": 238
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.803623188405797,
+          "test_cov": 0.31315240083507306,
+          "test_roi": 0.8324444444444444,
+          "test_wagered": 150
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.7472826086956522,
+          "test_cov": 0.2776617954070981,
+          "test_roi": 0.9115288220551379,
+          "test_wagered": 133
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.821376811594203,
+          "test_cov": 0.18162839248434237,
+          "test_roi": 1.0731800766283526,
+          "test_wagered": 87
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.2,
+          "train_roi": 0.7920289855072464,
+          "test_cov": 0.31315240083507306,
+          "test_roi": 0.8368888888888889,
+          "test_wagered": 150
+        }
+      }
+    },
+    {
+      "seed": 7,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.1141304347826086,
+          "test_cov": 0.16075156576200417,
+          "test_roi": 0.8766233766233766,
+          "test_wagered": 77
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.1,
+          "train_roi": 1.0945652173913043,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.823170731707317,
+          "test_wagered": 82
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9641304347826087,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 0.9,
+          "test_wagered": 84
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.1141304347826086,
+          "test_cov": 0.1649269311064718,
+          "test_roi": 0.8544303797468354,
+          "test_wagered": 79
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.1934782608695653,
+          "test_cov": 0.16075156576200417,
+          "test_roi": 1.0038961038961038,
+          "test_wagered": 77
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 1.1043478260869566,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 1.170731707317073,
+          "test_wagered": 82
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.2,
+          "train_roi": 0.9630434782608696,
+          "test_cov": 0.3048016701461378,
+          "test_roi": 0.9383561643835616,
+          "test_wagered": 146
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.142391304347826,
+          "test_cov": 0.1649269311064718,
+          "test_roi": 1.0430379746835443,
+          "test_wagered": 79
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.3,
+          "train_roi": 0.9225631768953069,
+          "test_cov": 0.4133611691022965,
+          "test_roi": 0.6708333333333333,
+          "test_wagered": 198
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.3,
+          "train_roi": 0.9370938628158845,
+          "test_cov": 0.3883089770354906,
+          "test_roi": 0.6939516129032258,
+          "test_wagered": 186
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.2,
+          "train_roi": 0.9558423913043478,
+          "test_cov": 0.3048016701461378,
+          "test_roi": 0.7443493150684931,
+          "test_wagered": 146
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.4,
+          "train_roi": 0.915650406504065,
+          "test_cov": 0.4968684759916493,
+          "test_roi": 0.6609243697478991,
+          "test_wagered": 238
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.8335144927536232,
+          "test_cov": 0.30062630480167013,
+          "test_roi": 0.9944444444444445,
+          "test_wagered": 144
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.875,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 1.2764227642276422,
+          "test_wagered": 82
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.3,
+          "train_roi": 0.8433212996389892,
+          "test_cov": 0.4196242171189979,
+          "test_roi": 1.1182421227197346,
+          "test_wagered": 201
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.8307971014492753,
+          "test_cov": 0.1649269311064718,
+          "test_roi": 1.2565400843881858,
+          "test_wagered": 79
+        }
+      }
+    },
+    {
+      "seed": 13,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.4,
+          "train_roi": 0.7520325203252033,
+          "test_cov": 0.46346555323590816,
+          "test_roi": 0.6833333333333333,
+          "test_wagered": 222
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.3,
+          "train_roi": 0.7057761732851986,
+          "test_cov": 0.3736951983298539,
+          "test_roi": 0.7452513966480447,
+          "test_wagered": 179
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.3,
+          "train_roi": 0.8043321299638989,
+          "test_cov": 0.38204592901878914,
+          "test_roi": 0.7775956284153005,
+          "test_wagered": 183
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.2,
+          "train_roi": 0.7782608695652173,
+          "test_cov": 0.267223382045929,
+          "test_roi": 0.8703125,
+          "test_wagered": 128
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.3,
+          "train_roi": 0.8635379061371841,
+          "test_cov": 0.3757828810020877,
+          "test_roi": 0.8961111111111111,
+          "test_wagered": 180
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.9190217391304348,
+          "test_cov": 0.2630480167014614,
+          "test_roi": 0.9253968253968254,
+          "test_wagered": 126
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9641304347826087,
+          "test_cov": 0.14822546972860126,
+          "test_roi": 1.1,
+          "test_wagered": 71
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.3,
+          "train_roi": 0.8953068592057761,
+          "test_cov": 0.38204592901878914,
+          "test_roi": 0.8912568306010928,
+          "test_wagered": 183
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9114130434782609,
+          "test_cov": 0.14822546972860126,
+          "test_roi": 0.8369718309859155,
+          "test_wagered": 71
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9277173913043478,
+          "test_cov": 0.15866388308977036,
+          "test_roi": 0.8595394736842106,
+          "test_wagered": 76
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.4,
+          "train_roi": 0.9237804878048781,
+          "test_cov": 0.4801670146137787,
+          "test_roi": 0.7094565217391304,
+          "test_wagered": 230
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.3,
+          "train_roi": 0.9510830324909747,
+          "test_cov": 0.38204592901878914,
+          "test_roi": 0.7263661202185793,
+          "test_wagered": 183
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.3,
+          "train_roi": 0.7542719614921781,
+          "test_cov": 0.3757828810020877,
+          "test_roi": 0.9096296296296297,
+          "test_wagered": 180
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.761231884057971,
+          "test_cov": 0.2630480167014614,
+          "test_roi": 0.837037037037037,
+          "test_wagered": 126
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.8039855072463769,
+          "test_cov": 0.14822546972860126,
+          "test_roi": 1.0023474178403755,
+          "test_wagered": 71
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.2,
+          "train_roi": 0.7769927536231884,
+          "test_cov": 0.267223382045929,
+          "test_roi": 0.98125,
+          "test_wagered": 128
+        }
+      }
+    },
+    {
+      "seed": 21,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.4,
+          "train_roi": 0.7831978319783198,
+          "test_cov": 0.49478079331941544,
+          "test_roi": 0.9050632911392406,
+          "test_wagered": 237
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.8597826086956522,
+          "test_cov": 0.17745302713987474,
+          "test_roi": 0.8188235294117647,
+          "test_wagered": 85
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.2,
+          "train_roi": 0.8592391304347826,
+          "test_cov": 0.29227557411273486,
+          "test_roi": 0.7714285714285715,
+          "test_wagered": 140
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.4,
+          "train_roi": 0.7788617886178861,
+          "test_cov": 0.5093945720250522,
+          "test_roi": 1.0463114754098362,
+          "test_wagered": 244
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.0304347826086957,
+          "test_cov": 0.18789144050104384,
+          "test_roi": 0.6644444444444444,
+          "test_wagered": 90
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9804347826086957,
+          "test_cov": 0.17745302713987474,
+          "test_roi": 0.7623529411764706,
+          "test_wagered": 85
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.0065217391304349,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.7977272727272727,
+          "test_wagered": 88
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.0467391304347826,
+          "test_cov": 0.18997912317327767,
+          "test_roi": 0.6131868131868132,
+          "test_wagered": 91
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.5,
+          "train_roi": 0.8484815618221259,
+          "test_cov": 0.5678496868475992,
+          "test_roi": 0.7012867647058824,
+          "test_wagered": 272
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9173913043478261,
+          "test_cov": 0.17745302713987474,
+          "test_roi": 0.8544117647058823,
+          "test_wagered": 85
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.2,
+          "train_roi": 0.8817934782608695,
+          "test_cov": 0.29227557411273486,
+          "test_roi": 0.7723214285714286,
+          "test_wagered": 140
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.3,
+          "train_roi": 0.8819494584837545,
+          "test_cov": 0.40292275574112735,
+          "test_roi": 0.7286269430051814,
+          "test_wagered": 193
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.8554347826086957,
+          "test_cov": 0.18789144050104384,
+          "test_roi": 0.8951851851851852,
+          "test_wagered": 90
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.922463768115942,
+          "test_cov": 0.17745302713987474,
+          "test_roi": 0.9490196078431372,
+          "test_wagered": 85
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.8398550724637681,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.9943181818181818,
+          "test_wagered": 88
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.2,
+          "train_roi": 0.8581521739130434,
+          "test_cov": 0.29436325678496866,
+          "test_roi": 1.1023640661938534,
+          "test_wagered": 141
+        }
+      }
+    },
+    {
+      "seed": 99,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9,
+          "test_cov": 0.1524008350730689,
+          "test_roi": 0.9123287671232877,
+          "test_wagered": 73
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.741304347826087,
+          "test_cov": 0.2359081419624217,
+          "test_roi": 0.6849557522123894,
+          "test_wagered": 113
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.2,
+          "train_roi": 0.8402173913043478,
+          "test_cov": 0.2755741127348643,
+          "test_roi": 0.740909090909091,
+          "test_wagered": 132
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.8369565217391305,
+          "test_cov": 0.15031315240083507,
+          "test_roi": 0.925,
+          "test_wagered": 72
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.0065217391304349,
+          "test_cov": 0.1524008350730689,
+          "test_roi": 0.7109589041095891,
+          "test_wagered": 73
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.8652173913043478,
+          "test_cov": 0.2359081419624217,
+          "test_roi": 0.6592920353982301,
+          "test_wagered": 113
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.017391304347826,
+          "test_cov": 0.16075156576200417,
+          "test_roi": 0.8636363636363636,
+          "test_wagered": 77
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9739130434782609,
+          "test_cov": 0.15031315240083507,
+          "test_roi": 0.8486111111111111,
+          "test_wagered": 72
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.4,
+          "train_roi": 0.8703929539295393,
+          "test_cov": 0.4718162839248434,
+          "test_roi": 0.6389380530973451,
+          "test_wagered": 226
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.3,
+          "train_roi": 0.9346570397111913,
+          "test_cov": 0.35073068893528186,
+          "test_roi": 0.6788690476190476,
+          "test_wagered": 168
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.883695652173913,
+          "test_cov": 0.16075156576200417,
+          "test_roi": 0.47175324675324676,
+          "test_wagered": 77
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.4,
+          "train_roi": 0.8527777777777777,
+          "test_cov": 0.4759916492693111,
+          "test_roi": 0.637609649122807,
+          "test_wagered": 228
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.9018115942028986,
+          "test_cov": 0.27139874739039666,
+          "test_roi": 0.7674358974358975,
+          "test_wagered": 130
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.841304347826087,
+          "test_cov": 0.2359081419624217,
+          "test_roi": 0.7941002949852507,
+          "test_wagered": 113
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.8445652173913043,
+          "test_cov": 0.16075156576200417,
+          "test_roi": 0.912987012987013,
+          "test_wagered": 77
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.2,
+          "train_roi": 0.8278985507246377,
+          "test_cov": 0.2839248434237996,
+          "test_roi": 0.7730392156862745,
+          "test_wagered": 136
+        }
+      }
+    },
+    {
+      "seed": 123,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.4,
+          "train_roi": 0.8154471544715447,
+          "test_cov": 0.47390396659707723,
+          "test_roi": 0.7951541850220264,
+          "test_wagered": 227
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.7945652173913044,
+          "test_cov": 0.17745302713987474,
+          "test_roi": 0.9611764705882353,
+          "test_wagered": 85
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.3,
+          "train_roi": 0.8043321299638989,
+          "test_cov": 0.3862212943632568,
+          "test_roi": 0.7562162162162163,
+          "test_wagered": 185
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.4,
+          "train_roi": 0.8211382113821138,
+          "test_cov": 0.4592901878914405,
+          "test_roi": 0.7336363636363636,
+          "test_wagered": 220
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.0891304347826087,
+          "test_cov": 0.16910229645093947,
+          "test_roi": 0.8518518518518519,
+          "test_wagered": 81
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9423913043478261,
+          "test_cov": 0.17745302713987474,
+          "test_roi": 0.9835294117647059,
+          "test_wagered": 85
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9847826086956522,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.9431818181818182,
+          "test_wagered": 88
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.0565217391304347,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.8414634146341463,
+          "test_wagered": 82
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.4,
+          "train_roi": 0.8535907859078591,
+          "test_cov": 0.47390396659707723,
+          "test_roi": 0.6920704845814978,
+          "test_wagered": 227
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.4,
+          "train_roi": 0.8550813008130081,
+          "test_cov": 0.4509394572025052,
+          "test_roi": 0.7013888888888888,
+          "test_wagered": 216
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.5,
+          "train_roi": 0.8632321041214751,
+          "test_cov": 0.5657620041753654,
+          "test_roi": 0.6977859778597786,
+          "test_wagered": 271
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.4,
+          "train_roi": 0.8997967479674797,
+          "test_cov": 0.4592901878914405,
+          "test_roi": 0.7136363636363636,
+          "test_wagered": 220
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.8344202898550724,
+          "test_cov": 0.16910229645093947,
+          "test_roi": 0.8526748971193415,
+          "test_wagered": 81
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.9,
+          "train_roi": 0.7446586345381526,
+          "test_cov": 0.906054279749478,
+          "test_roi": 0.8078341013824885,
+          "test_wagered": 434
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.5,
+          "train_roi": 0.7576283441793203,
+          "test_cov": 0.5657620041753654,
+          "test_roi": 0.904920049200492,
+          "test_wagered": 271
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.8427536231884057,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.8703252032520326,
+          "test_wagered": 82
+        }
+      }
+    },
+    {
+      "seed": 2024,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.8923913043478261,
+          "test_cov": 0.16075156576200417,
+          "test_roi": 0.8363636363636363,
+          "test_wagered": 77
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.9,
+          "train_roi": 0.7418072289156626,
+          "test_cov": 0.9123173277661796,
+          "test_roi": 0.8009153318077803,
+          "test_wagered": 437
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.8,
+          "train_roi": 0.7920054200542005,
+          "test_cov": 0.8496868475991649,
+          "test_roi": 0.8368550368550368,
+          "test_wagered": 407
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9304347826086956,
+          "test_cov": 0.162839248434238,
+          "test_roi": 0.8256410256410256,
+          "test_wagered": 78
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.0804347826086957,
+          "test_cov": 0.16075156576200417,
+          "test_roi": 0.6792207792207792,
+          "test_wagered": 77
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.9532608695652174,
+          "test_cov": 0.2567849686847599,
+          "test_roi": 0.7642276422764228,
+          "test_wagered": 123
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.1130434782608696,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.8585365853658536,
+          "test_wagered": 82
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.1043478260869566,
+          "test_cov": 0.162839248434238,
+          "test_roi": 0.7653846153846153,
+          "test_wagered": 78
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9576086956521739,
+          "test_cov": 0.16075156576200417,
+          "test_roi": 0.8071428571428572,
+          "test_wagered": 77
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9548913043478261,
+          "test_cov": 0.1649269311064718,
+          "test_roi": 0.7990506329113924,
+          "test_wagered": 79
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.2,
+          "train_roi": 0.9385869565217392,
+          "test_cov": 0.2985386221294363,
+          "test_roi": 0.6993006993006993,
+          "test_wagered": 143
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.3,
+          "train_roi": 0.8518953068592058,
+          "test_cov": 0.3945720250521921,
+          "test_roi": 0.6853174603174603,
+          "test_wagered": 189
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.8181159420289855,
+          "test_cov": 0.16075156576200417,
+          "test_roi": 0.8194805194805195,
+          "test_wagered": 77
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.8199275362318841,
+          "test_cov": 0.2567849686847599,
+          "test_roi": 0.8579945799457994,
+          "test_wagered": 123
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.8528985507246377,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.8666666666666667,
+          "test_wagered": 82
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.8307971014492753,
+          "test_cov": 0.162839248434238,
+          "test_roi": 0.782051282051282,
+          "test_wagered": 78
+        }
+      }
+    }
+  ],
+  "robust_winners_over_100_median": [],
+  "honesty_notes": [
+    "OOFのP(win)はout-of-fold(リーク無し)。閾値はtrainでのみ選定しtestに凍結適用。",
+    "test標本が小さく選択的投票は更にその一部のみ=分散大。高配当1本で大きく動く。",
+    "approx_evは全オッズ盤が無いための自己参照近似で過大評価しうる(参考指標)。",
+    "回収は全てDB実払戻。購入判定のみ指標/近似オッズを使用。",
+    "engine.py不変更・本番DBはSELECTのみ・DB書込ゼロ。"
+  ]
+}

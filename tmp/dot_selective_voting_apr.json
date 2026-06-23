@@ -1,0 +1,1131 @@
+{
+  "variant": "apr_train_merge",
+  "target": "is_win",
+  "folds": 5,
+  "train_frac": 0.6,
+  "oof_races": 1401,
+  "n_train_apr_may": 3193,
+  "dot_top1_oof": 0.550321199143469,
+  "leak_free": true,
+  "robustness_seeds": [
+    42,
+    1,
+    7,
+    13,
+    21,
+    99,
+    123,
+    2024
+  ],
+  "robustness_summary": {
+    "A_3連単上位3その順|p_top": {
+      "n_seeds": 8,
+      "test_roi_min": 0.4112676056338028,
+      "test_roi_median": 0.7306047060284349,
+      "test_roi_mean": 0.6709387505252169,
+      "test_roi_max": 0.8636363636363636,
+      "frac_over_100": 0.0
+    },
+    "A_3連単上位3その順|gap": {
+      "n_seeds": 8,
+      "test_roi_min": 0.4853658536585366,
+      "test_roi_median": 0.7521954581254923,
+      "test_roi_mean": 0.7260162540704999,
+      "test_roi_max": 0.9833333333333333,
+      "frac_over_100": 0.0
+    },
+    "A_3連単上位3その順|neg_entropy": {
+      "n_seeds": 8,
+      "test_roi_min": 0.478125,
+      "test_roi_median": 0.6539873827240376,
+      "test_roi_mean": 0.6754756174151274,
+      "test_roi_max": 0.8357723577235773,
+      "frac_over_100": 0.0
+    },
+    "A_3連単上位3その順|variance": {
+      "n_seeds": 8,
+      "test_roi_min": 0.4708333333333333,
+      "test_roi_median": 0.7140932705086385,
+      "test_roi_mean": 0.6783642593146306,
+      "test_roi_max": 0.8096774193548387,
+      "frac_over_100": 0.0
+    },
+    "D_3連複上位3(1点)|p_top": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6202380952380953,
+      "test_roi_median": 0.7377705627705629,
+      "test_roi_mean": 0.7298569147876302,
+      "test_roi_max": 0.8082706766917294,
+      "frac_over_100": 0.0
+    },
+    "D_3連複上位3(1点)|gap": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6119402985074627,
+      "test_roi_median": 0.7976045296167247,
+      "test_roi_mean": 0.7554509909280642,
+      "test_roi_max": 0.852755905511811,
+      "frac_over_100": 0.0
+    },
+    "D_3連複上位3(1点)|neg_entropy": {
+      "n_seeds": 8,
+      "test_roi_min": 0.698780487804878,
+      "test_roi_median": 0.7517045454545455,
+      "test_roi_mean": 0.774842310523773,
+      "test_roi_max": 0.9260273972602739,
+      "frac_over_100": 0.0
+    },
+    "D_3連複上位3(1点)|variance": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6277108433734939,
+      "test_roi_median": 0.7375665452507705,
+      "test_roi_mean": 0.7263525808943099,
+      "test_roi_max": 0.8201550387596899,
+      "frac_over_100": 0.0
+    },
+    "E_3連複上位4BOX(4点)|p_top": {
+      "n_seeds": 8,
+      "test_roi_min": 0.7439236111111112,
+      "test_roi_median": 0.8346140521064301,
+      "test_roi_mean": 0.8658956145853904,
+      "test_roi_max": 1.050297619047619,
+      "frac_over_100": 0.125
+    },
+    "E_3連複上位4BOX(4点)|gap": {
+      "n_seeds": 8,
+      "test_roi_min": 0.7604430379746835,
+      "test_roi_median": 0.8113184079601989,
+      "test_roi_mean": 0.8361118598117883,
+      "test_roi_max": 1.0054597701149426,
+      "frac_over_100": 0.125
+    },
+    "E_3連複上位4BOX(4点)|neg_entropy": {
+      "n_seeds": 8,
+      "test_roi_min": 0.724609375,
+      "test_roi_median": 0.7736476793248945,
+      "test_roi_mean": 0.8098388657275453,
+      "test_roi_max": 1.0801829268292682,
+      "frac_over_100": 0.125
+    },
+    "E_3連複上位4BOX(4点)|variance": {
+      "n_seeds": 8,
+      "test_roi_min": 0.7453125,
+      "test_roi_median": 0.8398876404494382,
+      "test_roi_mean": 0.8744260970007145,
+      "test_roi_max": 1.0536144578313253,
+      "frac_over_100": 0.125
+    },
+    "I_PL上位3点3連単|p_top": {
+      "n_seeds": 8,
+      "test_roi_min": 0.7218390804597701,
+      "test_roi_median": 0.8348587518178161,
+      "test_roi_mean": 0.8657021252496604,
+      "test_roi_max": 1.0140151515151514,
+      "frac_over_100": 0.125
+    },
+    "I_PL上位3点3連単|gap": {
+      "n_seeds": 8,
+      "test_roi_min": 0.7254901960784313,
+      "test_roi_median": 0.8809671156413057,
+      "test_roi_mean": 0.8481309678693922,
+      "test_roi_max": 0.9321839080459771,
+      "frac_over_100": 0.0
+    },
+    "I_PL上位3点3連単|neg_entropy": {
+      "n_seeds": 8,
+      "test_roi_min": 0.6691056910569105,
+      "test_roi_median": 0.7929364454934872,
+      "test_roi_mean": 0.7819238132263031,
+      "test_roi_max": 0.9102272727272728,
+      "frac_over_100": 0.0
+    },
+    "I_PL上位3点3連単|variance": {
+      "n_seeds": 8,
+      "test_roi_min": 0.750187265917603,
+      "test_roi_median": 0.8198795180722891,
+      "test_roi_mean": 0.8509090197088741,
+      "test_roi_max": 1.0303370786516854,
+      "frac_over_100": 0.125
+    }
+  },
+  "robustness_full_test": {
+    "A_3連単上位3その順": {
+      "test_roi_median": 0.6521920668058455,
+      "test_roi_mean": 0.6697546972860126
+    },
+    "D_3連複上位3(1点)": {
+      "test_roi_median": 0.8062630480167015,
+      "test_roi_mean": 0.8067849686847599
+    },
+    "E_3連複上位4BOX(4点)": {
+      "test_roi_median": 0.7359864300626304,
+      "test_roi_mean": 0.7426800626304801
+    },
+    "I_PL上位3点3連単": {
+      "test_roi_median": 0.8542797494780794,
+      "test_roi_mean": 0.8444415448851774
+    }
+  },
+  "robustness_per_seed": [
+    {
+      "seed": 42,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.3,
+          "train_roi": 0.7155234657039711,
+          "test_cov": 0.4112734864300626,
+          "test_roi": 0.6101522842639594,
+          "test_wagered": 197
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.6489130434782608,
+          "test_cov": 0.2797494780793319,
+          "test_roi": 0.5828358208955224,
+          "test_wagered": 134
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.5,
+          "train_roi": 0.779175704989154,
+          "test_cov": 0.5866388308977035,
+          "test_roi": 0.6761565836298933,
+          "test_wagered": 281
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.4,
+          "train_roi": 0.7070460704607046,
+          "test_cov": 0.4968684759916493,
+          "test_roi": 0.634453781512605,
+          "test_wagered": 238
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.8815217391304347,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 0.6202380952380953,
+          "test_wagered": 84
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.8244565217391304,
+          "test_cov": 0.2797494780793319,
+          "test_roi": 0.6119402985074627,
+          "test_wagered": 134
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.067391304347826,
+          "test_cov": 0.1941544885177453,
+          "test_roi": 0.7795698924731183,
+          "test_wagered": 93
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9326086956521739,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.6277108433734939,
+          "test_wagered": 83
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.8982336956521739,
+          "test_cov": 0.30062630480167013,
+          "test_roi": 0.7439236111111112,
+          "test_wagered": 144
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.956929347826087,
+          "test_cov": 0.2797494780793319,
+          "test_roi": 0.7684701492537314,
+          "test_wagered": 134
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.4,
+          "train_roi": 0.8598915989159892,
+          "test_cov": 0.524008350730689,
+          "test_roi": 0.7549800796812749,
+          "test_wagered": 251
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.2,
+          "train_roi": 0.8875,
+          "test_cov": 0.30062630480167013,
+          "test_roi": 0.7453125,
+          "test_wagered": 144
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9855072463768116,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 0.9761904761904762,
+          "test_wagered": 84
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.813768115942029,
+          "test_cov": 0.2797494780793319,
+          "test_roi": 0.8907960199004975,
+          "test_wagered": 134
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.0865942028985507,
+          "test_cov": 0.1941544885177453,
+          "test_roi": 0.793189964157706,
+          "test_wagered": 93
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.0061594202898552,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.8301204819277108,
+          "test_wagered": 83
+        }
+      }
+    },
+    {
+      "seed": 1,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.8152173913043478,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.8636363636363636,
+          "test_wagered": 88
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.7097826086956521,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 0.9833333333333333,
+          "test_wagered": 84
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.7934782608695652,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.6318181818181818,
+          "test_wagered": 88
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.8152173913043478,
+          "test_cov": 0.18580375782881003,
+          "test_roi": 0.7303370786516854,
+          "test_wagered": 89
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.0423913043478261,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.7636363636363637,
+          "test_wagered": 88
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9771739130434782,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 0.7964285714285714,
+          "test_wagered": 84
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.0467391304347826,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.7522727272727273,
+          "test_wagered": 88
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.0706521739130435,
+          "test_cov": 0.18580375782881003,
+          "test_roi": 0.7662921348314606,
+          "test_wagered": 89
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9410326086956522,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.837215909090909,
+          "test_wagered": 88
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9788043478260869,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 0.8541666666666666,
+          "test_wagered": 84
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.0111413043478261,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.8198863636363637,
+          "test_wagered": 88
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.971195652173913,
+          "test_cov": 0.18580375782881003,
+          "test_roi": 0.8432584269662922,
+          "test_wagered": 89
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9478260869565217,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 1.0140151515151514,
+          "test_wagered": 88
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9931159420289855,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 0.9242063492063493,
+          "test_wagered": 84
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9960144927536232,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.9102272727272728,
+          "test_wagered": 88
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.0202898550724637,
+          "test_cov": 0.18580375782881003,
+          "test_roi": 1.0303370786516854,
+          "test_wagered": 89
+        }
+      }
+    },
+    {
+      "seed": 7,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.8538043478260869,
+          "test_cov": 0.2964509394572025,
+          "test_roi": 0.4112676056338028,
+          "test_wagered": 142
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.8989130434782608,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.4853658536585366,
+          "test_wagered": 82
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.4,
+          "train_roi": 0.8604336043360433,
+          "test_cov": 0.5198329853862212,
+          "test_roi": 0.6116465863453815,
+          "test_wagered": 249
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.2,
+          "train_roi": 0.8581521739130434,
+          "test_cov": 0.30062630480167013,
+          "test_roi": 0.4708333333333333,
+          "test_wagered": 144
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.2043478260869565,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.7085365853658536,
+          "test_wagered": 82
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 1.0228260869565218,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.7987804878048781,
+          "test_wagered": 82
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9989130434782608,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.8060240963855422,
+          "test_wagered": 83
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.233695652173913,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.7,
+          "test_wagered": 83
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9138586956521739,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.8320121951219512,
+          "test_wagered": 82
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 1.0184782608695653,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.8704268292682927,
+          "test_wagered": 82
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.3,
+          "train_roi": 0.8999097472924188,
+          "test_cov": 0.42171189979123175,
+          "test_roi": 0.7950495049504951,
+          "test_wagered": 202
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9119565217391304,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.821987951807229,
+          "test_wagered": 83
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.1206521739130435,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.7995934959349593,
+          "test_wagered": 82
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.1,
+          "train_roi": 1.1057971014492753,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.8711382113821138,
+          "test_wagered": 82
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9246376811594202,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.7514056224899598,
+          "test_wagered": 83
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.0894927536231884,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.7899598393574297,
+          "test_wagered": 83
+        }
+      }
+    },
+    {
+      "seed": 13,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.8809782608695652,
+          "test_cov": 0.2776617954070981,
+          "test_roi": 0.46766917293233085,
+          "test_wagered": 133
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.8010869565217391,
+          "test_cov": 0.1649269311064718,
+          "test_roi": 0.7873417721518987,
+          "test_wagered": 79
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.3,
+          "train_roi": 0.8581227436823105,
+          "test_cov": 0.40083507306889354,
+          "test_roi": 0.478125,
+          "test_wagered": 192
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.2,
+          "train_roi": 0.9228260869565217,
+          "test_cov": 0.26931106471816285,
+          "test_roi": 0.5170542635658915,
+          "test_wagered": 129
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.9771739130434782,
+          "test_cov": 0.2776617954070981,
+          "test_roi": 0.8082706766917294,
+          "test_wagered": 133
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.9108695652173913,
+          "test_cov": 0.2651356993736952,
+          "test_roi": 0.852755905511811,
+          "test_wagered": 127
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9771739130434782,
+          "test_cov": 0.1524008350730689,
+          "test_roi": 0.9260273972602739,
+          "test_wagered": 73
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.2,
+          "train_roi": 0.9668478260869565,
+          "test_cov": 0.26931106471816285,
+          "test_roi": 0.8201550387596899,
+          "test_wagered": 129
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.0421195652173914,
+          "test_cov": 0.16701461377870563,
+          "test_roi": 0.8953125,
+          "test_wagered": 80
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.9430706521739131,
+          "test_cov": 0.2651356993736952,
+          "test_roi": 0.7633858267716536,
+          "test_wagered": 127
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.3,
+          "train_roi": 0.8957581227436823,
+          "test_cov": 0.40083507306889354,
+          "test_roi": 0.724609375,
+          "test_wagered": 192
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.038858695652174,
+          "test_cov": 0.1524008350730689,
+          "test_roi": 0.927054794520548,
+          "test_wagered": 73
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.856159420289855,
+          "test_cov": 0.2776617954070981,
+          "test_roi": 0.8170426065162907,
+          "test_wagered": 133
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.3,
+          "train_roi": 0.7749699157641395,
+          "test_cov": 0.35490605427974947,
+          "test_roi": 0.7254901960784313,
+          "test_wagered": 170
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.8818840579710145,
+          "test_cov": 0.1524008350730689,
+          "test_roi": 0.8547945205479452,
+          "test_wagered": 73
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.8905797101449275,
+          "test_cov": 0.1524008350730689,
+          "test_roi": 0.8009132420091324,
+          "test_wagered": 73
+        }
+      }
+    },
+    {
+      "seed": 21,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.4,
+          "train_roi": 0.7626016260162601,
+          "test_cov": 0.4906054279749478,
+          "test_roi": 0.7791489361702127,
+          "test_wagered": 235
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.6,
+          "train_roi": 0.7674502712477396,
+          "test_cov": 0.6116910229645094,
+          "test_roi": 0.7563139931740614,
+          "test_wagered": 293
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.4,
+          "train_roi": 0.743360433604336,
+          "test_cov": 0.5135699373695198,
+          "test_roi": 0.8357723577235773,
+          "test_wagered": 246
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.4,
+          "train_roi": 0.7769647696476965,
+          "test_cov": 0.5177453027139874,
+          "test_roi": 0.8096774193548387,
+          "test_wagered": 248
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.842391304347826,
+          "test_cov": 0.18162839248434237,
+          "test_roi": 0.6655172413793103,
+          "test_wagered": 87
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.3,
+          "train_roi": 0.8064981949458484,
+          "test_cov": 0.3757828810020877,
+          "test_roi": 0.8094444444444444,
+          "test_wagered": 180
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.941304347826087,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.7511363636363636,
+          "test_wagered": 88
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.8891304347826087,
+          "test_cov": 0.18580375782881003,
+          "test_roi": 0.650561797752809,
+          "test_wagered": 89
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.2,
+          "train_roi": 0.8789402173913043,
+          "test_cov": 0.2964509394572025,
+          "test_roi": 0.8096830985915493,
+          "test_wagered": 142
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.2,
+          "train_roi": 0.899320652173913,
+          "test_cov": 0.2839248434237996,
+          "test_roi": 0.7648897058823529,
+          "test_wagered": 136
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.3,
+          "train_roi": 0.8698555956678701,
+          "test_cov": 0.4175365344467641,
+          "test_roi": 0.757,
+          "test_wagered": 200
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.8668478260869565,
+          "test_cov": 0.18580375782881003,
+          "test_roi": 0.8365168539325842,
+          "test_wagered": 89
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9670289855072464,
+          "test_cov": 0.18162839248434237,
+          "test_roi": 0.7218390804597701,
+          "test_wagered": 87
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9521739130434783,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.802439024390244,
+          "test_wagered": 82
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9514492753623188,
+          "test_cov": 0.1837160751565762,
+          "test_roi": 0.8079545454545455,
+          "test_wagered": 88
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9572463768115942,
+          "test_cov": 0.18580375782881003,
+          "test_roi": 0.750187265917603,
+          "test_wagered": 89
+        }
+      }
+    },
+    {
+      "seed": 99,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.3,
+          "train_roi": 0.8025270758122743,
+          "test_cov": 0.3695198329853862,
+          "test_roi": 0.7480225988700565,
+          "test_wagered": 177
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.8010869565217391,
+          "test_cov": 0.17954070981210857,
+          "test_roi": 0.6430232558139535,
+          "test_wagered": 86
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.5,
+          "train_roi": 0.8099783080260303,
+          "test_cov": 0.5678496868475992,
+          "test_roi": 0.8,
+          "test_wagered": 272
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.5,
+          "train_roi": 0.7561822125813449,
+          "test_cov": 0.5594989561586639,
+          "test_roi": 0.7611940298507462,
+          "test_wagered": 268
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9804347826086957,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 0.7119047619047619,
+          "test_wagered": 84
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.925,
+          "test_cov": 0.17954070981210857,
+          "test_roi": 0.6651162790697674,
+          "test_wagered": 86
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.3,
+          "train_roi": 0.8667870036101083,
+          "test_cov": 0.40292275574112735,
+          "test_roi": 0.738860103626943,
+          "test_wagered": 193
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9119565217391304,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.7204819277108434,
+          "test_wagered": 83
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.1021739130434782,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 1.050297619047619,
+          "test_wagered": 84
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.2,
+          "train_roi": 1.1391304347826088,
+          "test_cov": 0.25260960334029225,
+          "test_roi": 0.9016528925619834,
+          "test_wagered": 121
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.0293478260869566,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 1.0801829268292682,
+          "test_wagered": 82
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.0464673913043478,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 1.0536144578313253,
+          "test_wagered": 83
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.3405797101449275,
+          "test_cov": 0.17536534446764093,
+          "test_roi": 0.7801587301587302,
+          "test_wagered": 84
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.1,
+          "train_roi": 1.3239130434782609,
+          "test_cov": 0.17954070981210857,
+          "test_roi": 0.7383720930232558,
+          "test_wagered": 86
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.2579710144927536,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.7926829268292683,
+          "test_wagered": 82
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.2630434782608695,
+          "test_cov": 0.1732776617954071,
+          "test_roi": 0.8096385542168675,
+          "test_wagered": 83
+        }
+      }
+    },
+    {
+      "seed": 123,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.8630434782608696,
+          "test_cov": 0.18997912317327767,
+          "test_roi": 0.7131868131868132,
+          "test_wagered": 91
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.7782608695652173,
+          "test_cov": 0.18162839248434237,
+          "test_roi": 0.8218390804597702,
+          "test_wagered": 87
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.8293478260869566,
+          "test_cov": 0.18580375782881003,
+          "test_roi": 0.7797752808988764,
+          "test_wagered": 89
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9,
+          "test_cov": 0.1941544885177453,
+          "test_roi": 0.6978494623655914,
+          "test_wagered": 93
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.0771739130434783,
+          "test_cov": 0.18997912317327767,
+          "test_roi": 0.7879120879120879,
+          "test_wagered": 91
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 1.0,
+          "test_cov": 0.18162839248434237,
+          "test_roi": 0.8137931034482758,
+          "test_wagered": 87
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.1065217391304347,
+          "test_cov": 0.18580375782881003,
+          "test_roi": 0.7460674157303371,
+          "test_wagered": 89
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.1206521739130435,
+          "test_cov": 0.1941544885177453,
+          "test_roi": 0.7709677419354839,
+          "test_wagered": 93
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9779891304347826,
+          "test_cov": 0.18997912317327767,
+          "test_roi": 0.9818681318681318,
+          "test_wagered": 91
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9730978260869565,
+          "test_cov": 0.18162839248434237,
+          "test_roi": 1.0054597701149426,
+          "test_wagered": 87
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.4,
+          "train_roi": 0.8630081300813008,
+          "test_cov": 0.49478079331941544,
+          "test_roi": 0.7902953586497891,
+          "test_wagered": 237
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9807065217391304,
+          "test_cov": 0.1941544885177453,
+          "test_roi": 0.9865591397849462,
+          "test_wagered": 93
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9467391304347826,
+          "test_cov": 0.18997912317327767,
+          "test_roi": 0.9641025641025641,
+          "test_wagered": 91
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.928623188405797,
+          "test_cov": 0.18162839248434237,
+          "test_roi": 0.9321839080459771,
+          "test_wagered": 87
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9340579710144927,
+          "test_cov": 0.18580375782881003,
+          "test_roi": 0.6760299625468165,
+          "test_wagered": 89
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9586956521739131,
+          "test_cov": 0.1941544885177453,
+          "test_roi": 0.928673835125448,
+          "test_wagered": 93
+        }
+      }
+    },
+    {
+      "seed": 2024,
+      "cutoff": "2026-06-08",
+      "n_train": 922,
+      "n_test": 479,
+      "combos": {
+        "A_3連単上位3その順|p_top": {
+          "train_cov": 0.6,
+          "train_roi": 0.750994575045208,
+          "test_cov": 0.6367432150313153,
+          "test_roi": 0.7744262295081967,
+          "test_wagered": 305
+        },
+        "A_3連単上位3その順|gap": {
+          "train_cov": 0.4,
+          "train_roi": 0.748780487804878,
+          "test_cov": 0.4342379958246347,
+          "test_roi": 0.7480769230769231,
+          "test_wagered": 208
+        },
+        "A_3連単上位3その順|neg_entropy": {
+          "train_cov": 0.2,
+          "train_roi": 0.7592391304347826,
+          "test_cov": 0.2860125260960334,
+          "test_roi": 0.5905109489051095,
+          "test_wagered": 137
+        },
+        "A_3連単上位3その順|variance": {
+          "train_cov": 0.5,
+          "train_roi": 0.7273318872017354,
+          "test_cov": 0.5678496868475992,
+          "test_roi": 0.805514705882353,
+          "test_wagered": 272
+        },
+        "D_3連複上位3(1点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9195652173913044,
+          "test_cov": 0.16910229645093947,
+          "test_roi": 0.7728395061728395,
+          "test_wagered": 81
+        },
+        "D_3連複上位3(1点)|gap": {
+          "train_cov": 0.3,
+          "train_roi": 0.8151624548736462,
+          "test_cov": 0.35908141962421714,
+          "test_roi": 0.6953488372093023,
+          "test_wagered": 172
+        },
+        "D_3連複上位3(1点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9565217391304348,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.698780487804878,
+          "test_wagered": 82
+        },
+        "D_3連複上位3(1点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.941304347826087,
+          "test_cov": 0.17954070981210857,
+          "test_roi": 0.7546511627906977,
+          "test_wagered": 86
+        },
+        "E_3連複上位4BOX(4点)|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 0.9692934782608695,
+          "test_cov": 0.16910229645093947,
+          "test_roi": 0.7768518518518519,
+          "test_wagered": 81
+        },
+        "E_3連複上位4BOX(4点)|gap": {
+          "train_cov": 0.1,
+          "train_roi": 1.0171195652173912,
+          "test_cov": 0.1649269311064718,
+          "test_roi": 0.7604430379746835,
+          "test_wagered": 79
+        },
+        "E_3連複上位4BOX(4点)|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 0.9980978260869565,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.7567073170731707,
+          "test_wagered": 82
+        },
+        "E_3連複上位4BOX(4点)|variance": {
+          "train_cov": 0.1,
+          "train_roi": 0.9614130434782608,
+          "test_cov": 0.17954070981210857,
+          "test_roi": 0.7811046511627907,
+          "test_wagered": 86
+        },
+        "I_PL上位3点3連単|p_top": {
+          "train_cov": 0.1,
+          "train_roi": 1.0746376811594203,
+          "test_cov": 0.16910229645093947,
+          "test_roi": 0.8526748971193415,
+          "test_wagered": 81
+        },
+        "I_PL上位3点3連単|gap": {
+          "train_cov": 0.1,
+          "train_roi": 0.9333333333333333,
+          "test_cov": 0.1649269311064718,
+          "test_roi": 0.90042194092827,
+          "test_wagered": 79
+        },
+        "I_PL上位3点3連単|neg_entropy": {
+          "train_cov": 0.1,
+          "train_roi": 1.008695652173913,
+          "test_cov": 0.17118997912317327,
+          "test_roi": 0.6691056910569105,
+          "test_wagered": 82
+        },
+        "I_PL上位3点3連単|variance": {
+          "train_cov": 0.1,
+          "train_roi": 1.0456521739130435,
+          "test_cov": 0.17954070981210857,
+          "test_roi": 0.8674418604651163,
+          "test_wagered": 86
+        }
+      }
+    }
+  ],
+  "robust_winners_over_100_median": []
+}

@@ -1,0 +1,87 @@
+========================================================================
+データ基盤フェーズ4 バックフィル・オーケストレータ
+  items=both venue=(all) from=2026-05-03 to=(latest)
+  VPS=http://153.121.51.74:8080  sleep=4.0s timeout=180.0s retries=2 backoff=5.0s max_batches=∞ dry_run=False
+  取得可能最古日付(DB): 2026-05-03
+========================================================================
+
+会場×月スライス一覧 (items=both):
+  item    month    venue  batches  broken
+  entry   2026-05  びわこ          3       0
+  entry   2026-05  三国           2       0
+  entry   2026-05  丸亀           2       0
+  entry   2026-05  住之江          2       0
+  entry   2026-05  児島           2       0
+  entry   2026-05  唐津           2       0
+  entry   2026-05  多摩川          1       0
+  entry   2026-05  宮島           1       0
+  entry   2026-05  尼崎           2       0
+  entry   2026-05  常滑           2       0
+  entry   2026-05  平和島          2       0
+  entry   2026-05  徳山           2       0
+  entry   2026-05  戸田           2       0
+  entry   2026-05  桐生           2       0
+  entry   2026-05  津            2       0
+  entry   2026-05  浜名湖          2       0
+  entry   2026-05  芦屋           1       0
+  entry   2026-05  若松           2       0
+  entry   2026-05  蒲郡           2       0
+  entry   2026-06  びわこ          7       2
+  entry   2026-06  三国           3       0
+  entry   2026-06  下関           4       2
+  entry   2026-06  丸亀           4       1
+  entry   2026-06  住之江          3       3
+  entry   2026-06  児島           3       2
+  entry   2026-06  唐津           4       2
+  entry   2026-06  多摩川          3       2
+  entry   2026-06  大村           4       1
+  entry   2026-06  宮島           3       1
+  entry   2026-06  尼崎           3       1
+  entry   2026-06  常滑           3       1
+  entry   2026-06  平和島          3       3
+  entry   2026-06  徳山           4       1
+  entry   2026-06  戸田           3       3
+  entry   2026-06  桐生           3       1
+  entry   2026-06  江戸川          3       1
+  entry   2026-06  津            3       1
+  entry   2026-06  浜名湖          3       1
+  entry   2026-06  福岡           3       2
+  entry   2026-06  芦屋           3       1
+  entry   2026-06  若松           3       2
+  entry   2026-06  蒲郡           3       1
+  entry   2026-06  鳴門           4       2
+  results 2026-05  びわこ          3       0
+  results 2026-05  住之江          2       0
+  results 2026-05  児島          11       0
+  results 2026-05  唐津           3       0
+  results 2026-05  尼崎           1       0
+  results 2026-05  平和島         11       0
+  results 2026-05  戸田           4       0
+  results 2026-05  福岡           6       0
+  results 2026-05  若松           1       0
+  results 2026-05  蒲郡           7       0
+  results 2026-05  鳴門           3       0
+  results 2026-06  びわこ          8       0
+  results 2026-06  三国           7       0
+  results 2026-06  下関           5       0
+  results 2026-06  丸亀           6       0
+  results 2026-06  住之江          3       0
+  results 2026-06  児島           1       0
+  results 2026-06  唐津           5       0
+  results 2026-06  多摩川          5       0
+  results 2026-06  大村           5       0
+  results 2026-06  宮島           6       0
+  results 2026-06  尼崎           9       1
+  results 2026-06  常滑           5       0
+  results 2026-06  徳山           6       0
+  results 2026-06  桐生           6       0
+  results 2026-06  江戸川          5       0
+  results 2026-06  津            5       0
+  results 2026-06  浜名湖          5       0
+  results 2026-06  芦屋           6       1
+  results 2026-06  若松           6       0
+  results 2026-06  蒲郡           7       0
+  results 2026-06  鳴門           6       0
+
+  スライス数=75 合計バッチ=287 壊れバッチ=39
+  実行例: python scripts/sakura/backfill_phase4.py --items results --venue びわこ --from 2026-05-01 --to 2026-05-31 --all-dates

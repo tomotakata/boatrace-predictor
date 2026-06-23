@@ -27,11 +27,13 @@ import time
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
-
-# プロジェクトルートの .env を読み込む
-_project_root = Path(__file__).resolve().parents[2]
-load_dotenv(_project_root / ".env")
+try:
+    from dotenv import load_dotenv
+    # プロジェクトルートの .env を読み込む
+    _project_root = Path(__file__).resolve().parents[2]
+    load_dotenv(_project_root / ".env")
+except ImportError:
+    _project_root = Path(__file__).resolve().parents[2]
 
 # fetch_race_data をモジュールとして import
 sys.path.insert(0, str(Path(__file__).resolve().parent))

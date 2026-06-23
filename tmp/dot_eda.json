@@ -1,0 +1,290 @@
+{
+  "races": 430,
+  "boat_rows": 2580,
+  "correlations": [
+    {
+      "feature": "general1y_win_rate",
+      "n": 576,
+      "corr_win": 0.5513628406674285,
+      "corr_top3": 0.3774336703898881
+    },
+    {
+      "feature": "local5y_win_rate",
+      "n": 960,
+      "corr_win": 0.47500716487157774,
+      "corr_top3": 0.30812465412442636
+    },
+    {
+      "feature": "general1y_place2_rate",
+      "n": 576,
+      "corr_win": 0.47332199634531263,
+      "corr_top3": 0.4385270503725146
+    },
+    {
+      "feature": "local5y_place2_rate",
+      "n": 576,
+      "corr_win": 0.43750497830451235,
+      "corr_top3": 0.4601444653069814
+    },
+    {
+      "feature": "general1y_tricast_rate",
+      "n": 576,
+      "corr_win": 0.3945134455048941,
+      "corr_top3": 0.4694572242707655
+    },
+    {
+      "feature": "lane",
+      "n": 2580,
+      "corr_win": -0.3477276706737253,
+      "corr_top3": -0.3381607229519336
+    },
+    {
+      "feature": "local5y_tricast_rate",
+      "n": 960,
+      "corr_win": 0.32884907011830644,
+      "corr_top3": 0.40379001032077966
+    },
+    {
+      "feature": "c1_win_rate",
+      "n": 880,
+      "corr_win": 0.22601226838380595,
+      "corr_top3": 0.34283171440172777
+    },
+    {
+      "feature": "course1y_st",
+      "n": 576,
+      "corr_win": -0.2197934270210824,
+      "corr_top3": -0.3002846289754828
+    },
+    {
+      "feature": "national_place2_rate",
+      "n": 1854,
+      "corr_win": 0.1882939132828355,
+      "corr_top3": 0.309126738346599
+    },
+    {
+      "feature": "c3_win_rate",
+      "n": 880,
+      "corr_win": 0.17145818779092548,
+      "corr_top3": 0.29176538267099533
+    },
+    {
+      "feature": "national_win_rate",
+      "n": 1854,
+      "corr_win": 0.16668122299068436,
+      "corr_top3": 0.3041621533192532
+    },
+    {
+      "feature": "hit_rate",
+      "n": 2580,
+      "corr_win": 0.1651838637994402,
+      "corr_top3": 0.09819788832040921
+    },
+    {
+      "feature": "c2_win_rate",
+      "n": 880,
+      "corr_win": 0.1549749908445968,
+      "corr_top3": 0.25597277211232744
+    },
+    {
+      "feature": "local_place2_rate",
+      "n": 1854,
+      "corr_win": 0.15250608347910705,
+      "corr_top3": 0.18160345933235042
+    },
+    {
+      "feature": "local_win_rate",
+      "n": 1854,
+      "corr_win": 0.14804645131923763,
+      "corr_top3": 0.1729383446671749
+    },
+    {
+      "feature": "c5_win_rate",
+      "n": 880,
+      "corr_win": 0.13923612474551625,
+      "corr_top3": 0.2764104611024493
+    },
+    {
+      "feature": "c4_win_rate",
+      "n": 880,
+      "corr_win": 0.13901004074013779,
+      "corr_top3": 0.2141241882094848
+    },
+    {
+      "feature": "today_st",
+      "n": 960,
+      "corr_win": -0.0973903912983077,
+      "corr_top3": -0.09937492916878442
+    },
+    {
+      "feature": "exhibition_time",
+      "n": 719,
+      "corr_win": -0.0946412626872404,
+      "corr_top3": -0.06000266969750193
+    },
+    {
+      "feature": "avg_st",
+      "n": 1748,
+      "corr_win": -0.08973409209128833,
+      "corr_top3": -0.11131894261144337
+    },
+    {
+      "feature": "c6_win_rate",
+      "n": 880,
+      "corr_win": 0.07977559008109285,
+      "corr_top3": 0.21380717257600013
+    },
+    {
+      "feature": "gen_rate",
+      "n": 2580,
+      "corr_win": -0.04121361212952095,
+      "corr_top3": -0.010912270790589361
+    },
+    {
+      "feature": "motor_place2_rate",
+      "n": 1854,
+      "corr_win": 0.03170677936688545,
+      "corr_top3": 0.03849256718040775
+    },
+    {
+      "feature": "weight",
+      "n": 2580,
+      "corr_win": 0.024695660811425456,
+      "corr_top3": 0.026068174832189348
+    },
+    {
+      "feature": "exhibition_st",
+      "n": 653,
+      "corr_win": -0.023947280077759488,
+      "corr_top3": -0.006488578204499856
+    },
+    {
+      "feature": "national_place3_rate",
+      "n": 72,
+      "corr_win": -0.014120048820467648,
+      "corr_top3": 0.19129643685547923
+    },
+    {
+      "feature": "age",
+      "n": 2508,
+      "corr_win": -0.0038969718614358636,
+      "corr_top3": 0.06526381182314081
+    },
+    {
+      "feature": "f_count",
+      "n": 2580,
+      "corr_win": 0.003076540808618864,
+      "corr_top3": 0.0034396771918119686
+    },
+    {
+      "feature": "standard_st",
+      "n": 847,
+      "corr_win": -6.504064151489389e-05,
+      "corr_top3": -0.00014662197247886815
+    },
+    {
+      "feature": "season_st",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "start_timing",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "motor_ratio",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "boat_ratio",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "deashi",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "nobashi",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "exhibition_1lap",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "exhibition_turning",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "exhibition_straight",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "lap1_time",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "turn_time",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    },
+    {
+      "feature": "odds_win",
+      "n": 0,
+      "corr_win": null,
+      "corr_top3": null
+    }
+  ],
+  "lane_stats": {
+    "1": {
+      "n": 430,
+      "win_rate": 0.5325581395348837,
+      "top3_rate": 0.786046511627907
+    },
+    "2": {
+      "n": 430,
+      "win_rate": 0.13023255813953488,
+      "top3_rate": 0.6
+    },
+    "3": {
+      "n": 430,
+      "win_rate": 0.11627906976744186,
+      "top3_rate": 0.541860465116279
+    },
+    "4": {
+      "n": 430,
+      "win_rate": 0.11162790697674418,
+      "top3_rate": 0.45348837209302323
+    },
+    "5": {
+      "n": 430,
+      "win_rate": 0.07209302325581396,
+      "top3_rate": 0.3697674418604651
+    },
+    "6": {
+      "n": 430,
+      "win_rate": 0.037209302325581395,
+      "top3_rate": 0.24883720930232558
+    }
+  }
+}

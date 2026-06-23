@@ -1,0 +1,44 @@
+{
+  "びわこ": {
+    "1": {"result_3t": "1-3-2", "boat_1st": 1, "boat_2nd": 3, "boat_3rd": 2},
+    "2": {"result_3t": "5-3-1", "boat_1st": 5, "boat_2nd": 3, "boat_3rd": 1},
+    "3": {"result_3t": "5-1-3", "boat_1st": 5, "boat_2nd": 1, "boat_3rd": 3},
+    "4": {"result_3t": "1-3-2", "boat_1st": 1, "boat_2nd": 3, "boat_3rd": 2},
+    "5": {"result_3t": "3-1-5", "boat_1st": 3, "boat_2nd": 1, "boat_3rd": 5},
+    "6": {"result_3t": "1-4-3", "boat_1st": 1, "boat_2nd": 4, "boat_3rd": 3},
+    "7": {"result_3t": "1-3-2", "boat_1st": 1, "boat_2nd": 3, "boat_3rd": 2},
+    "8": {"result_3t": "6-1-2", "boat_1st": 6, "boat_2nd": 1, "boat_3rd": 2},
+    "9": {"result_3t": "1-2-5", "boat_1st": 1, "boat_2nd": 2, "boat_3rd": 5},
+    "10": {"result_3t": "1-6-2", "boat_1st": 1, "boat_2nd": 6, "boat_3rd": 2},
+    "11": {"result_3t": "1-2-5", "boat_1st": 1, "boat_2nd": 2, "boat_3rd": 5},
+    "12": {"result_3t": "1-4-3", "boat_1st": 1, "boat_2nd": 4, "boat_3rd": 3}
+  },
+  "丸亀": {
+    "1": {"result_3t": "1-2-4", "boat_1st": 1, "boat_2nd": 2, "boat_3rd": 4},
+    "2": {"result_3t": "1-2-5", "boat_1st": 1, "boat_2nd": 2, "boat_3rd": 5},
+    "3": {"result_3t": "3-6-5", "boat_1st": 3, "boat_2nd": 6, "boat_3rd": 5},
+    "4": {"result_3t": "2-4-5", "boat_1st": 2, "boat_2nd": 4, "boat_3rd": 5},
+    "5": {"result_3t": "1-4-2", "boat_1st": 1, "boat_2nd": 4, "boat_3rd": 2},
+    "6": {"result_3t": "2-1-5", "boat_1st": 2, "boat_2nd": 1, "boat_3rd": 5},
+    "7": {"result_3t": "2-4-3", "boat_1st": 2, "boat_2nd": 4, "boat_3rd": 3},
+    "8": {"result_3t": "1-4-5", "boat_1st": 1, "boat_2nd": 4, "boat_3rd": 5},
+    "9": {"result_3t": "6-1-2", "boat_1st": 6, "boat_2nd": 1, "boat_3rd": 2},
+    "10": {"result_3t": "1-2-3", "boat_1st": 1, "boat_2nd": 2, "boat_3rd": 3},
+    "11": {"result_3t": "1-2-4", "boat_1st": 1, "boat_2nd": 2, "boat_3rd": 4},
+    "12": {"result_3t": "1-3-4", "boat_1st": 1, "boat_2nd": 3, "boat_3rd": 4}
+  },
+  "福岡": {
+    "1": {"result_3t": "1-2-3", "boat_1st": 1, "boat_2nd": 2, "boat_3rd": 3},
+    "2": {"result_3t": "4-5-6", "boat_1st": 4, "boat_2nd": 5, "boat_3rd": 6},
+    "3": {"result_3t": "3-4-5", "boat_1st": 3, "boat_2nd": 4, "boat_3rd": 5},
+    "4": {"result_3t": "1-4-2", "boat_1st": 1, "boat_2nd": 4, "boat_3rd": 2},
+    "5": {"result_3t": "3-2-4", "boat_1st": 3, "boat_2nd": 2, "boat_3rd": 4},
+    "6": {"result_3t": "2-1-4", "boat_1st": 2, "boat_2nd": 1, "boat_3rd": 4},
+    "7": {"result_3t": "1-2-5", "boat_1st": 1, "boat_2nd": 2, "boat_3rd": 5},
+    "8": {"result_3t": "4-1-2", "boat_1st": 4, "boat_2nd": 1, "boat_3rd": 2},
+    "9": {"result_3t": "1-2-4", "boat_1st": 1, "boat_2nd": 2, "boat_3rd": 4},
+    "10": {"result_3t": "4-1-6", "boat_1st": 4, "boat_2nd": 1, "boat_3rd": 6},
+    "11": {"result_3t": "3-4-1", "boat_1st": 3, "boat_2nd": 4, "boat_3rd": 1},
+    "12": {"result_3t": "1-2-3", "boat_1st": 1, "boat_2nd": 2, "boat_3rd": 3}
+  }
+}

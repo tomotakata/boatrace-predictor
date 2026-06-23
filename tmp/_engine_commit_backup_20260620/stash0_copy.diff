@@ -1,0 +1,775 @@
+diff --git a/backend/app/prediction/engine.py b/backend/app/prediction/engine.py
+index 33b0d13..f5aad1c 100644
+--- a/backend/app/prediction/engine.py
++++ b/backend/app/prediction/engine.py
+@@ -43,10 +43,6 @@ from typing import List, Optional, Dict, Tuple
+ # ═══════════════════════════════════════════════════════════
+ EV_MIN = 1.15      # 採用閾値（v58.7では内部参考値のみ）
+ EV_BAT = 1.70      # 勝負閾値（v58.7では内部参考値のみ）
+-GAP = 1.6          # フォーマット/軸ギャップ閾値（倍）
+-DEC1 = 0.85        # 逃げ成立度減衰係数（イン弱日）
+-DEC2 = 0.70        # 逃げ成立度減衰係数（大荒れ日）
+-N_CAL = 24         # 較正最低標本（R）
+ SINK = 0.5         # 沈み艇3着補正係数
+ MANSHU_MIN_ODDS = 100.0   # 万舟=100倍以上
+ WEAK_HEAD_TH = 0.50       # 弱頭判定（1着率合計<50%）
+@@ -73,6 +69,28 @@ GEN_FIRE = 0.05           # 発生率≥5%
+ DKAN_FIRE = 2             # D-KAN2項目以上
+ HIT_HIGH = 0.40           # 被弾率⑤f：1号A型禁止/崩壊枝厚みの高被弾閾値
+ 
++DEFAULT_ENGINE_PARAMS = {
++    "p0_override": {},
++    "n_cal": 24,
++    "dec1": 0.85,
++    "dec2": 0.70,
++    "gap_target": "lane1_vs_best_non1",
++    "gap_threshold": 1.6,
++    "escape_score_weights": {
++        "p1": 0.55,
++        "c1_place2": 0.20,
++        "c1_tricast": 0.15,
++        "st": 0.10,
++    },
++    "escape_outstanding_threshold": 0.58,
++    "gen_rate_mode": "existing_or_kimarite",
++    "gen_rate_threshold": 0.05,
++    "revision67_lane1_unreliable_threshold": 0.45,
++    "revision67_use_nigiri_top2": True,
++    "dkan_fire_threshold": 2,
++    "hit_high": 0.40,
++}
++
+ 
+ # ─────────────────────────────────────────
+ # データクラス
+@@ -160,6 +178,7 @@ class RaceInput:
+     # 逃げ成立度較正（改正46/48）: 実1号頭率R と標本数N
+     cal_r: Optional[float] = None    # 同場直近2節＋当節の実1号頭率（0-1）
+     cal_n: int = 0                   # 標本レース数
++    engine_params: Optional[Dict] = None
+ 
+ 
+ @dataclass
+@@ -335,6 +354,7 @@ class BoatracePredictor:
+     def predict(self, race: RaceInput) -> PredictionOutput:
+         self.race = race
+         self.boats = sorted(race.boats, key=lambda b: (b.lane, b.course))
++        self.params = self._merge_engine_params(getattr(race, "engine_params", None))
+         self.out = PredictionOutput()
+         self.out.notes = []
+         self.benefit_ladder = []
+@@ -367,6 +387,21 @@ class BoatracePredictor:
+         self._run10_finalize()
+         return self.out
+ 
++    def _merge_engine_params(self, overrides: Optional[Dict]) -> Dict:
++        params = {
++            **DEFAULT_ENGINE_PARAMS,
++            "p0_override": dict(DEFAULT_ENGINE_PARAMS["p0_override"]),
++            "escape_score_weights": dict(DEFAULT_ENGINE_PARAMS["escape_score_weights"]),
++        }
++        if not overrides:
++            return params
++        for key, value in overrides.items():
++            if key in ("p0_override", "escape_score_weights") and isinstance(value, dict):
++                params[key].update(value)
++            else:
++                params[key] = value
++        return params
++
+     def _normalize_boat_field(self):
+         lane_map = {b.lane: b for b in self.boats if 1 <= b.lane <= 6}
+         if len(lane_map) < 6:
+@@ -393,14 +428,15 @@ class BoatracePredictor:
+     def _recompute_attack_rates(self):
+         attackers = [b for b in self.boats if b.course >= 2]
+         for b in attackers:
+-            attack_score = _prob(b.course_win_rates.get(b.course, 0))
+-            attack_score += _prob(b.course_place2_rates.get(b.course, 0)) * 0.35
+-            attack_score += min(0.25, max(0.0, b.ei) / 100.0) * 0.25
+-            attack_score += min(0.20, b.completion_power * 0.03)
+-            if b.gen_rate_raw > 0:
++            attack_score = self._derived_gen_rate(b)
++            if self.params.get("gen_rate_mode") == "existing" and b.gen_rate_raw > 0:
++                b.gen_rate = b.gen_rate_raw
++            elif self.params.get("gen_rate_mode") == "kimarite":
++                b.gen_rate = attack_score
++            elif b.gen_rate_raw > 0:
+                 b.gen_rate = b.gen_rate_raw
+             elif b.gen_rate <= 0:
+-                b.gen_rate = max(0.0, attack_score)
++                b.gen_rate = attack_score
+ 
+         boat1 = self._boat_by_course(1)
+         if boat1 is not None:
+@@ -414,6 +450,20 @@ class BoatracePredictor:
+             elif boat1.hit_rate <= 0:
+                 boat1.hit_rate = imputed_hit
+ 
++    def _derived_gen_rate(self, b: BoatEntry) -> float:
++        kimarite_total = max(0, b.sashi) + max(0, b.makuri) + max(0, b.makurizashi)
++        if kimarite_total > 0:
++            if b.attack_type == "捲り":
++                return max(0.0, b.makuri / kimarite_total)
++            if b.attack_type == "捲差":
++                return max(0.0, b.makurizashi / kimarite_total)
++            return max(0.0, b.sashi / kimarite_total)
++        attack_score = _prob(b.course_win_rates.get(b.course, 0))
++        attack_score += _prob(b.course_place2_rates.get(b.course, 0)) * 0.35
++        attack_score += min(0.25, max(0.0, b.ei) / 100.0) * 0.25
++        attack_score += min(0.20, b.completion_power * 0.03)
++        return max(0.0, min(1.0, attack_score))
++
+     # ────────────────────────────────────
+     # RUN-00 進入・初日・SINK適用可否
+     # ────────────────────────────────────
+@@ -563,22 +613,29 @@ class BoatracePredictor:
+         self.out.cal_applied = False
+ 
+         # ② 逃げ成立度の当節較正（改正46/48）
+-        if boat1 is not None and self.race.cal_r is not None and self.race.cal_n >= N_CAL:
++        n_cal = int(self.params.get("n_cal", DEFAULT_ENGINE_PARAMS["n_cal"]))
++        dec1 = float(self.params.get("dec1", DEFAULT_ENGINE_PARAMS["dec1"]))
++        dec2 = float(self.params.get("dec2", DEFAULT_ENGINE_PARAMS["dec2"]))
++        prior = self.params.get("p0_override", {}).get(
++            self.race.venue,
++            VENUE_IN_PRIOR.get(self.race.venue, 0.52),
++        )
++        if boat1 is not None and self.race.cal_r is not None and self.race.cal_n >= n_cal:
+             R = self.race.cal_r
+             P0 = prior
+             if R < P0 - 0.20:
+-                factor = DEC2
++                factor = dec2
+             elif R < P0 - 0.10:
+-                factor = DEC1
++                factor = dec1
+             if factor < 1.0:
+                 self.out.cal_applied = True
+                 self.out.cal_factor = factor
+                 self.out.notes.append(
+                     f"逃げ成立度較正：実1号頭率R={R:.2f} < 場平均P0={P0:.2f} "
+                     f"→ 1号P1×{factor}（標本{self.race.cal_n}R・改正46/48）")
+-        elif self.race.cal_n and self.race.cal_n < N_CAL:
++        elif self.race.cal_n and self.race.cal_n < n_cal:
+             self.out.notes.append(
+-                f"較正標本{self.race.cal_n}R < N_cal({N_CAL})→prior据え置き（改正48）")
++                f"較正標本{self.race.cal_n}R < N_cal({n_cal})→prior据え置き（改正48）")
+ 
+         # ③ 減衰＋再正規化（改正53）：ΔPを非1号へ比例配分しΣP1=1を回復
+         if boat1 is not None and factor < 1.0:
+@@ -690,11 +747,15 @@ class BoatracePredictor:
+         ranked = sorted(self.boats, key=lambda b: b.p1, reverse=True)
+         top1 = ranked[0]
+         top2 = ranked[1] if len(ranked) > 1 else ranked[0]
+-        gap_ok = top2.p1 > 0 and (top1.p1 / max(top2.p1, 1e-6)) >= GAP
+-        return boat1.p1 >= 0.50 and self.out.s_in == "イン強" and gap_ok
++        gap_ok = self._gap_ok(top1, top2)
++        return boat1.p1 >= 0.50 and self._escape_outstanding(boat1) and gap_ok
+ 
+     def _is_lane1_unreliable(self, boat1: Optional[BoatEntry]) -> bool:
+-        return boat1 is not None and boat1.p1 < 0.45
++        threshold = float(self.params.get(
++            "revision67_lane1_unreliable_threshold",
++            DEFAULT_ENGINE_PARAMS["revision67_lane1_unreliable_threshold"],
++        ))
++        return boat1 is not None and boat1.p1 < threshold
+ 
+     def _is_revision67_case(
+         self,
+@@ -706,14 +767,12 @@ class BoatracePredictor:
+             return False
+         if not self._is_lane1_unreliable(boat1):
+             return False
+-        c2_attack = boat2.attack_type in ("差し", "捲り", "捲差")
+-        sashi_top2 = boat2.sashi > 0 and sum(
+-            1 for b in self.boats if b.sashi > boat2.sashi
++        c2_attack = boat2.attack_type in ("捲差", "捲り")
++        nigiri_top2 = bool(self.params.get("revision67_use_nigiri_top2", True)) and boat2.nigiri_rate > 0 and sum(
++            1 for b in self.boats if b.nigiri_rate > boat2.nigiri_rate
+         ) < 2
+-        makuri_top2 = boat2.makuri > 0 and sum(
+-            1 for b in self.boats if b.makuri > boat2.makuri
+-        ) < 2
+-        c2_advantage = sashi_top2 or makuri_top2
++        makurizashi_ok = boat2.makurizashi > 0 or boat2.attack_type == "捲差"
++        c2_advantage = makurizashi_ok or nigiri_top2
+         c2_edge = boat2.p1 >= boat3.p1
+         return c2_attack and c2_advantage and c2_edge
+ 
+@@ -724,9 +783,9 @@ class BoatracePredictor:
+             gmax_val = max(b.gen_rate for b in attackers)
+             cand = max(attackers, key=lambda b: (b.gen_rate, b.completion_power, b.p1))
+             if (
+-                cand.gen_rate >= GEN_FIRE
++                cand.gen_rate >= float(self.params.get("gen_rate_threshold", GEN_FIRE))
+                 and cand.gen_rate >= gmax_val - 1e-9
+-                and cand.completion_power >= DKAN_FIRE
++                and cand.completion_power >= int(self.params.get("dkan_fire_threshold", DKAN_FIRE))
+             ):
+                 recognized = cand
+         fallback = max(
+@@ -756,12 +815,33 @@ class BoatracePredictor:
+             return boat2.lane, boat2.course, self._attack_label(boat2)
+         if self._is_lane1_unreliable(boat1) and recognized_fire is not None:
+             return recognized_fire.lane, recognized_fire.course, self._attack_label(recognized_fire)
+-        if top.course != 1 and boat1 is not None and boat1.p1 < 0.50:
+-            return top.lane, top.course, self._attack_label(top)
++        ranked_attackers = self._rank_attack_candidates()
++        if boat1 is not None and boat1.p1 < 0.50 and ranked_attackers:
++            best_attacker = ranked_attackers[0]
++            return best_attacker.lane, best_attacker.course, self._attack_label(best_attacker)
+         if boat1 is not None:
+             return boat1.lane, 1, "1逃げ"
+         return top.lane, top.course, self._attack_label(top)
+ 
++    def _rank_attack_candidates(self) -> List[BoatEntry]:
++        attackers = [b for b in self.boats if b.course >= 2 and b.lane != 1]
++        def score(boat: BoatEntry) -> Tuple[float, float, float, float, int]:
++            course_win = _prob(boat.course_win_rates.get(boat.course, 0))
++            motor = _prob(boat.motor_place2_rate)
++            st_edge = max(0.0, 0.22 - self._st_value(boat))
++            attack_fit = boat.gen_rate
++            dkan = float(boat.completion_power)
++            total = (
++                course_win * 0.42
++                + attack_fit * 0.23
++                + motor * 0.15
++                + st_edge * 0.80
++                + dkan * 0.03
++                + boat.p1 * 0.17
++            )
++            return (total, course_win, attack_fit, motor, -boat.lane)
++        return sorted(attackers, key=score, reverse=True)
++
+     def _attack_label(self, b: BoatEntry) -> str:
+         c = b.course
+         if c == 2:
+@@ -811,7 +891,7 @@ class BoatracePredictor:
+         # ── 被弾率⑤f（1号評価専用：A型禁止判定・崩壊枝厚み）──
+         self._no_a_format = False
+         boat1 = self._boat_by_course(1)
+-        if boat1 and boat1.hit_rate >= HIT_HIGH:
++        if boat1 and boat1.hit_rate >= float(self.params.get("hit_high", HIT_HIGH)):
+             self._no_a_format = True
+             self.out.notes.append(
+                 f"被弾率⑤f：1号の被弾率{boat1.hit_rate*100:.0f}%（高）→"
+@@ -830,17 +910,20 @@ class BoatracePredictor:
+ 
+     def _build_pdf_templates(self, attack_course: int) -> List[Tuple[int, List[int], List[int]]]:
+         if self.out.fmt == "B":
+-            lane1 = self._lane_of_course(1)
+-            if lane1:
+-                lane2 = self._lane_of_course(2)
+-                lane3 = self._lane_of_course(3)
+-                lane4 = self._lane_of_course(4)
+-                lane5 = self._lane_of_course(5)
+-                return [(
+-                    lane1,
+-                    [ln for ln in (lane2, lane3, lane5) if ln],
+-                    [ln for ln in (lane2, lane3, lane4, lane5) if ln],
+-                )]
++            head_pair = list(self.out.head_boats or [])
++            if len(head_pair) < 2:
++                lane1 = self._lane_of_course(1)
++                if lane1:
++                    second = self._select_b_second_head(lane1, self.out.main_attack_lane)
++                    head_pair = [lane1, second]
++            template_lanes = self._build_b_template_lanes(head_pair)
++            templates: List[Tuple[int, List[int], List[int]]] = []
++            for head in head_pair[:2]:
++                seconds = [lane for lane in template_lanes if lane != head]
++                thirds = [lane for lane in template_lanes if lane != head]
++                if head and seconds and thirds:
++                    templates.append((head, seconds, thirds))
++            return templates
+         if attack_course == 1:
+             lane1 = self._lane_of_course(1)
+             lane2 = self._lane_of_course(2)
+@@ -956,10 +1039,7 @@ class BoatracePredictor:
+             for ln in thirds:
+                 if ln and ln not in template_hus_src:
+                     template_hus_src.append(ln)
+-        axis_src = [ln for ln in self.benefit_ladder if ln in template_axis_src]
+-        for ln in template_axis_src:
+-            if ln not in axis_src:
+-                axis_src.append(ln)
++        axis_src = template_axis_src[:]
+         hus_src = template_hus_src[:]
+         template_pool = {a_lane, *template_axis_src, *template_hus_src}
+         for b in sorted(self.boats, key=lambda b: b.p1, reverse=True):
+@@ -976,17 +1056,12 @@ class BoatracePredictor:
+             self.out.axis_boats = axis_src[:3]
+             self.out.hus_boats = (axis_src[:3] + [x for x in hus_src if x not in axis_src[:3]])[:4]
+         else:
+-            lane1 = lane1_boat.lane
+-            second_head = self._select_b_second_head(lane1, a_lane)
+-            self.out.head_boats = [lane1]
++            head_pair = self._select_b_head_pair(lane1_boat, attack_boat)
++            self.out.head_boats = head_pair[:2]
+             self.out.head_type = "B"
+-            axis4 = list(dict.fromkeys([second_head] + axis_src))
+-            self.out.axis_boats = axis4
+-            # 3着側に攻め成立側の外艇6を必ず1枚（改正42）
+-            hus4 = list(dict.fromkeys(axis4 + hus_src))
+-            l6 = self._lane_of_course(6)
+-            if l6 and l6 not in hus4:
+-                hus4.append(l6)
++            axis4 = self._build_b_axis_candidates(head_pair, axis_src)
++            self.out.axis_boats = axis4[:4]
++            hus4 = self._build_b_hus_candidates(head_pair, axis_src, hus_src)
+             self.out.hus_boats = hus4[:4]
+ 
+         # 弱頭判定（改正54）
+@@ -1007,9 +1082,131 @@ class BoatracePredictor:
+     ) -> bool:
+         if head_boat is None:
+             return False
+-        gap_ok = top2.p1 > 0 and (top1.p1 / max(top2.p1, 1e-6)) >= GAP
+-        escape_outstanding = self.out.main_attack_course == 1 and self.out.s_in == "イン強"
+-        return head_boat.p1 >= 0.50 and gap_ok and escape_outstanding
++        gap_ok = self._gap_ok(top1, top2)
++        escape_outstanding = self.out.main_attack_course == 1 and self._escape_outstanding(head_boat)
++        return head_boat.lane == self._lane_of_course(1) and head_boat.p1 >= 0.50 and gap_ok and escape_outstanding
++
++    def _select_b_head_pair(
++        self,
++        lane1_boat: Optional[BoatEntry],
++        attack_boat: Optional[BoatEntry],
++    ) -> List[int]:
++        ranked = self._rank_b_head_candidates()
++        pair: List[int] = []
++        for lane in ranked:
++            if lane not in pair:
++                pair.append(lane)
++            if len(pair) >= 2:
++                break
++        if len(pair) < 2 and attack_boat and attack_boat.lane not in pair:
++            pair.append(attack_boat.lane)
++        if len(pair) < 2 and lane1_boat and lane1_boat.lane not in pair:
++            pair.append(lane1_boat.lane)
++        return pair[:2]
++
++    def _rank_b_head_candidates(self) -> List[int]:
++        lane1 = self._boat_by_course(1)
++        scored: List[Tuple[float, int]] = []
++        for boat in self.boats:
++            course_win = _prob(boat.course_win_rates.get(boat.course, 0))
++            motor = _prob(boat.motor_place2_rate)
++            st_edge = max(0.0, 0.22 - self._st_value(boat))
++            attack_fit = boat.gen_rate
++            dkan = float(boat.completion_power)
++            score = (
++                course_win * 0.45
++                + attack_fit * 0.20
++                + motor * 0.14
++                + st_edge * 0.75
++                + dkan * 0.03
++                + boat.p1 * 0.12
++            )
++            if lane1 and boat.lane == lane1.lane:
++                if self._escape_outstanding(lane1):
++                    score += 0.18
++                else:
++                    score -= 0.12
++            if boat.course >= 4:
++                score += 0.04
++            scored.append((score, boat.lane))
++        scored.sort(key=lambda item: (-item[0], item[1]))
++        return [lane for _, lane in scored]
++
++    def _build_b_template_lanes(self, head_pair: List[int]) -> List[int]:
++        lanes: List[int] = []
++        for lane in head_pair[:2]:
++            if lane and lane not in lanes:
++                lanes.append(lane)
++        for boat in sorted(self.boats, key=lambda b: self._b_template_support_score(b), reverse=True):
++            if boat.lane not in lanes:
++                lanes.append(boat.lane)
++            if len(lanes) >= 4:
++                break
++        return lanes[:4]
++
++    def _b_template_support_score(self, boat: BoatEntry) -> float:
++        return (
++            _prob(boat.course_place2_rates.get(boat.course, 0)) * 0.45
++            + _prob(boat.course_tricast_rates.get(boat.course, 0)) * 0.25
++            + _prob(boat.motor_place2_rate) * 0.15
++            + max(0.0, 0.22 - self._st_value(boat)) * 0.60
++            + boat.p1 * 0.10
++        )
++
++    def _build_b_axis_candidates(self, head_pair: List[int], template_axis_src: List[int]) -> List[int]:
++        axis: List[int] = []
++        for lane in template_axis_src:
++            if lane and lane not in head_pair and lane not in axis:
++                axis.append(lane)
++        for lane in head_pair:
++            if lane and lane not in axis:
++                axis.append(lane)
++        return axis[:4]
++
++    def _build_b_hus_candidates(
++        self,
++        head_pair: List[int],
++        template_axis_src: List[int],
++        template_hus_src: List[int],
++    ) -> List[int]:
++        hus: List[int] = []
++        for lane in template_axis_src:
++            if lane and lane not in hus:
++                hus.append(lane)
++        for lane in template_hus_src:
++            if lane and lane not in hus:
++                hus.append(lane)
++        return hus[:4]
++
++    def _gap_ok(self, top1: BoatEntry, top2: BoatEntry) -> bool:
++        threshold = float(self.params.get("gap_threshold", DEFAULT_ENGINE_PARAMS["gap_threshold"]))
++        target = self.params.get("gap_target", DEFAULT_ENGINE_PARAMS["gap_target"])
++        lane1 = self._boat_by_course(1)
++        if lane1 is None:
++            return False
++        if target == "lane1_vs_best_non1":
++            others = [b for b in self.boats if b.lane != lane1.lane]
++            if not others:
++                return False
++            best_other = max(others, key=lambda b: b.p1)
++            return lane1.p1 / max(best_other.p1, 1e-6) >= threshold
++        return top2.p1 > 0 and (top1.p1 / max(top2.p1, 1e-6)) >= threshold
++
++    def _escape_outstanding(self, boat1: BoatEntry) -> bool:
++        weights = self.params.get("escape_score_weights", DEFAULT_ENGINE_PARAMS["escape_score_weights"])
++        c1_place2 = _prob(boat1.course_place2_rates.get(1, 0))
++        c1_tricast = _prob(boat1.course_tricast_rates.get(1, 0))
++        st_score = max(0.0, min(1.0, 0.25 - self._st_value(boat1)) / 0.15)
++        score = (
++            boat1.p1 * float(weights.get("p1", 0.55))
++            + c1_place2 * float(weights.get("c1_place2", 0.20))
++            + c1_tricast * float(weights.get("c1_tricast", 0.15))
++            + st_score * float(weights.get("st", 0.10))
++        )
++        return score >= float(self.params.get(
++            "escape_outstanding_threshold",
++            DEFAULT_ENGINE_PARAMS["escape_outstanding_threshold"],
++        ))
+ 
+     def _select_b_second_head(self, lane1: int, attack_lane: int) -> int:
+         candidates = [
+@@ -1495,34 +1692,28 @@ class BoatracePredictor:
+ 
+         subject_ok = False
+         if self.out.fmt == "B":
+-            lane1 = self._lane_of_course(1)
+-            subject_ok = bool(
+-                lane1
+-                and self.out.head_boats
+-                and self.out.head_boats[0] == lane1
+-            )
++            subject_ok = bool(attack_lane and attack_lane in self.out.head_boats)
+         elif attack_lane and self.out.head_boats:
+             subject_ok = attack_lane in self.out.head_boats
+         elif attack_lane:
+             subject_ok = any(point.combo.startswith(f"{attack_lane}-") for point in self.out.honsen)
+         if not subject_ok and attack_lane:
+             if self.out.fmt == "B":
+-                lane1 = self._lane_of_course(1)
+-                if lane1:
+-                    second_head = self._select_b_second_head(lane1, attack_lane)
+-                    self.out.head_boats = [lane1, second_head]
++                lane1_boat = self._boat_by_course(1)
++                attack_boat = self._boat_by_lane(attack_lane)
++                self.out.head_boats = self._select_b_head_pair(lane1_boat, attack_boat)
+             elif attack_lane not in self.out.head_boats:
+                 self.out.head_boats = [attack_lane] + [lane for lane in self.out.head_boats if lane != attack_lane]
+                 self.out.head_boats = self.out.head_boats[:1]
+             self.out.head_type = "AB" if self.out.fmt == "B" else "A"
+             if self.out.fmt == "B":
+-                notes_to_add.append("4M主体整合是正：Bフォーマット頭を1号艇へ復帰")
+-                summary_parts.append("主体=是正(B=1号頭)")
++                notes_to_add.append("4M主体整合是正：Bフォーマット頭を攻め主体含みへ再構成")
++                summary_parts.append("主体=是正(B=AB頭)")
+             else:
+                 notes_to_add.append(f"4M主体整合是正：攻め主体{attack_course}号を頭候補へ復帰")
+                 summary_parts.append(f"主体=是正({attack_course}号)")
+         else:
+-            summary_parts.append("主体=適合(B=1号頭)" if self.out.fmt == "B" else f"主体=適合({attack_course}号)")
++            summary_parts.append("主体=適合(B=AB頭)" if self.out.fmt == "B" else f"主体=適合({attack_course}号)")
+ 
+         beneficiary_conflicts: List[str] = []
+         if primary:
+@@ -1544,12 +1735,13 @@ class BoatracePredictor:
+ 
+         template_violations: List[str] = []
+         if template:
+-            expected_head = self._lane_of_course(1) if self.out.fmt == "B" else attack_lane
+-            invalid_heads = [lane for lane in self.out.head_boats if lane != expected_head and lane not in template_seconds]
++            expected_heads = set(self.out.head_boats[:2]) if self.out.fmt == "B" else {attack_lane}
++            invalid_heads = [lane for lane in self.out.head_boats if lane not in expected_heads]
+             if invalid_heads:
+                 self.out.head_boats = [lane for lane in self.out.head_boats if lane not in invalid_heads]
+-                if expected_head and expected_head not in self.out.head_boats:
+-                    self.out.head_boats.insert(0, expected_head)
++                for lane in expected_heads:
++                    if lane and lane not in self.out.head_boats:
++                        self.out.head_boats.append(lane)
+                 template_violations.append(f"頭テンプレ外除去={invalid_heads}")
+             invalid_axis = [lane for lane in self.out.axis_boats if lane not in template_seconds and lane not in self.out.head_boats]
+             if invalid_axis:
+@@ -1833,6 +2025,7 @@ def race_dict_to_input(race: dict) -> RaceInput:
+         odds_updated_at=race.get("odds_updated_at") or "",
+         cal_r=cal.get("r"),
+         cal_n=_safe_int(cal.get("n")),
++        engine_params=race.get("engine_params"),
+     )
+ 
+ 
+diff --git a/frontend/src/pages/RaceDetail.tsx b/frontend/src/pages/RaceDetail.tsx
+index ac13c47..53074e1 100644
+--- a/frontend/src/pages/RaceDetail.tsx
++++ b/frontend/src/pages/RaceDetail.tsx
+@@ -1299,6 +1299,9 @@ function ResultAndMemoPanel({ raceId, raceDate, raceVenue, systemDetail }: { rac
+       setLoading(false)
+     }
+   }
++  // 「確定結果を取得」ボタンは現在無効化中（将来再有効化用に保持）
++  void fetchResult
++  void loading
+ 
+   async function handleSaveMemo() {
+     setSaving(true)
+@@ -1377,9 +1380,9 @@ function ResultAndMemoPanel({ raceId, raceDate, raceVenue, systemDetail }: { rac
+           </div>
+         )}
+         {!fetched ? (
+-          <button onClick={fetchResult} disabled={loading}
+-            style={{ padding: '7px 18px', background: '#1e3a5f', color: '#93c5fd', border: '1px solid #3b82f6', borderRadius: 7, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+-            {loading ? '取得中…' : '確定結果を取得'}
++          <button disabled
++            style={{ padding: '7px 18px', background: '#1e293b', color: '#64748b', border: '1px solid #334155', borderRadius: 7, cursor: 'not-allowed', fontSize: 13, fontWeight: 600, opacity: 0.6 }}>
++            確定結果を取得
+           </button>
+         ) : result && (result.trifecta_result || result.winner_lane) ? (
+           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
+@@ -1486,7 +1489,7 @@ function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
+   return (
+     <div style={{ border: '2px solid #3b82f644', borderRadius: 10, marginBottom: 16, overflow: 'hidden' }}>
+       <div style={{ background: '#1e3a5f44', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #1e3a5f', flexWrap: 'wrap' }}>
+-        <span style={{ fontWeight: 700, color: '#60a5fa', fontSize: 14 }}>システム予測 {detail.version || 'v60.0'}</span>
++        <span style={{ fontWeight: 700, color: '#60a5fa', fontSize: 14 }}>システム化修正調査中</span>
+         <span style={{ padding: '2px 10px', borderRadius: 10, background: '#1e3a5f', color: '#94a3b8', fontSize: 12 }}>{detail.regime}</span>
+         <span style={{ padding: '2px 10px', borderRadius: 10, background: '#1e3a5f', color: '#94a3b8', fontSize: 12 }}>{detail.s_in}（{detail.surface_type}）</span>
+         <span style={{ fontSize: 12, color: '#64748b' }}>自信度: {Math.round(detail.confidence)}% / 波乱度: {Math.round(detail.wave_score)}%</span>
+@@ -1773,7 +1776,7 @@ export default function RaceDetail() {
+           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+             <button onClick={handlePredictSystem} disabled={predicting}
+               style={{ padding: '8px 16px', background: 'linear-gradient(135deg,#1e40af,#3b82f6)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+-              {predicting ? '予測中…' : 'システム予測 v60.0'}
++              {predicting ? '予測中…' : 'システム化修正調査中'}
+             </button>
+             <button onClick={() => handlePredict('ensemble')} disabled={predicting}
+               style={{ padding: '8px 14px', background: '#1e2a40', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
+diff --git a/scripts/sakura/server.py b/scripts/sakura/server.py
+index f826922..47341f1 100644
+--- a/scripts/sakura/server.py
++++ b/scripts/sakura/server.py
+@@ -25,7 +25,7 @@ BR_BASE = "https://www.boatrace.jp"
+ 
+ VENUE_CODE_MAP = {
+     "桐生":"01","戸田":"02","江戸川":"03","平和島":"04","多摩川":"05","浜名湖":"06",
+-    "蒲郡":"07","常滑":"08","津":"09","三国":"10","びわこ":"12","住之江":"11",
++    "蒲郡":"07","常滑":"08","津":"09","三国":"10","びわこ":"11","住之江":"12",
+     "尼崎":"13","鳴門":"14","丸亀":"15","児島":"16","宮島":"17","徳山":"18",
+     "下関":"19","若松":"20","芦屋":"21","福岡":"22","唐津":"23","大村":"24"
+ }
+@@ -93,27 +93,10 @@ async def bf_login(client):
+     r2 = await client.post(f"{BF_BASE}/login", data={"_token":tok,"email":BOATFRONTIER_EMAIL,"password":BOATFRONTIER_PASSWORD}, follow_redirects=True)
+     return "logout" in r2.text.lower()
+ 
+-async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, race_no):
+-    """boatrace.jp から1レース分の出走表を取得してDBに保存"""
+-    url = f"{BR_BASE}/owpc/pc/race/racelist?hd={date_str}&jcd={venue_code}&rno={race_no}"
+-    resp = await client.get(url)
+-    if resp.status_code != 200:
+-        return 0
+-    soup = BeautifulSoup(resp.text, "html.parser")
+-
+-    # 出走表テーブルの選手行を取得
+-    player_rows = soup.select("table tbody tr")
+-    boats_saved = 0
+-
+-    # race_id 取得または作成
+-    ex = sb.table("races").select("id").eq("date",date_fmt).eq("venue",venue).eq("race_no",race_no).execute()
+-    if ex.data:
+-        race_id = ex.data[0]["id"]
+-    else:
+-        r2 = sb.table("races").insert({"date":date_fmt,"venue":venue,"race_no":race_no,"status":"scheduled"}).execute()
+-        if not r2.data: return 0
+-        race_id = r2.data[0]["id"]
+-
++def _parse_entry_rows(player_rows):
++    """racelistのtbody行から6艇分の(lane, player_fields, boat_fields)を抽出。
++    DB書き込みは一切行わず、パース結果のみ返す。lane重複は最後の行で上書き。"""
++    parsed = {}
+     for row in player_rows:
+         cells = row.find_all(["td","th"])
+         if len(cells) < 20: continue
+@@ -174,6 +157,81 @@ async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, ra
+ 
+         if not name or len(name) < 2: continue
+ 
++        parsed[lane] = {
++            "lane": lane,
++            "reg_no": reg_no, "rank": rank, "name": name, "age": age,
++            "boat": {
++                "lane": lane,
++                "age": age, "weight": weight, "f_count": f_count,
++                "national_win_rate": national_win_rate,
++                "national_place2_rate": national_place2_rate,
++                "local_win_rate": local_win_rate,
++                "local_place2_rate": local_place2_rate,
++                "motor_no": motor_no, "motor_place2_rate": motor_place2_rate,
++                "boat_no": boat_no,
++                "avg_st": avg_st,
++            },
++        }
++    return parsed
++
++async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, race_no):
++    """boatrace.jp から1レース分の出走表を取得してDBに保存。
++    6艇揃わない場合は races行作成・boats保存を行わず incomplete を返す(部分保存防止)。
++    開催されていない(出走表テーブルが存在しない)レースは held=False で静かにスキップ。
++    戻り値: {"boats": int, "complete": bool, "held": bool, "race_no": int}
++    """
++    url = f"{BR_BASE}/owpc/pc/race/racelist?hd={date_str}&jcd={venue_code}&rno={race_no}"
++
++    # HTTP取得+パースを最大3回リトライ(レイアウト変化/部分ロード対策)
++    parsed = {}
++    saw_rows = False  # 出走表tbody行が一度でも存在したか(=開催判定)
++    for attempt in range(3):
++        try:
++            resp = await client.get(url)
++        except Exception as _e:
++            await asyncio.sleep(0.5 * (attempt + 1))
++            continue
++        if resp.status_code != 200:
++            await asyncio.sleep(0.5 * (attempt + 1))
++            continue
++        soup = BeautifulSoup(resp.text, "html.parser")
++        player_rows = soup.select("table tbody tr")
++        if player_rows:
++            saw_rows = True
++        parsed = _parse_entry_rows(player_rows)
++        if len(parsed) == 6:
++            break
++        # 出走表テーブル自体が無い(=非開催)なら即リターン、リトライ不要
++        if not player_rows:
++            return {"boats": 0, "complete": False, "held": False, "race_no": race_no}
++        await asyncio.sleep(0.5 * (attempt + 1))
++
++    # 出走表行が一度も無ければ非開催として静かにスキップ
++    if not saw_rows:
++        return {"boats": 0, "complete": False, "held": False, "race_no": race_no}
++
++    # 開催されているのに6艇揃わない場合は明示ログ化し、races行作成も既存boats上書きもしない
++    if len(parsed) != 6:
++        print(f"[entry][incomplete] date={date_fmt} venue={venue} rno={race_no} "
++              f"parsed_lanes={sorted(parsed.keys())} count={len(parsed)}")
++        return {"boats": 0, "complete": False, "held": True, "race_no": race_no}
++
++    # ここで初めて race_id 取得または作成(部分作成を防ぐ)
++    ex = sb.table("races").select("id").eq("date",date_fmt).eq("venue",venue).eq("race_no",race_no).execute()
++    if ex.data:
++        race_id = ex.data[0]["id"]
++    else:
++        r2 = sb.table("races").insert({"date":date_fmt,"venue":venue,"race_no":race_no,"status":"scheduled"}).execute()
++        if not r2.data:
++            print(f"[entry][error] races insert failed date={date_fmt} venue={venue} rno={race_no}")
++            return {"boats": 0, "complete": False, "held": True, "race_no": race_no}
++        race_id = r2.data[0]["id"]
++
++    boats_saved = 0
++    for lane in sorted(parsed.keys()):
++        info = parsed[lane]
++        reg_no = info["reg_no"]; rank = info["rank"]; name = info["name"]; age = info["age"]
++
+         # players upsert
+         pl = sb.table("players").select("id").eq("registration_no", reg_no).execute()
+         if pl.data:
+@@ -184,20 +242,14 @@ async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, ra
+                 "name":name,"rank":rank,"registration_no":reg_no,
+                 "age":age,
+             }).execute()
+-            if not pl2.data: continue
++            if not pl2.data:
++                continue
+             player_id = pl2.data[0]["id"]
+ 
+-        bdata = {
+-            "race_id": race_id, "lane": lane, "player_id": player_id,
+-            "age": age, "weight": weight, "f_count": f_count,
+-            "national_win_rate": national_win_rate,
+-            "national_place2_rate": national_place2_rate,
+-            "local_win_rate": local_win_rate,
+-            "local_place2_rate": local_place2_rate,
+-            "motor_no": motor_no, "motor_place2_rate": motor_place2_rate,
+-            "boat_no": boat_no,
+-            "avg_st": avg_st,
+-        }
++        bdata = dict(info["boat"])
++        bdata["race_id"] = race_id
++        bdata["player_id"] = player_id
++
+         ex2 = sb.table("boats").select("id").eq("race_id",race_id).eq("lane",lane).execute()
+         if ex2.data:
+             sb.table("boats").update(bdata).eq("id",ex2.data[0]["id"]).execute()
+@@ -205,7 +257,11 @@ async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, ra
+             sb.table("boats").insert(bdata).execute()
+         boats_saved += 1
+ 
+-    return boats_saved
++    complete = (boats_saved == 6)
++    if not complete:
++        print(f"[entry][incomplete] date={date_fmt} venue={venue} rno={race_no} "
++              f"saved={boats_saved} (player upsert failure)")
++    return {"boats": boats_saved, "complete": complete, "held": True, "race_no": race_no}
+ 
+ async def scrape_entry(date, venues):
+     sb = create_client(SUPABASE_URL, SUPABASE_KEY)
+@@ -223,8 +279,34 @@ async def scrape_entry(date, venues):
+                 # 全12レース並列取得
+                 tasks = [fetch_race_entry(client, sb, date_str, date_fmt, vname, vc, rno) for rno in range(1,13)]
+                 counts = await asyncio.gather(*tasks, return_exceptions=True)
+-                total = sum(c for c in counts if isinstance(c, int))
+-                results.append({"venue":v,"item":"entry","status":"ok","boats":total})
++                total = 0
++                complete_races = 0
++                held_races = 0
++                incomplete_rnos = []
++                for rno, c in zip(range(1, 13), counts):
++                    if isinstance(c, dict):
++                        if not c.get("held"):
++                            # 非開催レースは対象外(skip)
++                            continue
++                        held_races += 1
++                        total += c.get("boats", 0)
++                        if c.get("complete"):
++                            complete_races += 1
++                        else:
++                            incomplete_rnos.append(rno)
++                    else:
++                        # 例外: 取得失敗としてincomplete扱い(開催の有無は不明だが安全側)
++                        incomplete_rnos.append(rno)
++                if held_races == 0 and not incomplete_rnos:
++                    # 当日非開催の会場: ok扱い(boats=0だがraces行も作らない)
++                    status = "ok"
++                else:
++                    status = "ok" if not incomplete_rnos else "partial"
++                rec = {"venue":v,"item":"entry","status":status,"boats":total,
++                       "held_races":held_races,"complete_races":complete_races}
++                if incomplete_rnos:
++                    rec["incomplete_races"] = incomplete_rnos
++                results.append(rec)
+             except Exception as e:
+                 results.append({"venue":v,"item":"entry","status":"error","message":str(e)})
+     return results

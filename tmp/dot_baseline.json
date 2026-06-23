@@ -1,0 +1,217 @@
+{
+  "used_races": 454,
+  "n_boats": 2724,
+  "n_features": 43,
+  "features": [
+    "age",
+    "avg_st",
+    "avg_st_rank",
+    "avg_st_z",
+    "c1_win_rate",
+    "c2_win_rate",
+    "c3_win_rate",
+    "c4_win_rate",
+    "c5_win_rate",
+    "c6_win_rate",
+    "course1y_st",
+    "exhibition_st",
+    "exhibition_time",
+    "f_count",
+    "gen_rate",
+    "general1y_place2_rate",
+    "general1y_tricast_rate",
+    "general1y_win_rate",
+    "general1y_win_rate_rank",
+    "general1y_win_rate_z",
+    "hit_rate",
+    "lane",
+    "local5y_place2_rate",
+    "local5y_tricast_rate",
+    "local5y_win_rate",
+    "local5y_win_rate_rank",
+    "local5y_win_rate_z",
+    "local_place2_rate",
+    "local_win_rate",
+    "motor_place2_rate",
+    "motor_place2_rate_rank",
+    "motor_place2_rate_z",
+    "national_place2_rate",
+    "national_place2_rate_rank",
+    "national_place2_rate_z",
+    "national_win_rate",
+    "national_win_rate_rank",
+    "national_win_rate_z",
+    "standard_st",
+    "today_st",
+    "weight",
+    "weight_rank",
+    "weight_z"
+  ],
+  "leak_free": true,
+  "targets": {
+    "is_win": {
+      "fold_metrics": [
+        {
+          "fold": 0,
+          "n_val_races": 82,
+          "n_val_boats": 492,
+          "logloss": 0.37801475991823896,
+          "auc": 0.7857227840571088,
+          "top1_hit_rate": 0.4634146341463415,
+          "trifecta_hit_rate": 0.036585365853658534,
+          "roi": 0.2621951219512195
+        },
+        {
+          "fold": 1,
+          "n_val_races": 81,
+          "n_val_boats": 486,
+          "logloss": 0.36947308352185576,
+          "auc": 0.7758573388203017,
+          "top1_hit_rate": 0.48148148148148145,
+          "trifecta_hit_rate": 0.08641975308641975,
+          "roi": 0.5530864197530864
+        },
+        {
+          "fold": 2,
+          "n_val_races": 81,
+          "n_val_boats": 486,
+          "logloss": 0.35605432214638927,
+          "auc": 0.8038103947568969,
+          "top1_hit_rate": 0.5185185185185185,
+          "trifecta_hit_rate": 0.1111111111111111,
+          "roi": 1.1358024691358024
+        },
+        {
+          "fold": 3,
+          "n_val_races": 81,
+          "n_val_boats": 486,
+          "logloss": 0.3295021760001804,
+          "auc": 0.840329218106996,
+          "top1_hit_rate": 0.6172839506172839,
+          "trifecta_hit_rate": 0.07407407407407407,
+          "roi": 0.9209876543209876
+        },
+        {
+          "fold": 4,
+          "n_val_races": 81,
+          "n_val_boats": 486,
+          "logloss": 0.3764761908586813,
+          "auc": 0.7826855662246608,
+          "top1_hit_rate": 0.5185185185185185,
+          "trifecta_hit_rate": 0.09876543209876543,
+          "roi": 1.0728395061728395
+        }
+      ],
+      "cv_mean": {
+        "logloss": 0.3619041064890691,
+        "logloss_std": 0.017962701836724944,
+        "auc": 0.7976810603931929,
+        "auc_std": 0.023240370641206265,
+        "top1_hit_rate": 0.5198434206564289,
+        "top1_hit_rate_std": 0.053205289087957706,
+        "trifecta_hit_rate": 0.08139114724480578,
+        "trifecta_hit_rate_std": 0.02557939213104353,
+        "roi": 0.7889822342667872,
+        "roi_std": 0.332095213473211
+      },
+      "oof_dot": {
+        "top1_hit_rate": 0.5197044334975369,
+        "trifecta_hit_rate": 0.0812807881773399,
+        "roi": 0.7876847290640394
+      },
+      "baseline_lane1": {
+        "top1_hit_rate": 0.541871921182266,
+        "trifecta_hit_rate": 0.08620689655172414,
+        "roi": 0.9687192118226601
+      },
+      "baseline_national": {
+        "top1_hit_rate": 0.3817733990147783,
+        "trifecta_hit_rate": 0.0665024630541872,
+        "roi": 1.356896551724138
+      },
+      "oof_races": 406
+    },
+    "is_top3": {
+      "fold_metrics": [
+        {
+          "fold": 0,
+          "n_val_races": 82,
+          "n_val_boats": 492,
+          "logloss": 0.6038575171916408,
+          "auc": 0.7379205499372067,
+          "top1_hit_rate": 0.45121951219512196,
+          "trifecta_hit_rate": 0.08536585365853659,
+          "roi": 1.5939024390243903
+        },
+        {
+          "fold": 1,
+          "n_val_races": 81,
+          "n_val_boats": 486,
+          "logloss": 0.6088770427872512,
+          "auc": 0.721350065200088,
+          "top1_hit_rate": 0.4567901234567901,
+          "trifecta_hit_rate": 0.06172839506172839,
+          "roi": 0.3950617283950617
+        },
+        {
+          "fold": 2,
+          "n_val_races": 81,
+          "n_val_boats": 486,
+          "logloss": 0.5855430203635024,
+          "auc": 0.7598943250520754,
+          "top1_hit_rate": 0.4567901234567901,
+          "trifecta_hit_rate": 0.08641975308641975,
+          "roi": 0.828395061728395
+        },
+        {
+          "fold": 3,
+          "n_val_races": 81,
+          "n_val_boats": 486,
+          "logloss": 0.5854768506504693,
+          "auc": 0.7516469372893699,
+          "top1_hit_rate": 0.6172839506172839,
+          "trifecta_hit_rate": 0.1111111111111111,
+          "roi": 1.2061728395061728
+        },
+        {
+          "fold": 4,
+          "n_val_races": 81,
+          "n_val_boats": 486,
+          "logloss": 0.5704543067252753,
+          "auc": 0.7724432251181221,
+          "top1_hit_rate": 0.41975308641975306,
+          "trifecta_hit_rate": 0.09876543209876543,
+          "roi": 1.3518518518518519
+        }
+      ],
+      "cv_mean": {
+        "logloss": 0.5908417475436277,
+        "logloss_std": 0.013908188275834123,
+        "auc": 0.7486510205193724,
+        "auc_std": 0.01767451031308594,
+        "top1_hit_rate": 0.48036735922914786,
+        "top1_hit_rate_std": 0.06983066968833568,
+        "trifecta_hit_rate": 0.08867810900331226,
+        "trifecta_hit_rate_std": 0.016415553351928947,
+        "roi": 1.0750767841011744,
+        "roi_std": 0.4210090313086965
+      },
+      "oof_dot": {
+        "top1_hit_rate": 0.4802955665024631,
+        "trifecta_hit_rate": 0.08866995073891626,
+        "roi": 1.0763546798029557
+      },
+      "baseline_lane1": {
+        "top1_hit_rate": 0.541871921182266,
+        "trifecta_hit_rate": 0.08620689655172414,
+        "roi": 0.9687192118226601
+      },
+      "baseline_national": {
+        "top1_hit_rate": 0.3817733990147783,
+        "trifecta_hit_rate": 0.0665024630541872,
+        "roi": 1.356896551724138
+      },
+      "oof_races": 406
+    }
+  }
+}

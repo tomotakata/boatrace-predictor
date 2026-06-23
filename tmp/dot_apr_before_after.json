@@ -1,0 +1,541 @@
+{
+  "months": {
+    "2026-04": 2570,
+    "2026-05": 623,
+    "2026-06": 1401
+  },
+  "used_races": 4594,
+  "seeds": [
+    42,
+    1,
+    7,
+    13,
+    21,
+    99,
+    123,
+    2024
+  ],
+  "focus_metrics": [
+    "p_top",
+    "gap",
+    "neg_entropy",
+    "variance"
+  ],
+  "before": {
+    "label": "before_may_only",
+    "train_months": [
+      "2026-05"
+    ],
+    "lightgbm": {
+      "is_win": {
+        "oof_races": 1401,
+        "top1_hit_rate": 0.5531763026409707,
+        "auc": 0.8298432698984767,
+        "trifecta_hit_rate": 0.07494646680942184,
+        "roi": 0.6548179871520342
+      },
+      "is_top3": {
+        "oof_races": 1401,
+        "top1_hit_rate": 0.5438972162740899,
+        "auc": 0.7656791097122033,
+        "trifecta_hit_rate": 0.08565310492505353,
+        "roi": 0.9033547466095646
+      }
+    },
+    "sv_robustness": {
+      "A_3連単上位3その順|p_top": {
+        "n_seeds": 8,
+        "test_roi_min": 0.27945205479452057,
+        "test_roi_median": 0.5903729971105858,
+        "test_roi_mean": 0.6492923981733926,
+        "test_roi_max": 0.9671232876712329,
+        "frac_over_100": 0.0
+      },
+      "A_3連単上位3その順|gap": {
+        "n_seeds": 8,
+        "test_roi_min": 0.31384615384615383,
+        "test_roi_median": 0.7589197925786249,
+        "test_roi_mean": 0.7118659562794815,
+        "test_roi_max": 0.9153846153846154,
+        "frac_over_100": 0.0
+      },
+      "A_3連単上位3その順|neg_entropy": {
+        "n_seeds": 8,
+        "test_roi_min": 0.2756756756756757,
+        "test_roi_median": 0.7163135135135135,
+        "test_roi_mean": 0.6840844668301905,
+        "test_roi_max": 0.85625,
+        "frac_over_100": 0.0
+      },
+      "A_3連単上位3その順|variance": {
+        "n_seeds": 8,
+        "test_roi_min": 0.28732394366197184,
+        "test_roi_median": 0.7192105263157895,
+        "test_roi_mean": 0.6801285977345113,
+        "test_roi_max": 0.9259259259259259,
+        "frac_over_100": 0.0
+      },
+      "D_3連複上位3(1点)|p_top": {
+        "n_seeds": 8,
+        "test_roi_min": 0.4589041095890411,
+        "test_roi_median": 0.6834194659776055,
+        "test_roi_mean": 0.6608236553833523,
+        "test_roi_max": 0.8175675675675675,
+        "frac_over_100": 0.0
+      },
+      "D_3連複上位3(1点)|gap": {
+        "n_seeds": 8,
+        "test_roi_min": 0.4646153846153846,
+        "test_roi_median": 0.6715407470288625,
+        "test_roi_mean": 0.637233942962963,
+        "test_roi_max": 0.7536,
+        "frac_over_100": 0.0
+      },
+      "D_3連複上位3(1点)|neg_entropy": {
+        "n_seeds": 8,
+        "test_roi_min": 0.5297619047619048,
+        "test_roi_median": 0.7100868217054264,
+        "test_roi_mean": 0.6975235786379437,
+        "test_roi_max": 0.8628205128205129,
+        "frac_over_100": 0.0
+      },
+      "D_3連複上位3(1点)|variance": {
+        "n_seeds": 8,
+        "test_roi_min": 0.5183098591549296,
+        "test_roi_median": 0.6753084634663582,
+        "test_roi_mean": 0.6696844458277442,
+        "test_roi_max": 0.8012820512820513,
+        "frac_over_100": 0.0
+      },
+      "E_3連複上位4BOX(4点)|p_top": {
+        "n_seeds": 8,
+        "test_roi_min": 0.7026223776223777,
+        "test_roi_median": 0.7678585377284799,
+        "test_roi_mean": 0.792531265354913,
+        "test_roi_max": 1.0023972602739726,
+        "frac_over_100": 0.125
+      },
+      "E_3連複上位4BOX(4点)|gap": {
+        "n_seeds": 8,
+        "test_roi_min": 0.7334876543209876,
+        "test_roi_median": 0.8826309475188892,
+        "test_roi_mean": 0.8868257508210986,
+        "test_roi_max": 1.0334615384615384,
+        "frac_over_100": 0.375
+      },
+      "E_3連複上位4BOX(4点)|neg_entropy": {
+        "n_seeds": 8,
+        "test_roi_min": 0.6893678160919541,
+        "test_roi_median": 0.7727393474653391,
+        "test_roi_mean": 0.7846495059124869,
+        "test_roi_max": 0.9541139240506329,
+        "frac_over_100": 0.0
+      },
+      "E_3連複上位4BOX(4点)|variance": {
+        "n_seeds": 8,
+        "test_roi_min": 0.6986206896551724,
+        "test_roi_median": 0.7474877343613107,
+        "test_roi_mean": 0.7830413235158279,
+        "test_roi_max": 0.9976666666666667,
+        "frac_over_100": 0.0
+      },
+      "I_PL上位3点3連単|p_top": {
+        "n_seeds": 8,
+        "test_roi_min": 0.5892857142857143,
+        "test_roi_median": 0.8415823909779044,
+        "test_roi_mean": 0.8137416571110754,
+        "test_roi_max": 1.0036036036036036,
+        "frac_over_100": 0.125
+      },
+      "I_PL上位3点3連単|gap": {
+        "n_seeds": 8,
+        "test_roi_min": 0.5947791164658635,
+        "test_roi_median": 0.794723565175988,
+        "test_roi_mean": 0.7727727002781868,
+        "test_roi_max": 0.9411255411255411,
+        "frac_over_100": 0.0
+      },
+      "I_PL上位3点3連単|neg_entropy": {
+        "n_seeds": 8,
+        "test_roi_min": 0.6618666666666667,
+        "test_roi_median": 0.7945327164325076,
+        "test_roi_mean": 0.8500819877341415,
+        "test_roi_max": 1.1078095238095238,
+        "frac_over_100": 0.25
+      },
+      "I_PL上位3点3連単|variance": {
+        "n_seeds": 8,
+        "test_roi_min": 0.6166666666666667,
+        "test_roi_median": 0.7630752912654051,
+        "test_roi_mean": 0.8057108568955034,
+        "test_roi_max": 1.068075117370892,
+        "frac_over_100": 0.125
+      }
+    },
+    "sv_full_test": {
+      "A_3連単上位3その順": {
+        "test_roi_median": 0.808768267223382,
+        "test_roi_mean": 0.8142484342379959
+      },
+      "D_3連複上位3(1点)": {
+        "test_roi_median": 0.802713987473904,
+        "test_roi_mean": 0.804070981210856
+      },
+      "E_3連複上位4BOX(4点)": {
+        "test_roi_median": 0.7060020876826723,
+        "test_roi_mean": 0.7097403444676409
+      },
+      "I_PL上位3点3連単": {
+        "test_roi_median": 0.8556715379262352,
+        "test_roi_mean": 0.8495998608211551
+      }
+    }
+  },
+  "after": {
+    "label": "after_apr_may",
+    "train_months": [
+      "2026-04",
+      "2026-05"
+    ],
+    "lightgbm": {
+      "is_win": {
+        "oof_races": 1401,
+        "top1_hit_rate": 0.550321199143469,
+        "auc": 0.8329703826317594,
+        "trifecta_hit_rate": 0.07209136331192005,
+        "roi": 0.6115631691648822
+      },
+      "is_top3": {
+        "oof_races": 1401,
+        "top1_hit_rate": 0.5417558886509636,
+        "auc": 0.765213448649263,
+        "trifecta_hit_rate": 0.08279800142755175,
+        "roi": 0.8307637401855817
+      }
+    },
+    "sv_robustness": {
+      "A_3連単上位3その順|p_top": {
+        "n_seeds": 8,
+        "test_roi_min": 0.4112676056338028,
+        "test_roi_median": 0.7306047060284349,
+        "test_roi_mean": 0.6709387505252169,
+        "test_roi_max": 0.8636363636363636,
+        "frac_over_100": 0.0
+      },
+      "A_3連単上位3その順|gap": {
+        "n_seeds": 8,
+        "test_roi_min": 0.4853658536585366,
+        "test_roi_median": 0.7521954581254923,
+        "test_roi_mean": 0.7260162540704999,
+        "test_roi_max": 0.9833333333333333,
+        "frac_over_100": 0.0
+      },
+      "A_3連単上位3その順|neg_entropy": {
+        "n_seeds": 8,
+        "test_roi_min": 0.478125,
+        "test_roi_median": 0.6539873827240376,
+        "test_roi_mean": 0.6754756174151274,
+        "test_roi_max": 0.8357723577235773,
+        "frac_over_100": 0.0
+      },
+      "A_3連単上位3その順|variance": {
+        "n_seeds": 8,
+        "test_roi_min": 0.4708333333333333,
+        "test_roi_median": 0.7140932705086385,
+        "test_roi_mean": 0.6783642593146306,
+        "test_roi_max": 0.8096774193548387,
+        "frac_over_100": 0.0
+      },
+      "D_3連複上位3(1点)|p_top": {
+        "n_seeds": 8,
+        "test_roi_min": 0.6202380952380953,
+        "test_roi_median": 0.7377705627705629,
+        "test_roi_mean": 0.7298569147876302,
+        "test_roi_max": 0.8082706766917294,
+        "frac_over_100": 0.0
+      },
+      "D_3連複上位3(1点)|gap": {
+        "n_seeds": 8,
+        "test_roi_min": 0.6119402985074627,
+        "test_roi_median": 0.7976045296167247,
+        "test_roi_mean": 0.7554509909280642,
+        "test_roi_max": 0.852755905511811,
+        "frac_over_100": 0.0
+      },
+      "D_3連複上位3(1点)|neg_entropy": {
+        "n_seeds": 8,
+        "test_roi_min": 0.698780487804878,
+        "test_roi_median": 0.7517045454545455,
+        "test_roi_mean": 0.774842310523773,
+        "test_roi_max": 0.9260273972602739,
+        "frac_over_100": 0.0
+      },
+      "D_3連複上位3(1点)|variance": {
+        "n_seeds": 8,
+        "test_roi_min": 0.6277108433734939,
+        "test_roi_median": 0.7375665452507705,
+        "test_roi_mean": 0.7263525808943099,
+        "test_roi_max": 0.8201550387596899,
+        "frac_over_100": 0.0
+      },
+      "E_3連複上位4BOX(4点)|p_top": {
+        "n_seeds": 8,
+        "test_roi_min": 0.7439236111111112,
+        "test_roi_median": 0.8346140521064301,
+        "test_roi_mean": 0.8658956145853904,
+        "test_roi_max": 1.050297619047619,
+        "frac_over_100": 0.125
+      },
+      "E_3連複上位4BOX(4点)|gap": {
+        "n_seeds": 8,
+        "test_roi_min": 0.7604430379746835,
+        "test_roi_median": 0.8113184079601989,
+        "test_roi_mean": 0.8361118598117883,
+        "test_roi_max": 1.0054597701149426,
+        "frac_over_100": 0.125
+      },
+      "E_3連複上位4BOX(4点)|neg_entropy": {
+        "n_seeds": 8,
+        "test_roi_min": 0.724609375,
+        "test_roi_median": 0.7736476793248945,
+        "test_roi_mean": 0.8098388657275453,
+        "test_roi_max": 1.0801829268292682,
+        "frac_over_100": 0.125
+      },
+      "E_3連複上位4BOX(4点)|variance": {
+        "n_seeds": 8,
+        "test_roi_min": 0.7453125,
+        "test_roi_median": 0.8398876404494382,
+        "test_roi_mean": 0.8744260970007145,
+        "test_roi_max": 1.0536144578313253,
+        "frac_over_100": 0.125
+      },
+      "I_PL上位3点3連単|p_top": {
+        "n_seeds": 8,
+        "test_roi_min": 0.7218390804597701,
+        "test_roi_median": 0.8348587518178161,
+        "test_roi_mean": 0.8657021252496604,
+        "test_roi_max": 1.0140151515151514,
+        "frac_over_100": 0.125
+      },
+      "I_PL上位3点3連単|gap": {
+        "n_seeds": 8,
+        "test_roi_min": 0.7254901960784313,
+        "test_roi_median": 0.8809671156413057,
+        "test_roi_mean": 0.8481309678693922,
+        "test_roi_max": 0.9321839080459771,
+        "frac_over_100": 0.0
+      },
+      "I_PL上位3点3連単|neg_entropy": {
+        "n_seeds": 8,
+        "test_roi_min": 0.6691056910569105,
+        "test_roi_median": 0.7929364454934872,
+        "test_roi_mean": 0.7819238132263031,
+        "test_roi_max": 0.9102272727272728,
+        "frac_over_100": 0.0
+      },
+      "I_PL上位3点3連単|variance": {
+        "n_seeds": 8,
+        "test_roi_min": 0.750187265917603,
+        "test_roi_median": 0.8198795180722891,
+        "test_roi_mean": 0.8509090197088741,
+        "test_roi_max": 1.0303370786516854,
+        "frac_over_100": 0.125
+      }
+    },
+    "sv_full_test": {
+      "A_3連単上位3その順": {
+        "test_roi_median": 0.6521920668058455,
+        "test_roi_mean": 0.6697546972860126
+      },
+      "D_3連複上位3(1点)": {
+        "test_roi_median": 0.8062630480167015,
+        "test_roi_mean": 0.8067849686847599
+      },
+      "E_3連複上位4BOX(4点)": {
+        "test_roi_median": 0.7359864300626304,
+        "test_roi_mean": 0.7426800626304801
+      },
+      "I_PL上位3点3連単": {
+        "test_roi_median": 0.8542797494780794,
+        "test_roi_mean": 0.8444415448851774
+      }
+    }
+  },
+  "deltas": {
+    "lightgbm": {
+      "is_win": {
+        "d_top1_pt": -0.29,
+        "d_auc": 0.0031,
+        "d_roi_pt": -4.33
+      },
+      "is_top3": {
+        "d_top1_pt": -0.21,
+        "d_auc": -0.0005,
+        "d_roi_pt": -7.26
+      }
+    },
+    "sv": {
+      "A_3連単上位3その順|p_top": {
+        "before_median": 59.0,
+        "after_median": 73.1,
+        "d_median_pt": 14.0,
+        "before_min": 27.9,
+        "after_min": 41.1,
+        "d_min_pt": 13.2,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 0
+      },
+      "A_3連単上位3その順|gap": {
+        "before_median": 75.9,
+        "after_median": 75.2,
+        "d_median_pt": -0.7,
+        "before_min": 31.4,
+        "after_min": 48.5,
+        "d_min_pt": 17.2,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 0
+      },
+      "A_3連単上位3その順|neg_entropy": {
+        "before_median": 71.6,
+        "after_median": 65.4,
+        "d_median_pt": -6.2,
+        "before_min": 27.6,
+        "after_min": 47.8,
+        "d_min_pt": 20.2,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 0
+      },
+      "A_3連単上位3その順|variance": {
+        "before_median": 71.9,
+        "after_median": 71.4,
+        "d_median_pt": -0.5,
+        "before_min": 28.7,
+        "after_min": 47.1,
+        "d_min_pt": 18.4,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 0
+      },
+      "D_3連複上位3(1点)|p_top": {
+        "before_median": 68.3,
+        "after_median": 73.8,
+        "d_median_pt": 5.4,
+        "before_min": 45.9,
+        "after_min": 62.0,
+        "d_min_pt": 16.1,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 0
+      },
+      "D_3連複上位3(1点)|gap": {
+        "before_median": 67.2,
+        "after_median": 79.8,
+        "d_median_pt": 12.6,
+        "before_min": 46.5,
+        "after_min": 61.2,
+        "d_min_pt": 14.7,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 0
+      },
+      "D_3連複上位3(1点)|neg_entropy": {
+        "before_median": 71.0,
+        "after_median": 75.2,
+        "d_median_pt": 4.2,
+        "before_min": 53.0,
+        "after_min": 69.9,
+        "d_min_pt": 16.9,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 0
+      },
+      "D_3連複上位3(1点)|variance": {
+        "before_median": 67.5,
+        "after_median": 73.8,
+        "d_median_pt": 6.2,
+        "before_min": 51.8,
+        "after_min": 62.8,
+        "d_min_pt": 10.9,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 0
+      },
+      "E_3連複上位4BOX(4点)|p_top": {
+        "before_median": 76.8,
+        "after_median": 83.5,
+        "d_median_pt": 6.7,
+        "before_min": 70.3,
+        "after_min": 74.4,
+        "d_min_pt": 4.1,
+        "before_frac_over_100": 12,
+        "after_frac_over_100": 12
+      },
+      "E_3連複上位4BOX(4点)|gap": {
+        "before_median": 88.3,
+        "after_median": 81.1,
+        "d_median_pt": -7.1,
+        "before_min": 73.3,
+        "after_min": 76.0,
+        "d_min_pt": 2.7,
+        "before_frac_over_100": 38,
+        "after_frac_over_100": 12
+      },
+      "E_3連複上位4BOX(4点)|neg_entropy": {
+        "before_median": 77.3,
+        "after_median": 77.4,
+        "d_median_pt": 0.1,
+        "before_min": 68.9,
+        "after_min": 72.5,
+        "d_min_pt": 3.5,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 12
+      },
+      "E_3連複上位4BOX(4点)|variance": {
+        "before_median": 74.7,
+        "after_median": 84.0,
+        "d_median_pt": 9.2,
+        "before_min": 69.9,
+        "after_min": 74.5,
+        "d_min_pt": 4.7,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 12
+      },
+      "I_PL上位3点3連単|p_top": {
+        "before_median": 84.2,
+        "after_median": 83.5,
+        "d_median_pt": -0.7,
+        "before_min": 58.9,
+        "after_min": 72.2,
+        "d_min_pt": 13.3,
+        "before_frac_over_100": 12,
+        "after_frac_over_100": 12
+      },
+      "I_PL上位3点3連単|gap": {
+        "before_median": 79.5,
+        "after_median": 88.1,
+        "d_median_pt": 8.6,
+        "before_min": 59.5,
+        "after_min": 72.5,
+        "d_min_pt": 13.1,
+        "before_frac_over_100": 0,
+        "after_frac_over_100": 0
+      },
+      "I_PL上位3点3連単|neg_entropy": {
+        "before_median": 79.5,
+        "after_median": 79.3,
+        "d_median_pt": -0.2,
+        "before_min": 66.2,
+        "after_min": 66.9,
+        "d_min_pt": 0.7,
+        "before_frac_over_100": 25,
+        "after_frac_over_100": 0
+      },
+      "I_PL上位3点3連単|variance": {
+        "before_median": 76.3,
+        "after_median": 82.0,
+        "d_median_pt": 5.7,
+        "before_min": 61.7,
+        "after_min": 75.0,
+        "d_min_pt": 13.4,
+        "before_frac_over_100": 12,
+        "after_frac_over_100": 12
+      }
+    }
+  }
+}
