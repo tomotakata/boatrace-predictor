@@ -375,3 +375,39 @@ export const getRaceResult = (raceId: number) =>
 
 export const savePredictionMemo = (raceId: number, memo: string) =>
   api.patch<{ status: string }>(`/races/${raceId}/prediction/memo`, { memo })
+
+// Shishido Predict API
+export interface ShishidoPrediction {
+  venue: string
+  date: string
+  race_no: number
+  status: string
+  error?: string
+  prediction?: {
+    venue?: string
+    date?: string
+    race_no?: number
+    analysis?: {
+      attack_subject?: { course: number; type: string; attack_type: string }
+      head?: number[]
+      box?: number[]
+      honsen_12?: string[]
+      race_class?: string
+      exacta_top?: string[]
+      suichi?: string[]
+      dashboard?: Record<string, { EI: number; TI: number; P1: number; nige: number; place: number; second: number }>
+    }
+    reasoning?: string
+  }
+  raw_response?: string
+}
+
+export const getShishidoVenues = (date: string) =>
+  api.get<{ date: string; venues: string[] }>('/shishido/venues', { params: { date } })
+
+export const runShishidoPredict = (date: string, venue: string, raceNo?: number) =>
+  api.post<{ date: string; venue: string; results: ShishidoPrediction[] }>(
+    '/shishido/predict',
+    { date, venue, race_no: raceNo || null },
+    { timeout: 600000 }  // 10分タイムアウト（全12レース分）
+  )
