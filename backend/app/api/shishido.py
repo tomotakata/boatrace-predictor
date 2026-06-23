@@ -92,6 +92,39 @@ async def get_venues(date: str):
 # POST /predict
 # ---------------------------------------------------------------------------
 
+@router.get("/debug")
+async def debug_shishido():
+    """デバッグ: importやファイルパスの確認"""
+    info = {}
+    try:
+        info["project_root"] = str(_project_root)
+        info["shishido_dir"] = str(_shishido_dir)
+        info["shishido_dir_exists"] = _shishido_dir.exists()
+        info["files_in_shishido"] = [f.name for f in _shishido_dir.iterdir()] if _shishido_dir.exists() else []
+        spec = _project_root / "data" / "v587_full_spec.md"
+        info["spec_path"] = str(spec)
+        info["spec_exists"] = spec.exists()
+    except Exception as e:
+        info["path_error"] = str(e)
+    try:
+        from fetch_race_data import fetch_race_v4
+        info["fetch_import"] = "ok"
+    except Exception as e:
+        info["fetch_import_error"] = str(e)
+    try:
+        from predict import _load_system_prompt
+        info["predict_import"] = "ok"
+    except Exception as e:
+        info["predict_import_error"] = str(e)
+    try:
+        from predict import _load_system_prompt
+        prompt = _load_system_prompt()
+        info["spec_loaded"] = len(prompt) if prompt else 0
+    except Exception as e:
+        info["spec_load_error"] = str(e)
+    return info
+
+
 @router.post("/predict")
 async def predict(req: PredictRequest):
     """宍戸予想を実行して結果を返す"""
