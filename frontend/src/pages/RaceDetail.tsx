@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getRace, predictRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult } from '../lib/api'
+import { getRace, predictRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction } from '../lib/api'
 
 // 進入順ラベルの色
 const LANE_BG: Record<number, string> = {
@@ -1768,6 +1768,9 @@ export default function RaceDetail() {
   const [systemDetail, _setSystemDetail] = useState<SystemPredictionDetail | null>(null)
   const [venueConfig, setVenueConfig] = useState<VenueConfig | null>(null)
   const [showDotModal, setShowDotModal] = useState(false)
+  const [shishidoResult, setShishidoResult] = useState<ShishidoPrediction | null>(null)
+  const [shishidoLoading, setShishidoLoading] = useState(false)
+  const [shishidoError, setShishidoError] = useState<string | null>(null)
 
   async function fetchRace() {
     if (!id) return
@@ -1798,6 +1801,27 @@ export default function RaceDetail() {
       const res = await predictRace(parseInt(id), source)
       setRace(res.data)
     } catch { /* ignore */ } finally { setPredicting(false) }
+  }
+
+  async function handleShishidoPredict() {
+    if (!race) return
+    setShishidoLoading(true)
+    setShishidoResult(null)
+    setShishidoError(null)
+    try {
+      const raceNo = race.race_no || parseInt(String(race.race_name || '').match(/(\d+)R/)?.[1] || '0')
+      const res = await runShishidoPredict(race.date, race.venue, raceNo)
+      const results = res.data.results
+      if (results && results.length > 0) {
+        setShishidoResult(results[0])
+      } else {
+        setShishidoError('予想結果が返されませんでした')
+      }
+    } catch (e: any) {
+      setShishidoError(e.response?.data?.detail || e.message || '宍戸予想の実行に失敗しました')
+    } finally {
+      setShishidoLoading(false)
+    }
   }
 
   if (loading) return <div className="loading-spinner"><div className="spinner" />読み込み中…</div>
@@ -1845,9 +1869,9 @@ export default function RaceDetail() {
               style={{ padding: '8px 16px', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid #78450a', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
               DOTシステム（開発中）
             </button>
-            <button onClick={() => navigate('/shishido')}
+            <button onClick={handleShishidoPredict} disabled={shishidoLoading || predicting}
               style={{ padding: '8px 16px', background: 'rgba(167,139,250,0.15)', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-              宍戸予想 v58.7
+              {shishidoLoading ? '宍戸予想中…' : '宍戸予想 v58.7'}
             </button>
             <button onClick={() => handlePredict('ensemble')} disabled={predicting}
               style={{ padding: '8px 14px', background: '#1e2a40', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
@@ -1921,6 +1945,135 @@ export default function RaceDetail() {
 
       {/* オッズ */}
       <OddsSection race={race} />
+
+      {/* 宍戸予想結果 */}
+      {shishidoLoading && (
+        <div style={{ marginTop: 20, padding: '16px 20px', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 10 }}>
+          <div className="loading-spinner"><div className="spinner" />宍戸予想を実行中… Claude APIで分析しています（30秒〜1分程度）</div>
+        </div>
+      )}
+      {shishidoError && (
+        <div style={{ marginTop: 20, padding: '14px 18px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, fontSize: 13, color: '#ef4444' }}>
+          宍戸予想エラー: {shishidoError}
+        </div>
+      )}
+      {shishidoResult && shishidoResult.status === 'ok' && shishidoResult.prediction && (() => {
+        const pred = shishidoResult.prediction!
+        const analysis = pred.analysis || {}
+        return (
+          <div style={{ marginTop: 20, background: '#0d1b2e', borderRadius: 10, padding: '18px 20px', border: '1px solid #4c3a9e' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#a78bfa', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              宍戸予想 v58.7
+              {analysis.race_class && (
+                <span style={{
+                  fontSize: 12, padding: '2px 10px', borderRadius: 20, fontWeight: 600,
+                  background: analysis.race_class === '勝負' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                  color: analysis.race_class === '勝負' ? '#22c55e' : '#ef4444',
+                  border: `1px solid ${analysis.race_class === '勝負' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                }}>
+                  {analysis.race_class}
+                </span>
+              )}
+            </div>
+
+            {/* 攻め主体 */}
+            {analysis.attack_subject && (
+              <div style={{ padding: '10px 14px', background: '#0a1628', borderRadius: 8, marginBottom: 14, border: '1px solid #1e3a5f' }}>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>攻め主体</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#f59e0b' }}>
+                  {analysis.attack_subject.course}コース {analysis.attack_subject.type} ({analysis.attack_subject.attack_type})
+                </div>
+              </div>
+            )}
+
+            {/* 本線 */}
+            {analysis.honsen_12 && analysis.honsen_12.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 600 }}>本線 {analysis.honsen_12.length}点</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {analysis.honsen_12.map((bet: string, i: number) => (
+                    <span key={i} style={{ padding: '4px 10px', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 6, fontSize: 13, color: '#60a5fa', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>{bet}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 2連単・スイチ */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+              {analysis.exacta_top && analysis.exacta_top.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 600 }}>2連単</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {analysis.exacta_top.map((bet: string, i: number) => (
+                      <span key={i} style={{ padding: '3px 8px', background: '#1e2a40', border: '1px solid #334155', borderRadius: 4, fontSize: 12, color: '#94a3b8', fontFamily: "'JetBrains Mono', monospace" }}>{bet}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {analysis.suichi && analysis.suichi.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 600 }}>スイチ（万舟）</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {analysis.suichi.map((bet: string, i: number) => (
+                      <span key={i} style={{ padding: '3px 8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 4, fontSize: 12, color: '#f87171', fontFamily: "'JetBrains Mono', monospace" }}>{bet}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ダッシュボード */}
+            {analysis.dashboard && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 600 }}>ダッシュボード</div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #1e3a5f' }}>
+                        {['艇', 'EI', 'TI', 'P1', '逃', '連', '2着'].map(h => (
+                          <th key={h} style={{ padding: '6px 8px', color: '#64748b', fontWeight: 600, textAlign: 'center' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['1', '2', '3', '4', '5', '6'].map(b => {
+                        const d = analysis.dashboard?.[b]
+                        if (!d) return null
+                        return (
+                          <tr key={b} style={{ borderBottom: '1px solid #0f1d30' }}>
+                            <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                              <span style={{ display: 'inline-block', width: 22, height: 22, lineHeight: '22px', textAlign: 'center', borderRadius: 4, fontSize: 12, fontWeight: 700, color: '#fff', background: LANE_BG[parseInt(b)] || '#1e2a40' }}>{b}</span>
+                            </td>
+                            <td style={{ padding: '5px 8px', textAlign: 'center', color: '#e2e8f0', fontWeight: 600 }}>{d.EI?.toFixed(1) ?? '-'}</td>
+                            <td style={{ padding: '5px 8px', textAlign: 'center', color: '#e2e8f0', fontWeight: 600 }}>{d.TI?.toFixed(1) ?? '-'}</td>
+                            <td style={{ padding: '5px 8px', textAlign: 'center', color: '#94a3b8' }}>{d.P1?.toFixed(1) ?? '-'}</td>
+                            <td style={{ padding: '5px 8px', textAlign: 'center', color: '#94a3b8' }}>{d.nige ?? '-'}</td>
+                            <td style={{ padding: '5px 8px', textAlign: 'center', color: '#94a3b8' }}>{d.place ?? '-'}</td>
+                            <td style={{ padding: '5px 8px', textAlign: 'center', color: '#94a3b8' }}>{d.second ?? '-'}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* 判断要約 */}
+            {pred.reasoning && (
+              <div style={{ padding: '10px 14px', background: '#0a1628', borderRadius: 8, border: '1px solid #1e3a5f' }}>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>判断要約</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.7 }}>{pred.reasoning}</div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+      {shishidoResult && shishidoResult.status === 'error' && (
+        <div style={{ marginTop: 20, padding: '14px 18px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, fontSize: 13, color: '#ef4444' }}>
+          宍戸予想エラー: {shishidoResult.error || 'データ取得に失敗しました'}
+        </div>
+      )}
 
       {/* 予測結果 */}
       {(systemDetail || predictions.length > 0) && (
