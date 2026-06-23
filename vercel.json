@@ -15,7 +15,7 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 300,
-      "excludeFiles": "{scripts/dot/**,scripts/sakura/**,tmp/**,data/**,**/__pycache__/**,**/*.pyc}"
+      "excludeFiles": "{scripts/dot/**,scripts/sakura/**,tmp/**,data/sample_v4_output.json,**/__pycache__/**,**/*.pyc}"
     }
   }
 }
