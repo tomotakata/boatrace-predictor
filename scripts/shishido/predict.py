@@ -61,7 +61,7 @@ INTER_RACE_DELAY = 2  # seconds between races in --all mode
 def _load_system_prompt() -> str:
     """v587_full_spec.md を読み込んでシステムプロンプトとして返す"""
     if not SPEC_PATH.exists():
-        sys.exit(f"ERROR: 計算式ファイルが見つかりません: {SPEC_PATH}")
+        raise RuntimeError(f"計算式ファイルが見つかりません: {SPEC_PATH}")
     text = SPEC_PATH.read_text(encoding="utf-8")
     return (
         "あなたは競艇予想AI v58.7 のエンジンです。\n"
@@ -126,7 +126,7 @@ def _call_claude(system_prompt: str, user_message: str, model: str = MODEL) -> s
     """Claude API を呼び出してレスポンステキストを返す"""
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
-        sys.exit("ERROR: ANTHROPIC_API_KEY が環境変数に設定されていません")
+        raise RuntimeError("ANTHROPIC_API_KEY が環境変数に設定されていません")
 
     client = anthropic.Anthropic(api_key=api_key)
 
