@@ -1,0 +1,9 @@
+scripts/
+tmp/
+data/
+*.md
+.git/
+__pycache__/
+*.pyc
+.env
+.env.*

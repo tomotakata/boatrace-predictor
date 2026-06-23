@@ -14,7 +14,8 @@
   ],
   "functions": {
     "api/index.py": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "excludeFiles": "{scripts/**,tmp/**,data/**,**/__pycache__/**,**/*.pyc}"
     }
   }
 }
