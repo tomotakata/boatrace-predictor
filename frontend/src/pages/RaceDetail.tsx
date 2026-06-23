@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { getRace, predictRace, predictRaceSystem, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult } from '../lib/api'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { getRace, predictRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult } from '../lib/api'
 
 // 進入順ラベルの色
 const LANE_BG: Record<number, string> = {
@@ -1686,14 +1686,88 @@ function OddsSection({ race }: { race: Race }) {
   )
 }
 
+// ───── DOTパスワードモーダル（RaceDetail用） ─────
+const DOT_PW = 'Yalove0911'
+const DOT_KEY = 'dot_unlocked'
+
+function DotPasswordModalInline({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [input, setInput] = useState('')
+  const [error, setError] = useState(false)
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (input === DOT_PW) {
+      sessionStorage.setItem(DOT_KEY, '1')
+      onSuccess()
+    } else {
+      setError(true)
+      setInput('')
+    }
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }} onClick={onClose}>
+      <div style={{
+        background: '#0d1b2e', border: '1px solid #1e3a5f', borderRadius: 12,
+        padding: '32px 28px', maxWidth: 360, width: '90%', textAlign: 'center',
+        boxShadow: '0 8px 40px #0008',
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#60a5fa', marginBottom: 4 }}>
+          DOTシステム
+        </div>
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 20 }}>
+          開発パスワードを入力してください
+        </div>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="password"
+            value={input}
+            onChange={e => { setInput(e.target.value); setError(false) }}
+            placeholder="パスワード"
+            autoFocus
+            style={{
+              width: '100%', padding: '10px 14px', fontSize: 14,
+              background: '#090f1e', border: `1px solid ${error ? '#ef4444' : '#1e3a5f'}`,
+              borderRadius: 8, color: '#e2e8f0', outline: 'none', boxSizing: 'border-box',
+              marginBottom: error ? 6 : 12,
+            }}
+          />
+          {error && (
+            <div style={{ fontSize: 12, color: '#f87171', marginBottom: 10 }}>パスワードが違います</div>
+          )}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={onClose} style={{
+              flex: 1, padding: '10px 0', background: '#1e293b', color: '#94a3b8',
+              border: '1px solid #334155', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+            }}>
+              キャンセル
+            </button>
+            <button type="submit" style={{
+              flex: 1, padding: '10px 0', background: 'linear-gradient(135deg,#1e40af,#3b82f6)',
+              color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            }}>
+              ログイン
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ───── メインページ ─────
 export default function RaceDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [race, setRace] = useState<Race | null>(null)
   const [loading, setLoading] = useState(true)
   const [predicting, setPredicting] = useState(false)
-  const [systemDetail, setSystemDetail] = useState<SystemPredictionDetail | null>(null)
+  const [systemDetail, _setSystemDetail] = useState<SystemPredictionDetail | null>(null)
   const [venueConfig, setVenueConfig] = useState<VenueConfig | null>(null)
+  const [showDotModal, setShowDotModal] = useState(false)
 
   async function fetchRace() {
     if (!id) return
@@ -1723,16 +1797,6 @@ export default function RaceDetail() {
     try {
       const res = await predictRace(parseInt(id), source)
       setRace(res.data)
-    } catch { /* ignore */ } finally { setPredicting(false) }
-  }
-
-  async function handlePredictSystem() {
-    if (!id) return
-    setPredicting(true)
-    try {
-      const res = await predictRaceSystem(parseInt(id))
-      setRace(res.data)
-      setSystemDetail(res.data.system_prediction_detail || null)
     } catch { /* ignore */ } finally { setPredicting(false) }
   }
 
@@ -1771,9 +1835,19 @@ export default function RaceDetail() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={handlePredictSystem} disabled={predicting}
-              style={{ padding: '8px 16px', background: 'linear-gradient(135deg,#1e40af,#3b82f6)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-              {predicting ? '予測中…' : 'システム予測 v60.0'}
+            <button onClick={() => {
+              if (sessionStorage.getItem('dot_unlocked') === '1') {
+                navigate('/dot')
+              } else {
+                setShowDotModal(true)
+              }
+            }}
+              style={{ padding: '8px 16px', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid #78450a', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+              DOTシステム（開発中）
+            </button>
+            <button onClick={() => navigate('/shishido')}
+              style={{ padding: '8px 16px', background: 'rgba(167,139,250,0.15)', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+              宍戸予想 v58.7
             </button>
             <button onClick={() => handlePredict('ensemble')} disabled={predicting}
               style={{ padding: '8px 14px', background: '#1e2a40', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
@@ -1869,6 +1943,11 @@ export default function RaceDetail() {
         <div className="loading-spinner" style={{ marginTop: 16 }}>
           <div className="spinner" />AI予測を生成中…
         </div>
+      )}
+
+      {/* DOTシステム パスワードモーダル */}
+      {showDotModal && (
+        <DotPasswordModalInline onClose={() => setShowDotModal(false)} onSuccess={() => { setShowDotModal(false); navigate('/dot') }} />
       )}
     </div>
   )
