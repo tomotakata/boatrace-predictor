@@ -2,6 +2,30 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction, type ShishidoCalculationSteps } from '../lib/api'
 
+// ───── タイピングアニメーション ─────
+function TypingText({ text, speed = 60, pauseMs = 2000 }: { text: string; speed?: number; pauseMs?: number }) {
+  const [displayed, setDisplayed] = useState('')
+  useEffect(() => {
+    let idx = 0
+    let timer: ReturnType<typeof setTimeout>
+    function tick() {
+      if (idx <= text.length) {
+        setDisplayed(text.slice(0, idx))
+        idx++
+        timer = setTimeout(tick, speed)
+      } else {
+        timer = setTimeout(() => {
+          idx = 0
+          tick()
+        }, pauseMs)
+      }
+    }
+    tick()
+    return () => clearTimeout(timer)
+  }, [text, speed, pauseMs])
+  return <>{displayed}<span style={{ borderRight: '2px solid #a7f3d0', marginLeft: 1, animation: 'blink-caret 0.75s step-end infinite' }} /></>
+}
+
 // 攻め主体タイプ凡例
 const ATTACK_TYPE_LEGEND: Record<string, { label: string; desc: string }> = {
   'α': { label: 'アルファ', desc: '鉄板 — 1号が圧倒的に強い' },
@@ -2264,8 +2288,8 @@ export default function RaceDetail() {
               ))}
             </div>
             {venueConfig.notes && (
-              <div style={{ fontSize: 11, color: '#a7f3d0', marginTop: 4, borderTop: '1px solid #065f46', paddingTop: 4 }}>
-                {venueConfig.notes}
+              <div style={{ fontSize: 11, color: '#a7f3d0', marginTop: 4, borderTop: '1px solid #065f46', paddingTop: 4, minHeight: '1.5em' }}>
+                <TypingText text={venueConfig.notes} speed={60} pauseMs={2000} />
               </div>
             )}
           </div>

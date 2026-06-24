@@ -800,6 +800,11 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: #a7f3d0; }
+}
+
 /* Empty state */
 .empty-state {
   text-align: center;
