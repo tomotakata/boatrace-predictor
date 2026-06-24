@@ -1790,10 +1790,10 @@ function DotPasswordModalInline({ onClose, onSuccess }: { onClose: () => void; o
         boxShadow: '0 8px 40px #0008',
       }} onClick={e => e.stopPropagation()}>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#60a5fa', marginBottom: 4 }}>
-          DOTシステム
+          システム計算
         </div>
         <div style={{ fontSize: 12, color: '#64748b', marginBottom: 20 }}>
-          開発パスワードを入力してください
+          パスワードを入力してください
         </div>
         <form onSubmit={handleSubmit}>
           <input
@@ -2287,7 +2287,7 @@ export default function RaceDetail() {
               }
             }}
               style={{ padding: '8px 16px', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid #78450a', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-              DOTシステム（開発中）
+              システム計算（試験中）
             </button>
             <button onClick={handleShishidoPredict} disabled={shishidoLoading}
               style={{ padding: '8px 16px', background: 'rgba(167,139,250,0.15)', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
@@ -2515,7 +2515,7 @@ export default function RaceDetail() {
         </div>
       )}
 
-      {/* DOTシステム パスワードモーダル */}
+      {/* システム計算 パスワードモーダル */}
       {showDotModal && (
         <DotPasswordModalInline onClose={() => setShowDotModal(false)} onSuccess={() => { setShowDotModal(false); navigate('/dot') }} />
       )}
