@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getRace, predictRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction, type ShishidoCalculationSteps } from '../lib/api'
+import { getRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction, type ShishidoCalculationSteps } from '../lib/api'
 
 // 攻め主体タイプ凡例
 const ATTACK_TYPE_LEGEND: Record<string, { label: string; desc: string }> = {
@@ -2144,7 +2144,6 @@ export default function RaceDetail() {
   const navigate = useNavigate()
   const [race, setRace] = useState<Race | null>(null)
   const [loading, setLoading] = useState(true)
-  const [predicting, setPredicting] = useState(false)
   const [systemDetail, _setSystemDetail] = useState<SystemPredictionDetail | null>(null)
   const [venueConfig, setVenueConfig] = useState<VenueConfig | null>(null)
   const [showDotModal, setShowDotModal] = useState(false)
@@ -2173,15 +2172,6 @@ export default function RaceDetail() {
   }
 
   useEffect(() => { fetchRace() }, [id])
-
-  async function handlePredict(source: 'ensemble' | 'claude' | 'gemini') {
-    if (!id) return
-    setPredicting(true)
-    try {
-      const res = await predictRace(parseInt(id), source)
-      setRace(res.data)
-    } catch { /* ignore */ } finally { setPredicting(false) }
-  }
 
   async function handleShishidoPredict() {
     if (!race) return
@@ -2249,18 +2239,11 @@ export default function RaceDetail() {
               style={{ padding: '8px 16px', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid #78450a', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
               DOTシステム（開発中）
             </button>
-            <button onClick={handleShishidoPredict} disabled={shishidoLoading || predicting}
+            <button onClick={handleShishidoPredict} disabled={shishidoLoading}
               style={{ padding: '8px 16px', background: 'rgba(167,139,250,0.15)', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
               {shishidoLoading ? '宍戸予想中…' : '宍戸予想 v58.7'}
             </button>
-            <button onClick={() => handlePredict('ensemble')} disabled={predicting}
-              style={{ padding: '8px 14px', background: '#1e2a40', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
-              Ensemble
-            </button>
-            <button onClick={() => handlePredict('claude')} disabled={predicting}
-              style={{ padding: '8px 14px', background: '#1e2a40', color: '#f59e0b', border: '1px solid #78450a', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
-              Claude
-            </button>
+
           </div>
         </div>
 
@@ -2479,12 +2462,6 @@ export default function RaceDetail() {
       {!(systemDetail || predictions.length > 0) && race.id && (
         <div style={{ marginTop: 20 }}>
           <ResultAndMemoPanel raceId={race.id} raceDate={race.date} raceVenue={race.venue} systemDetail={null} />
-        </div>
-      )}
-
-      {predicting && (
-        <div className="loading-spinner" style={{ marginTop: 16 }}>
-          <div className="spinner" />AI予測を生成中…
         </div>
       )}
 
