@@ -107,7 +107,7 @@ async def predict(req: PredictRequest):
             # 単一レース
             from predict import predict_race
             result = predict_race(sb, req.date, req.venue, req.race_no, system_prompt)
-            return result
+            return {"date": req.date, "venue": req.venue, "results": [result]}
         else:
             # 全レース (1-12)
             results = []
