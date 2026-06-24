@@ -2,6 +2,25 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getRace, predictRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction } from '../lib/api'
 
+// 攻め主体タイプ凡例
+const ATTACK_TYPE_LEGEND: Record<string, { label: string; desc: string }> = {
+  'α': { label: 'アルファ', desc: '鉄板 — 1号が圧倒的に強い' },
+  'β': { label: 'ベータ', desc: '2号直捲り — 2号が1号を捲る' },
+  'γ': { label: 'ガンマ', desc: '発動艇 — 特定の外艇が仕掛ける' },
+  'δ': { label: 'デルタ', desc: 'デフォルト1号逃げ — 1号が逃げ切る（標準パターン）' },
+  'ε': { label: 'イプシロン', desc: '外艇捲り主体 — 外コースの艇が捲りに行く' },
+}
+
+function getAttackTypeExplanation(attackType?: string | null): string | null {
+  if (!attackType) return null
+  for (const [symbol, info] of Object.entries(ATTACK_TYPE_LEGEND)) {
+    if (attackType.includes(symbol)) {
+      return `→ ${info.label}：${info.desc}`
+    }
+  }
+  return null
+}
+
 // 進入順ラベルの色
 const LANE_BG: Record<number, string> = {
   1: '#1a1a3e',   // 白枠
@@ -1516,7 +1535,12 @@ function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
               <span style={{ fontSize: 12, color: '#64748b' }}>発動艇なし（1逃げ主体）</span>
             )}
             {detail.main_attack_course && (
-              <span style={{ fontSize: 12, color: '#94a3b8' }}>攻め主体 {detail.main_attack_course}号（{detail.attack_type}）</span>
+              <span style={{ fontSize: 12, color: '#94a3b8' }}>
+                攻め主体 {detail.main_attack_course}号（{detail.attack_type}）
+                {getAttackTypeExplanation(detail.attack_type) && (
+                  <span style={{ marginLeft: 6, color: '#64748b' }}>{getAttackTypeExplanation(detail.attack_type)}</span>
+                )}
+              </span>
             )}
           </div>
         )
@@ -1557,7 +1581,7 @@ function SystemPredictionPanel({ detail }: { detail: SystemPredictionDetail }) {
           {[
             ['パターン', detail.regime || '—'],
             ['逃げ判定', escapeVerdict],
-            ['主攻め候補', detail.main_attack_course ? `${detail.main_attack_course}号${detail.attack_type ? `（${detail.attack_type}）` : ''}` : '—'],
+            ['主攻め候補', detail.main_attack_course ? `${detail.main_attack_course}号${detail.attack_type ? `（${detail.attack_type}）` : ''}${getAttackTypeExplanation(detail.attack_type) ? ` ${getAttackTypeExplanation(detail.attack_type)}` : ''}` : '—'],
             ['沈み候補', detail.sink_boat_lane ? `${detail.sink_boat_lane}号` : '—'],
             ['スジ・特記', sujiAndNotes.length > 0 ? sujiAndNotes.join(' / ') : '—'],
           ].map(([label, value], index) => (
@@ -1983,6 +2007,11 @@ export default function RaceDetail() {
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#f59e0b' }}>
                   {analysis.attack_subject.course}コース {analysis.attack_subject.type} ({analysis.attack_subject.attack_type})
                 </div>
+                {getAttackTypeExplanation(analysis.attack_subject.type) && (
+                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+                    {getAttackTypeExplanation(analysis.attack_subject.type)}
+                  </div>
+                )}
               </div>
             )}
 
