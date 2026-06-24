@@ -377,6 +377,20 @@ export const savePredictionMemo = (raceId: number, memo: string) =>
   api.patch<{ status: string }>(`/races/${raceId}/prediction/memo`, { memo })
 
 // Shishido Predict API
+export interface ShishidoCalcStepData {
+  title: string
+  data: Record<string, unknown>
+}
+
+export interface ShishidoCalculationSteps {
+  step5_p2_linkage?: ShishidoCalcStepData
+  step6_ei?: ShishidoCalcStepData
+  step7_nige_ti?: ShishidoCalcStepData
+  step8_fire_boat?: ShishidoCalcStepData
+  step9_attack_decision?: ShishidoCalcStepData
+  step10_honsen?: ShishidoCalcStepData
+}
+
 export interface ShishidoPrediction {
   venue: string
   date: string
@@ -396,6 +410,7 @@ export interface ShishidoPrediction {
       exacta_top?: string[]
       suichi?: string[]
       dashboard?: Record<string, { EI: number; TI: number; P1: number; nige: number; place: number; second: number }>
+      calculation_steps?: ShishidoCalculationSteps
     }
     reasoning?: string
   }

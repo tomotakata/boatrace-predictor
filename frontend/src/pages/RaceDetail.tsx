@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getRace, predictRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction } from '../lib/api'
+import { getRace, predictRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction, type ShishidoCalculationSteps } from '../lib/api'
 
 // 攻め主体タイプ凡例
 const ATTACK_TYPE_LEGEND: Record<string, { label: string; desc: string }> = {
@@ -1782,6 +1782,362 @@ function DotPasswordModalInline({ onClose, onSuccess }: { onClose: () => void; o
   )
 }
 
+// ───── 宍戸予想 計算ステップ表示 ─────
+function ShishidoCalcStepsPanel({ steps }: { steps: ShishidoCalculationSteps }) {
+  const lanes = [1, 2, 3, 4, 5, 6]
+  const stepEntries = [
+    { key: 'step5_p2_linkage' as const, fallbackTitle: '⑤g P2連動要約(他艇成績→2着連動率)' },
+    { key: 'step6_ei' as const, fallbackTitle: '⑥格付け(EI 期待指数)' },
+    { key: 'step7_nige_ti' as const, fallbackTitle: '⑦逃げ成立度・TI' },
+    { key: 'step8_fire_boat' as const, fallbackTitle: '⑧発動艇判定' },
+    { key: 'step9_attack_decision' as const, fallbackTitle: '⑨攻め主体決定過程' },
+    { key: 'step10_honsen' as const, fallbackTitle: '⑩本線生成過程' },
+  ]
+
+  const cellStyle: React.CSSProperties = { textAlign: 'center', padding: '5px 6px', fontSize: 12, border: '1px solid #1e293b', color: '#e2e8f0' }
+  const headerCellStyle: React.CSSProperties = { ...cellStyle, color: '#94a3b8', fontWeight: 600, background: '#0a1520', fontSize: 11 }
+  const laneCellStyle = (lane: number): React.CSSProperties => ({ ...cellStyle, background: LANE_BG[lane], color: LANE_TEXT[lane], fontWeight: 700, fontSize: 13 })
+
+  const reliabilityColor = (r: string) => r === '完全' ? '#4ade80' : r === '中' ? '#facc15' : r === '低' ? '#f87171' : '#94a3b8'
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: 12, color: '#a78bfa', marginBottom: 8, fontWeight: 700, borderBottom: '1px solid #4c3a9e33', paddingBottom: 4 }}>計算ステップ詳細</div>
+
+      {stepEntries.map(({ key, fallbackTitle }) => {
+        const step = steps[key]
+        if (!step) return null
+        const data = step.data || {}
+        const title = step.title || fallbackTitle
+
+        // ⑤g P2連動要約
+        if (key === 'step5_p2_linkage') {
+          return (
+            <div key={key} style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid #1e3a5f' }}>
+              <div style={{ background: 'linear-gradient(90deg, #10264d 0%, #0a1f3f 100%)', padding: '6px 12px' }}>
+                <span style={{ color: '#93c5fd', fontWeight: 700, fontSize: 12 }}>{title}</span>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', background: '#081427', tableLayout: 'fixed' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ ...headerCellStyle, width: 80 }}>勝者→</td>
+                      {lanes.map(l => <td key={l} style={laneCellStyle(l)}>{l}</td>)}
+                    </tr>
+                    <tr>
+                      <td style={headerCellStyle}>2着筆頭</td>
+                      {lanes.map(l => {
+                        const d = data[String(l)] as Record<string, unknown> | undefined
+                        return <td key={l} style={{ ...cellStyle, fontWeight: 600 }}>{(d?.second_top as string) ?? '—'}</td>
+                      })}
+                    </tr>
+                    <tr>
+                      <td style={headerCellStyle}>2着次点</td>
+                      {lanes.map(l => {
+                        const d = data[String(l)] as Record<string, unknown> | undefined
+                        return <td key={l} style={cellStyle}>{(d?.second_next as string) ?? '—'}</td>
+                      })}
+                    </tr>
+                    <tr>
+                      <td style={headerCellStyle}>信頼度</td>
+                      {lanes.map(l => {
+                        const d = data[String(l)] as Record<string, unknown> | undefined
+                        const r = (d?.reliability as string) ?? '—'
+                        return <td key={l} style={{ ...cellStyle, color: reliabilityColor(r), fontWeight: 600 }}>{r}</td>
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        }
+
+        // ⑥格付け(EI)
+        if (key === 'step6_ei') {
+          const eiValues = lanes.map(l => {
+            const d = data[String(l)] as Record<string, unknown> | undefined
+            return d?.EI as number | undefined
+          })
+          const maxEi = eiValues.reduce<number | null>((acc, v) => v != null ? (acc == null ? v : Math.max(acc, v)) : acc, null)
+          return (
+            <div key={key} style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid #4338ca' }}>
+              <div style={{ background: 'linear-gradient(90deg, #312e81 0%, #581c87 100%)', padding: '6px 12px' }}>
+                <span style={{ color: '#c4b5fd', fontWeight: 700, fontSize: 12 }}>{title}</span>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', background: '#0f172a', tableLayout: 'fixed' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ ...headerCellStyle, width: 80 }}>艇</td>
+                      {lanes.map(l => <td key={l} style={laneCellStyle(l)}>{l}</td>)}
+                    </tr>
+                    {['A', 'B', 'C', 'D', 'F', 'G', 'H'].map(comp => (
+                      <tr key={comp}>
+                        <td style={headerCellStyle}>{comp}</td>
+                        {lanes.map(l => {
+                          const d = data[String(l)] as Record<string, unknown> | undefined
+                          const v = d?.[comp]
+                          return <td key={l} style={cellStyle}>{v != null ? (typeof v === 'number' ? v.toFixed(1) : String(v)) : '—'}</td>
+                        })}
+                      </tr>
+                    ))}
+                    <tr style={{ background: 'rgba(99,102,241,0.15)' }}>
+                      <td style={{ ...headerCellStyle, fontWeight: 700, color: '#c4b5fd' }}>EI</td>
+                      {lanes.map((l, i) => {
+                        const v = eiValues[i]
+                        return <td key={l} style={{ ...cellStyle, fontSize: 15, fontWeight: 700, color: v != null && maxEi != null && v === maxEi ? '#f87171' : '#e9d5ff' }}>{v != null ? Math.round(v) : '—'}</td>
+                      })}
+                    </tr>
+                    <tr>
+                      <td style={headerCellStyle}>EI順</td>
+                      {lanes.map(l => {
+                        const d = data[String(l)] as Record<string, unknown> | undefined
+                        const r = d?.EI_rank as number | undefined
+                        return <td key={l} style={{ ...cellStyle, color: r === 1 ? '#f87171' : '#e2e8f0', fontWeight: r === 1 ? 700 : 400 }}>{r ?? '—'}</td>
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        }
+
+        // ⑦逃げ成立度・TI
+        if (key === 'step7_nige_ti') {
+          const tiData = (data.ti || {}) as Record<string, number>
+          const tiRankData = (data.ti_rank || {}) as Record<string, number>
+          const tiValues = lanes.map(l => tiData[String(l)] ?? null)
+          const maxTi = tiValues.reduce<number | null>((acc, v) => v != null ? (acc == null ? v : Math.max(acc, v)) : acc, null)
+          return (
+            <div key={key} style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid #1d4ed8' }}>
+              <div style={{ background: 'linear-gradient(90deg, #0f2d5e 0%, #081a38 100%)', padding: '6px 12px' }}>
+                <span style={{ color: '#bfdbfe', fontWeight: 700, fontSize: 12 }}>{title}</span>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', background: '#081427', tableLayout: 'fixed' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ ...headerCellStyle, width: 100 }}>指標</td>
+                      <td colSpan={6} style={{ ...cellStyle, textAlign: 'left', fontSize: 11, color: '#94a3b8' }}>値</td>
+                    </tr>
+                    {[
+                      { label: '逃げ成立度', value: data.nige_success_rate },
+                      { label: '減衰係数(1号)', value: data.damping_1c },
+                      { label: '攻め圧力', value: data.attack_pressure },
+                      { label: '脅威合計', value: data.threat_total },
+                    ].map(({ label, value }) => (
+                      <tr key={label}>
+                        <td style={headerCellStyle}>{label}</td>
+                        <td colSpan={6} style={{ ...cellStyle, textAlign: 'left', fontWeight: 600, color: '#fcd34d' }}>
+                          {value != null ? (typeof value === 'number' ? value.toFixed(3) : String(value)) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td style={headerCellStyle}>艇</td>
+                      {lanes.map(l => <td key={l} style={laneCellStyle(l)}>{l}</td>)}
+                    </tr>
+                    <tr style={{ background: 'rgba(30,64,175,0.2)' }}>
+                      <td style={{ ...headerCellStyle, color: '#bfdbfe', fontWeight: 700 }}>TI</td>
+                      {lanes.map((l, i) => {
+                        const v = tiValues[i]
+                        return <td key={l} style={{ ...cellStyle, fontSize: 14, fontWeight: 700, color: v != null && maxTi != null && v === maxTi ? '#f87171' : '#dbeafe' }}>{v != null ? v.toFixed(2) : '—'}</td>
+                      })}
+                    </tr>
+                    <tr>
+                      <td style={headerCellStyle}>TI順</td>
+                      {lanes.map(l => {
+                        const r = tiRankData[String(l)]
+                        return <td key={l} style={{ ...cellStyle, color: r === 1 ? '#f87171' : '#e2e8f0', fontWeight: r === 1 ? 700 : 400 }}>{r ?? '—'}</td>
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        }
+
+        // ⑧発動艇判定
+        if (key === 'step8_fire_boat') {
+          const dkanData = (data.dkan || {}) as Record<string, number>
+          const dkanDetail = (data.dkan_detail || {}) as Record<string, Record<string, number>>
+          const fireBoat = data.fire_boat as number | null | undefined
+          const fireOcc = data.fire_boat_occ_rate as number | undefined
+          return (
+            <div key={key} style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid #92400e' }}>
+              <div style={{ background: 'linear-gradient(90deg, #451a03 0%, #78350f 100%)', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#fde68a', fontWeight: 700, fontSize: 12 }}>{title}</span>
+                {fireBoat != null ? (
+                  <span style={{ fontSize: 11, color: '#fb923c', fontWeight: 700, padding: '1px 8px', background: '#2d1500', borderRadius: 6 }}>
+                    発動艇: {fireBoat}号{fireOcc != null ? ` (発生率${typeof fireOcc === 'number' ? fireOcc.toFixed(1) : fireOcc}%)` : ''}
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 11, color: '#64748b' }}>発動艇なし</span>
+                )}
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', background: '#0c0a00', tableLayout: 'fixed' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ ...headerCellStyle, width: 80 }}>艇</td>
+                      {lanes.map(l => <td key={l} style={laneCellStyle(l)}>{l}</td>)}
+                    </tr>
+                    {['motor', 'ei', 'st', 'attack', 'class'].map(item => (
+                      <tr key={item}>
+                        <td style={headerCellStyle}>{item}</td>
+                        {lanes.map(l => {
+                          const d = dkanDetail[String(l)]
+                          const v = d?.[item]
+                          return <td key={l} style={{ ...cellStyle, color: v === 1 ? '#4ade80' : '#64748b' }}>{v != null ? (v === 1 ? '○' : '—') : '—'}</td>
+                        })}
+                      </tr>
+                    ))}
+                    <tr style={{ background: 'rgba(146,64,14,0.2)' }}>
+                      <td style={{ ...headerCellStyle, color: '#fde68a', fontWeight: 700 }}>D-KAN</td>
+                      {lanes.map(l => {
+                        const v = dkanData[String(l)] ?? (dkanDetail[String(l)]?.total)
+                        return <td key={l} style={{ ...cellStyle, fontSize: 14, fontWeight: 700, color: v != null && v >= 4 ? '#f87171' : v != null && v >= 2 ? '#fcd34d' : '#e2e8f0' }}>{v ?? '—'}</td>
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        }
+
+        // ⑨攻め主体決定過程
+        if (key === 'step9_attack_decision') {
+          const calWin = (data.cal_win || {}) as Record<string, number>
+          const checks = [
+            { label: 'α判定', value: data.alpha_check },
+            { label: 'β判定', value: data.beta_check },
+            { label: 'γ判定', value: data.gamma_check },
+            { label: 'ε判定', value: data.epsilon_check },
+          ]
+          const resultType = data.result_type as string | undefined
+          const resultReason = data.result_reason as string | undefined
+          return (
+            <div key={key} style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid #065f46' }}>
+              <div style={{ background: 'linear-gradient(90deg, #064e3b 0%, #065f46 100%)', padding: '6px 12px' }}>
+                <span style={{ color: '#6ee7b7', fontWeight: 700, fontSize: 12 }}>{title}</span>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', background: '#021a0f', tableLayout: 'fixed' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ ...headerCellStyle, width: 80 }}>cal_win</td>
+                      {lanes.map(l => <td key={l} style={laneCellStyle(l)}>{l}</td>)}
+                    </tr>
+                    <tr>
+                      <td style={headerCellStyle}>1着率(%)</td>
+                      {lanes.map(l => {
+                        const v = calWin[String(l)]
+                        return <td key={l} style={{ ...cellStyle, fontWeight: 600 }}>{v != null ? (typeof v === 'number' ? v.toFixed(1) : String(v)) : '—'}</td>
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ padding: '8px 12px', background: '#021a0f' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 6 }}>
+                  {[
+                    { label: 'GAP', value: data.gap },
+                    { label: '逃げ成立度', value: data.cal_nige },
+                    { label: '1号非信用', value: data.distrust_1 != null ? (data.distrust_1 ? 'YES' : 'NO') : '—' },
+                  ].map(({ label, value }) => (
+                    <div key={label} style={{ fontSize: 11, color: '#94a3b8' }}>
+                      <span style={{ color: '#6ee7b7', fontWeight: 600 }}>{label}: </span>
+                      {value != null ? (typeof value === 'number' ? value.toFixed(2) : String(value)) : '—'}
+                    </div>
+                  ))}
+                </div>
+                {checks.map(({ label, value }) => value != null && (
+                  <div key={label} style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
+                    <span style={{ color: '#6ee7b7', fontWeight: 600 }}>{label}: </span>{String(value)}
+                  </div>
+                ))}
+                {resultType && (
+                  <div style={{ marginTop: 6, padding: '4px 10px', background: 'rgba(16,185,129,0.15)', borderRadius: 6, border: '1px solid #065f46' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b' }}>結果: {resultType}</span>
+                    {resultReason && <span style={{ fontSize: 11, color: '#a7f3d0', marginLeft: 8 }}>{resultReason}</span>}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        }
+
+        // ⑩本線生成過程
+        if (key === 'step10_honsen') {
+          const headBoats = (data.head_boats || []) as number[]
+          const axisBoats = (data.axis_boats || []) as number[]
+          const boxBoats = (data.box_boats || []) as number[]
+          const sinkBoat = data.sink_boat as number | null | undefined
+          const sinkOverride = data.sink_override as string | undefined
+          const physDeath = (data.physical_death || []) as number[]
+          const kinsa = data.kinsa as boolean | undefined
+          const boxScores = (data.box_scores || {}) as Record<string, number>
+          const placeProb = (data.place_prob || {}) as Record<string, number>
+          const secondExpect = (data.second_expect || {}) as Record<string, number>
+          return (
+            <div key={key} style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid #1e3a5f' }}>
+              <div style={{ background: 'linear-gradient(90deg, #0f2d5e 0%, #0a1f3f 100%)', padding: '6px 12px' }}>
+                <span style={{ color: '#60a5fa', fontWeight: 700, fontSize: 12 }}>{title}</span>
+              </div>
+              <div style={{ padding: '8px 12px', background: '#081427', display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 11 }}>
+                <span style={{ color: '#60a5fa' }}>頭: <b style={{ color: '#fcd34d' }}>{headBoats.join(', ') || '—'}</b></span>
+                <span style={{ color: '#60a5fa' }}>軸: <b style={{ color: '#e2e8f0' }}>{axisBoats.join(', ') || '—'}</b></span>
+                <span style={{ color: '#60a5fa' }}>箱: <b style={{ color: '#e2e8f0' }}>{boxBoats.join(', ') || '—'}</b></span>
+                <span style={{ color: '#60a5fa' }}>沈み: <b style={{ color: sinkBoat ? '#f87171' : '#64748b' }}>{sinkBoat ?? 'なし'}</b></span>
+                {sinkOverride && <span style={{ color: '#94a3b8' }}>({sinkOverride})</span>}
+                <span style={{ color: '#60a5fa' }}>物理死亡: <b style={{ color: physDeath.length > 0 ? '#f87171' : '#64748b' }}>{physDeath.length > 0 ? physDeath.join(', ') : 'なし'}</b></span>
+                <span style={{ color: '#60a5fa' }}>僅差: <b style={{ color: kinsa ? '#fcd34d' : '#64748b' }}>{kinsa ? 'YES' : 'NO'}</b></span>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', background: '#081427', tableLayout: 'fixed' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ ...headerCellStyle, width: 80 }}>艇</td>
+                      {lanes.map(l => <td key={l} style={laneCellStyle(l)}>{l}</td>)}
+                    </tr>
+                    <tr>
+                      <td style={headerCellStyle}>箱スコア</td>
+                      {lanes.map(l => {
+                        const v = boxScores[String(l)]
+                        return <td key={l} style={{ ...cellStyle, fontWeight: 600 }}>{v != null ? (typeof v === 'number' ? v.toFixed(1) : String(v)) : '—'}</td>
+                      })}
+                    </tr>
+                    <tr>
+                      <td style={headerCellStyle}>着内確率</td>
+                      {lanes.map(l => {
+                        const v = placeProb[String(l)]
+                        return <td key={l} style={{ ...cellStyle, fontWeight: 600, color: v != null && v >= 60 ? '#fcd34d' : '#e2e8f0' }}>{v != null ? (typeof v === 'number' ? v.toFixed(1) : String(v)) : '—'}</td>
+                      })}
+                    </tr>
+                    <tr>
+                      <td style={headerCellStyle}>2着期待</td>
+                      {lanes.map(l => {
+                        const v = secondExpect[String(l)]
+                        return <td key={l} style={{ ...cellStyle, fontWeight: 600 }}>{v != null ? (typeof v === 'number' ? v.toFixed(1) : String(v)) : '—'}</td>
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        }
+
+        return null
+      })}
+    </div>
+  )
+}
+
 // ───── メインページ ─────
 export default function RaceDetail() {
   const { id } = useParams<{ id: string }>()
@@ -2086,6 +2442,11 @@ export default function RaceDetail() {
                   </table>
                 </div>
               </div>
+            )}
+
+            {/* 計算ステップ詳細 */}
+            {analysis.calculation_steps && (
+              <ShishidoCalcStepsPanel steps={analysis.calculation_steps} />
             )}
 
             {/* 判断要約 */}

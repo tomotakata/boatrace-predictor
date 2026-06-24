@@ -102,6 +102,76 @@ def _build_user_message(race_data: dict) -> str:
         '      "4": {"EI": N, "TI": N, "P1": N, "nige": N, "place": N, "second": N},\n'
         '      "5": {"EI": N, "TI": N, "P1": N, "nige": N, "place": N, "second": N},\n'
         '      "6": {"EI": N, "TI": N, "P1": N, "nige": N, "place": N, "second": N}\n'
+        "    },\n"
+        '    "calculation_steps": {\n'
+        '      "step5_p2_linkage": {\n'
+        '        "title": "⑤g P2連動要約(他艇成績→2着連動率)",\n'
+        '        "data": {\n'
+        '          "1": {"second_top": "2(82)", "second_next": "4(75)", "reliability": "中/完全/低"},\n'
+        '          "2": {"second_top": "4(49)", "second_next": "1(43)", "reliability": "中"},\n'
+        '          "...": "各コース1-6について同様"\n'
+        "        }\n"
+        "      },\n"
+        '      "step6_ei": {\n'
+        '        "title": "⑥格付け(EI 期待指数)",\n'
+        '        "data": {\n'
+        '          "1": {"A": N, "B": N, "C": N, "D": N, "F": N, "G": N, "H": N, "EI": N, "EI_rank": N},\n'
+        '          "...": "各艇1-6について同様"\n'
+        "        }\n"
+        "      },\n"
+        '      "step7_nige_ti": {\n'
+        '        "title": "⑦逃げ成立度・TI",\n'
+        '        "data": {\n'
+        '          "nige_success_rate": N,\n'
+        '          "damping_1c": N,\n'
+        '          "attack_pressure": N,\n'
+        '          "threat_total": N,\n'
+        '          "ti": {"1": N, "2": N, "3": N, "4": N, "5": N, "6": N},\n'
+        '          "ti_rank": {"1": N, "2": N, "3": N, "4": N, "5": N, "6": N}\n'
+        "        }\n"
+        "      },\n"
+        '      "step8_fire_boat": {\n'
+        '        "title": "⑧発動艇判定",\n'
+        '        "data": {\n'
+        '          "fire_boat": N or null,\n'
+        '          "fire_boat_occ_rate": N,\n'
+        '          "dkan": {"1": N, "2": N, "3": N, "4": N, "5": N, "6": N},\n'
+        '          "dkan_detail": {\n'
+        '            "1": {"motor": 0or1, "ei": 0or1, "st": 0or1, "attack": 0or1, "class": 0or1, "total": N},\n'
+        '            "...": "各艇同様"\n'
+        "          }\n"
+        "        }\n"
+        "      },\n"
+        '      "step9_attack_decision": {\n'
+        '        "title": "⑨攻め主体決定過程",\n'
+        '        "data": {\n'
+        '          "cal_win": {"1": N, "2": N, "3": N, "4": N, "5": N, "6": N},\n'
+        '          "gap": N,\n'
+        '          "cal_nige": N,\n'
+        '          "distrust_1": true/false,\n'
+        '          "alpha_check": "条件の判定結果テキスト",\n'
+        '          "beta_check": "条件の判定結果テキスト",\n'
+        '          "gamma_check": "条件の判定結果テキスト",\n'
+        '          "epsilon_check": "条件の判定結果テキスト",\n'
+        '          "result_type": "α/β/γ/ε/δ",\n'
+        '          "result_reason": "決定理由の要約"\n'
+        "        }\n"
+        "      },\n"
+        '      "step10_honsen": {\n'
+        '        "title": "⑩本線生成過程",\n'
+        '        "data": {\n'
+        '          "head_boats": [N, N],\n'
+        '          "axis_boats": [N, N],\n'
+        '          "box_boats": [N, N, N, N],\n'
+        '          "sink_boat": N or null,\n'
+        '          "sink_override": "沈み解除の有無と理由",\n'
+        '          "physical_death": [N] or [],\n'
+        '          "kinsa": true/false,\n'
+        '          "box_scores": {"1": N, "2": N, "3": N, "4": N, "5": N, "6": N},\n'
+        '          "place_prob": {"1": N, "2": N, "3": N, "4": N, "5": N, "6": N},\n'
+        '          "second_expect": {"1": N, "2": N, "3": N, "4": N, "5": N, "6": N}\n'
+        "        }\n"
+        "      }\n"
         "    }\n"
         "  },\n"
         '  "reasoning": "判断の要約"\n'
@@ -113,6 +183,13 @@ def _build_user_message(race_data: dict) -> str:
         "- honsen_12 は本線12点の3連単買い目リスト\n"
         "- exacta_top は2連単の上位候補\n"
         "- suichi はスイチ候補（万舟狙い）\n"
+        "- calculation_steps は各計算ステップの途中経過を記載。全ステップ必須\n"
+        "  - step5_p2_linkage: 各コース(1-6)が勝った場合の2着筆頭・次点・信頼度\n"
+        "  - step6_ei: EI算出の各成分(A-H)と最終EI・EI順位\n"
+        "  - step7_nige_ti: 逃げ成立度・減衰係数・攻め圧力・脅威合計・TI値・TI順位\n"
+        "  - step8_fire_boat: D-KAN(5項目)の内訳と発動艇認定結果\n"
+        "  - step9_attack_decision: 較正後1着率(cal_win)・GAP・α/β/γ/ε/δ各条件の判定結果\n"
+        "  - step10_honsen: 頭・軸・箱・沈み・物理死亡・僅差判定・箱スコア・着内確率・2着期待\n"
         "- JSON以外の出力は不要です。JSONブロックのみ出力してください\n\n"
         f"【出走データ】\n```json\n{race_json}\n```"
     )
@@ -135,7 +212,7 @@ def _call_claude(system_prompt: str, user_message: str, model: str = MODEL) -> s
             print(f"  Claude API 呼び出し中... (attempt {attempt}/{MAX_RETRIES})", file=sys.stderr)
             response = client.messages.create(
                 model=model,
-                max_tokens=8192,
+                max_tokens=16384,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_message}],
             )
