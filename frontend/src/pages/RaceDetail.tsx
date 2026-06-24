@@ -1303,7 +1303,7 @@ function SectionExhibit({ boats }: { boats: Boat[] }) {
 
 
 // ───── 結果確認・改善コメントパネル ─────
-function ResultAndMemoPanel({ raceId, raceDate, raceVenue, systemDetail }: { raceId: number; raceDate: string; raceVenue: string; systemDetail: SystemPredictionDetail | null }) {
+function ResultAndMemoPanel({ raceId, raceDate, raceVenue, systemDetail, shishidoResult }: { raceId: number; raceDate: string; raceVenue: string; systemDetail: SystemPredictionDetail | null; shishidoResult?: ShishidoPrediction | null }) {
   const [result, setResult] = useState<RaceResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [fetched, setFetched] = useState(false)
@@ -1393,6 +1393,32 @@ function ResultAndMemoPanel({ raceId, raceDate, raceVenue, systemDetail }: { rac
       accent: '#f59e0b',
       background: '#241507',
     },
+    ...(shishidoResult?.status === 'ok' && shishidoResult?.prediction?.analysis ? [
+      {
+        label: '宍戸 本線',
+        bets: ensureBetList(shishidoResult.prediction.analysis.honsen_12),
+        resultValue: trifecta,
+        payout: result?.trifecta_payout ?? null,
+        accent: '#a78bfa',
+        background: '#1a1040',
+      },
+      {
+        label: '宍戸 2連単',
+        bets: ensureBetList(shishidoResult.prediction.analysis.exacta_top),
+        resultValue: exacta,
+        payout: result?.exacta_payout ?? null,
+        accent: '#c084fc',
+        background: '#1a1040',
+      },
+      {
+        label: '宍戸 スイチ(万舟)',
+        bets: ensureBetList(shishidoResult.prediction.analysis.suichi),
+        resultValue: trifecta,
+        payout: result?.trifecta_payout ?? null,
+        accent: '#f472b6',
+        background: '#2d0f20',
+      },
+    ] : []),
   ].map((item) => {
     const safeBets = Array.isArray(item.bets) ? item.bets : []
     const normalizedBets = safeBets
@@ -2478,14 +2504,14 @@ export default function RaceDetail() {
           <div style={{ fontSize: 14, fontWeight: 700, color: '#94a3b8', marginBottom: 12 }}>予測結果</div>
           {systemDetail && <SystemPredictionPanel detail={systemDetail} />}
           {/* 過去レース：確定結果取得 & 改善コメント */}
-          <ResultAndMemoPanel raceId={race.id!} raceDate={race.date} raceVenue={race.venue} systemDetail={systemDetail} />
+          <ResultAndMemoPanel raceId={race.id!} raceDate={race.date} raceVenue={race.venue} systemDetail={systemDetail} shishidoResult={shishidoResult} />
         </div>
       )}
 
       {/* 予測なし・過去レースの場合も結果パネルを表示 */}
       {!(systemDetail || predictions.length > 0) && race.id && (
         <div style={{ marginTop: 20 }}>
-          <ResultAndMemoPanel raceId={race.id} raceDate={race.date} raceVenue={race.venue} systemDetail={null} />
+          <ResultAndMemoPanel raceId={race.id} raceDate={race.date} raceVenue={race.venue} systemDetail={null} shishidoResult={shishidoResult} />
         </div>
       )}
 
