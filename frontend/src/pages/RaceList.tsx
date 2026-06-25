@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { format, addDays, subDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { getRaces, getLatestDate, scrapeRaces, type Race } from '../lib/api'
@@ -33,7 +33,9 @@ export default function RaceList() {
   const [races, setRaces] = useState<Race[]>([])
   const [loading, setLoading] = useState(true)
   const [scraping, setScraping] = useState(false)
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const dateInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate()
 
   // 起動時: データがある最新日付を自動取得
   useEffect(() => {
@@ -86,6 +88,10 @@ export default function RaceList() {
   function goToday() {
     const t = new Date().toISOString().slice(0, 10)
     changeDate(t)
+  }
+
+  function toggleVenue(venue: string) {
+    setCollapsed(prev => ({ ...prev, [venue]: !prev[venue] }))
   }
 
   const isToday = date === new Date().toISOString().slice(0, 10)
@@ -148,58 +154,46 @@ export default function RaceList() {
           </div>
         </div>
       ) : (
-        Object.entries(grouped).map(([venue, venueRaces]) => (
-          <div key={venue} className="venue-group">
-            <div className="venue-header">{venue}</div>
-            <div className="card" style={{ padding: 0 }}>
-              <table className="race-table">
-                <thead>
-                  <tr>
-                    <th>R</th>
-                    <th>レース名</th>
-                    <th>ステータス</th>
-                    <th>予測数</th>
-                    <th>3連単</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
+        Object.entries(grouped).map(([venue, venueRaces]) => {
+          const isCollapsed = collapsed[venue] ?? false
+          return (
+            <div key={venue} className="venue-group">
+              <button
+                className={`venue-header-toggle ${isCollapsed ? 'collapsed' : ''}`}
+                onClick={() => toggleVenue(venue)}
+              >
+                <span className="venue-header-name">{venue}</span>
+                <span className="venue-header-count">{venueRaces.length}R</span>
+                <span className="venue-header-chevron">{isCollapsed ? '▶' : '▼'}</span>
+              </button>
+              {!isCollapsed && (
+                <div className="race-grid">
                   {venueRaces.map(race => {
                     const status = race.status || 'scheduled'
                     const sc = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.scheduled
-                    const trifecta = race.predictions?.[0]?.trifecta
+                    const trifecta = race.result?.trifecta
                     return (
-                      <tr key={race.id}>
-                        <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: 'var(--accent-blue-light)' }}>
-                          {race.race_no}R
-                        </td>
-                        <td>
-                          <Link to={`/race/${race.id}`} className="race-link">
-                            {race.race_name || `${race.race_no}R`}
-                          </Link>
-                        </td>
-                        <td>
-                          <span className={`status-badge ${sc.cls}`}>{sc.label}</span>
-                        </td>
-                        <td style={{ color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace' }}>
-                          {race.predictions_count ?? 0}
-                        </td>
-                        <td style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--accent-yellow)' }}>
+                      <div
+                        key={race.id}
+                        className="race-card"
+                        onClick={() => navigate(`/race/${race.id}`)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={e => { if (e.key === 'Enter') navigate(`/race/${race.id}`) }}
+                      >
+                        <div className="race-card-no">{race.race_no}R</div>
+                        <span className={`status-badge ${sc.cls}`}>{sc.label}</span>
+                        <div className="race-card-result">
                           {trifecta || '—'}
-                        </td>
-                        <td>
-                          <Link to={`/race/${race.id}`} className="btn btn-sm btn-secondary">
-                            詳細
-                          </Link>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     )
                   })}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
-          </div>
-        ))
+          )
+        })
       )}
     </div>
   )

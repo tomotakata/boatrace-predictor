@@ -328,49 +328,109 @@ html, body {
 
 /* Venue groups */
 .venue-group {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
-.venue-header {
+/* Venue accordion toggle */
+.venue-header-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.08);
+  border: none;
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 10px;
+}
+
+.venue-header-toggle:hover {
+  background: rgba(59, 130, 246, 0.14);
+}
+
+.venue-header-name {
   font-size: 15px;
   font-weight: 700;
   color: var(--accent-blue-light);
-  margin-bottom: 10px;
-  padding: 8px 12px;
-  background: rgba(59, 130, 246, 0.08);
-  border-radius: 6px;
-  border-left: 3px solid var(--accent-blue);
 }
 
-/* Race list table */
-.race-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.race-table th {
-  text-align: left;
-  padding: 8px 12px;
-  font-size: 11px;
-  font-weight: 600;
+.venue-header-count {
+  font-size: 12px;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
 }
 
-.race-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
+.venue-header-chevron {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
 }
 
-.race-table tr:last-child td {
-  border-bottom: none;
+/* Race grid */
+.race-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
-.race-table tr:hover td {
+@media (max-width: 1024px) {
+  .race-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .race-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Race card */
+.race-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  user-select: none;
+}
+
+.race-card:hover {
   background: var(--bg-card-hover);
+  border-color: var(--accent-blue);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.race-card:active {
+  transform: translateY(0);
+}
+
+.race-card:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+.race-card-no {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent-blue-light);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1;
+}
+
+.race-card-result {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-yellow);
+  font-family: 'JetBrains Mono', monospace;
+  min-height: 18px;
 }
 
 .race-link {
