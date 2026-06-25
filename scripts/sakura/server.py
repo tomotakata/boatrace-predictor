@@ -25,7 +25,7 @@ BR_BASE = "https://www.boatrace.jp"
 
 VENUE_CODE_MAP = {
     "桐生":"01","戸田":"02","江戸川":"03","平和島":"04","多摩川":"05","浜名湖":"06",
-    "蒲郡":"07","常滑":"08","津":"09","三国":"10","びわこ":"12","住之江":"11",
+    "蒲郡":"07","常滑":"08","津":"09","三国":"10","びわこ":"11","住之江":"12",
     "尼崎":"13","鳴門":"14","丸亀":"15","児島":"16","宮島":"17","徳山":"18",
     "下関":"19","若松":"20","芦屋":"21","福岡":"22","唐津":"23","大村":"24"
 }
@@ -93,27 +93,10 @@ async def bf_login(client):
     r2 = await client.post(f"{BF_BASE}/login", data={"_token":tok,"email":BOATFRONTIER_EMAIL,"password":BOATFRONTIER_PASSWORD}, follow_redirects=True)
     return "logout" in r2.text.lower()
 
-async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, race_no):
-    """boatrace.jp から1レース分の出走表を取得してDBに保存"""
-    url = f"{BR_BASE}/owpc/pc/race/racelist?hd={date_str}&jcd={venue_code}&rno={race_no}"
-    resp = await client.get(url)
-    if resp.status_code != 200:
-        return 0
-    soup = BeautifulSoup(resp.text, "html.parser")
-
-    # 出走表テーブルの選手行を取得
-    player_rows = soup.select("table tbody tr")
-    boats_saved = 0
-
-    # race_id 取得または作成
-    ex = sb.table("races").select("id").eq("date",date_fmt).eq("venue",venue).eq("race_no",race_no).execute()
-    if ex.data:
-        race_id = ex.data[0]["id"]
-    else:
-        r2 = sb.table("races").insert({"date":date_fmt,"venue":venue,"race_no":race_no,"status":"scheduled"}).execute()
-        if not r2.data: return 0
-        race_id = r2.data[0]["id"]
-
+def _parse_entry_rows(player_rows):
+    """racelistのtbody行から6艇分の(lane, player_fields, boat_fields)を抽出。
+    DB書き込みは一切行わず、パース結果のみ返す。lane重複は最後の行で上書き。"""
+    parsed = {}
     for row in player_rows:
         cells = row.find_all(["td","th"])
         if len(cells) < 20: continue
@@ -143,6 +126,13 @@ async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, ra
         # 体重（XX.Xkg）
         wt_m = re.search(r'([\d.]+)kg', cell2_text)
         weight = float(wt_m.group(1)) if wt_m else None
+        # branch
+        branch = None
+        for part in cell2_text.split(chr(124)):
+            bm = re.match(r"([一-鿿぀-ゟ゠-ヿ]+)/[一-鿿぀-ゟ゠-ヿ]+" + chr(36), part.strip())
+            if bm:
+                branch = bm.group(1)
+                break
 
         # F/L/avgST セル: "F0L00.14"
         fl_text = cells[3].get_text(strip=True) if len(cells)>3 else ""
@@ -174,6 +164,82 @@ async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, ra
 
         if not name or len(name) < 2: continue
 
+        parsed[lane] = {
+            "lane": lane,
+            "reg_no": reg_no, "rank": rank, "name": name, "age": age,
+            "boat": {
+                "lane": lane,
+                "age": age, "weight": weight, "f_count": f_count,
+                "national_win_rate": national_win_rate,
+                "national_place2_rate": national_place2_rate,
+                "local_win_rate": local_win_rate,
+                "local_place2_rate": local_place2_rate,
+                "motor_no": motor_no, "motor_place2_rate": motor_place2_rate,
+                "boat_no": boat_no,
+                "avg_st": avg_st,
+                "branch": branch,
+            },
+        }
+    return parsed
+
+async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, race_no):
+    """boatrace.jp から1レース分の出走表を取得してDBに保存。
+    6艇揃わない場合は races行作成・boats保存を行わず incomplete を返す(部分保存防止)。
+    開催されていない(出走表テーブルが存在しない)レースは held=False で静かにスキップ。
+    戻り値: {"boats": int, "complete": bool, "held": bool, "race_no": int}
+    """
+    url = f"{BR_BASE}/owpc/pc/race/racelist?hd={date_str}&jcd={venue_code}&rno={race_no}"
+
+    # HTTP取得+パースを最大3回リトライ(レイアウト変化/部分ロード対策)
+    parsed = {}
+    saw_rows = False  # 出走表tbody行が一度でも存在したか(=開催判定)
+    for attempt in range(3):
+        try:
+            resp = await client.get(url)
+        except Exception as _e:
+            await asyncio.sleep(0.5 * (attempt + 1))
+            continue
+        if resp.status_code != 200:
+            await asyncio.sleep(0.5 * (attempt + 1))
+            continue
+        soup = BeautifulSoup(resp.text, "html.parser")
+        player_rows = soup.select("table tbody tr")
+        if player_rows:
+            saw_rows = True
+        parsed = _parse_entry_rows(player_rows)
+        if len(parsed) == 6:
+            break
+        # 出走表テーブル自体が無い(=非開催)なら即リターン、リトライ不要
+        if not player_rows:
+            return {"boats": 0, "complete": False, "held": False, "race_no": race_no}
+        await asyncio.sleep(0.5 * (attempt + 1))
+
+    # 出走表行が一度も無ければ非開催として静かにスキップ
+    if not saw_rows:
+        return {"boats": 0, "complete": False, "held": False, "race_no": race_no}
+
+    # 開催されているのに6艇揃わない場合は明示ログ化し、races行作成も既存boats上書きもしない
+    if len(parsed) != 6:
+        print(f"[entry][incomplete] date={date_fmt} venue={venue} rno={race_no} "
+              f"parsed_lanes={sorted(parsed.keys())} count={len(parsed)}")
+        return {"boats": 0, "complete": False, "held": True, "race_no": race_no}
+
+    # ここで初めて race_id 取得または作成(部分作成を防ぐ)
+    ex = sb.table("races").select("id").eq("date",date_fmt).eq("venue",venue).eq("race_no",race_no).execute()
+    if ex.data:
+        race_id = ex.data[0]["id"]
+    else:
+        r2 = sb.table("races").insert({"date":date_fmt,"venue":venue,"race_no":race_no,"status":"scheduled"}).execute()
+        if not r2.data:
+            print(f"[entry][error] races insert failed date={date_fmt} venue={venue} rno={race_no}")
+            return {"boats": 0, "complete": False, "held": True, "race_no": race_no}
+        race_id = r2.data[0]["id"]
+
+    boats_saved = 0
+    for lane in sorted(parsed.keys()):
+        info = parsed[lane]
+        reg_no = info["reg_no"]; rank = info["rank"]; name = info["name"]; age = info["age"]
+
         # players upsert
         pl = sb.table("players").select("id").eq("registration_no", reg_no).execute()
         if pl.data:
@@ -184,20 +250,14 @@ async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, ra
                 "name":name,"rank":rank,"registration_no":reg_no,
                 "age":age,
             }).execute()
-            if not pl2.data: continue
+            if not pl2.data:
+                continue
             player_id = pl2.data[0]["id"]
 
-        bdata = {
-            "race_id": race_id, "lane": lane, "player_id": player_id,
-            "age": age, "weight": weight, "f_count": f_count,
-            "national_win_rate": national_win_rate,
-            "national_place2_rate": national_place2_rate,
-            "local_win_rate": local_win_rate,
-            "local_place2_rate": local_place2_rate,
-            "motor_no": motor_no, "motor_place2_rate": motor_place2_rate,
-            "boat_no": boat_no,
-            "avg_st": avg_st,
-        }
+        bdata = dict(info["boat"])
+        bdata["race_id"] = race_id
+        bdata["player_id"] = player_id
+
         ex2 = sb.table("boats").select("id").eq("race_id",race_id).eq("lane",lane).execute()
         if ex2.data:
             sb.table("boats").update(bdata).eq("id",ex2.data[0]["id"]).execute()
@@ -205,7 +265,11 @@ async def fetch_race_entry(client, sb, date_str, date_fmt, venue, venue_code, ra
             sb.table("boats").insert(bdata).execute()
         boats_saved += 1
 
-    return boats_saved
+    complete = (boats_saved == 6)
+    if not complete:
+        print(f"[entry][incomplete] date={date_fmt} venue={venue} rno={race_no} "
+              f"saved={boats_saved} (player upsert failure)")
+    return {"boats": boats_saved, "complete": complete, "held": True, "race_no": race_no}
 
 async def scrape_entry(date, venues):
     sb = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -223,8 +287,34 @@ async def scrape_entry(date, venues):
                 # 全12レース並列取得
                 tasks = [fetch_race_entry(client, sb, date_str, date_fmt, vname, vc, rno) for rno in range(1,13)]
                 counts = await asyncio.gather(*tasks, return_exceptions=True)
-                total = sum(c for c in counts if isinstance(c, int))
-                results.append({"venue":v,"item":"entry","status":"ok","boats":total})
+                total = 0
+                complete_races = 0
+                held_races = 0
+                incomplete_rnos = []
+                for rno, c in zip(range(1, 13), counts):
+                    if isinstance(c, dict):
+                        if not c.get("held"):
+                            # 非開催レースは対象外(skip)
+                            continue
+                        held_races += 1
+                        total += c.get("boats", 0)
+                        if c.get("complete"):
+                            complete_races += 1
+                        else:
+                            incomplete_rnos.append(rno)
+                    else:
+                        # 例外: 取得失敗としてincomplete扱い(開催の有無は不明だが安全側)
+                        incomplete_rnos.append(rno)
+                if held_races == 0 and not incomplete_rnos:
+                    # 当日非開催の会場: ok扱い(boats=0だがraces行も作らない)
+                    status = "ok"
+                else:
+                    status = "ok" if not incomplete_rnos else "partial"
+                rec = {"venue":v,"item":"entry","status":status,"boats":total,
+                       "held_races":held_races,"complete_races":complete_races}
+                if incomplete_rnos:
+                    rec["incomplete_races"] = incomplete_rnos
+                results.append(rec)
             except Exception as e:
                 results.append({"venue":v,"item":"entry","status":"error","message":str(e)})
     return results
@@ -276,7 +366,7 @@ async def scrape_motor(date, venues):
                     race_id = race["id"]
                     race_no = race["race_no"]
                     try:
-                        url = f"{BF_BASE}/race2/{date_str}/{int(code)}/{race_no}"
+                        url = f"{BF_BASE}/race2/{date_str}/{code}/{race_no}"
                         await page.goto(url, timeout=60000, wait_until="domcontentloaded")
                         await asyncio.sleep(1)
                         soup = BeautifulSoup(await page.content(), "html.parser")
@@ -371,6 +461,7 @@ async def scrape_motor(date, venues):
                                         st, rank = parse_st_rank(val)
                                         if st is not None:
                                             data_per_lane[lane]["course1y_st"] = st
+                                            data_per_lane[lane][f"c{lane}_avg_st"] = st
                                             if rank is not None:
                                                 data_per_lane[lane]["course1y_st_rank"] = rank
                                     elif "コース別勝率" in th_text:
@@ -425,12 +516,14 @@ async def scrape_motor(date, venues):
                                 try:
                                     if "出走数" in th_text:
                                         data_per_lane[lane]["general1y_races"] = safe_int(val, 0)
+                                        data_per_lane[lane]["ippan_starts"] = safe_int(val, 0)
                                     elif "コース別勝率" in th_text:
                                         data_per_lane[lane]["general1y_win_rate"] = safe_float(val, None)
                                     elif "コース別2着内率" in th_text:
                                         data_per_lane[lane]["general1y_place2_rate"] = safe_float(val, None)
                                     elif "コース別3着内率" in th_text:
                                         data_per_lane[lane]["general1y_tricast_rate"] = safe_float(val, None)
+                                        data_per_lane[lane]["ippan_top3_rate"] = safe_float(val, None)
                                     elif "コース別決まり手" in th_text:
                                         s, mk, mz = parse_kime(val)
                                         if s is not None:
@@ -984,21 +1077,19 @@ async def scrape_results(date, venues):
     async def fetch_race(client, vname, jcd, rno):
         official_url = (
             "https://www.boatrace.jp/owpc/pc/race/raceresult"
-            f"?rno={rno}&jcd={jcd}&hd={date_fmt}"
+            f"?rno={rno}&jcd={jcd}&hd={date_fmt.replace('-', '')}"
         )
         async with sem:
             try:
                 resp = await client.get(official_url, timeout=20)
                 if resp.status_code != 200:
-                    return {"rows": [], "error": f"http_{resp.status_code}"}
-                if not resp.text or not resp.text.strip():
-                    return {"rows": [], "error": "empty_html"}
+                    return []
                 soup = BeautifulSoup(resp.text, "html.parser")
                 if "データがありません" in soup.get_text(" ", strip=True):
-                    return {"rows": [], "error": None}
+                    return []
                 result_all = extract_result_rows(soup)
                 if not result_all or not any(item["pos"] == 1 for item in result_all):
-                    return {"rows": [], "error": "result_parse_failed"}
+                    return []
                 payouts = extract_payouts(soup)
                 lane_by_pos = {item["pos"]: item["lane"] for item in result_all}
                 course_by_pos = {item["pos"]: item["course"] for item in result_all}
@@ -1021,12 +1112,12 @@ async def scrape_results(date, venues):
                     "trifecta_payout": payouts["trifecta_payout"],
                     "exacta_payout": payouts["exacta_payout"],
                     "trifecta_place_payout": payouts["trifecta_place_payout"],
-                    "result_all": _json.dumps(result_all, ensure_ascii=False),
+                    "result_all": result_all,
                 }
-                return {"rows": [row], "error": None}
+                return [row]
             except Exception as e:
                 print(f"results {vname} {rno}R err: {e}")
-                return {"rows": [], "error": str(e)}
+                return []
 
     results = []
     async with httpx.AsyncClient(
@@ -1048,49 +1139,26 @@ async def scrape_results(date, venues):
 
         # 全タスク完了待ち
         venue_saved: dict = {}
-        venue_errors: dict = {}
+        REQUIRED_RESULT_FIELDS = ("winner_lane", "place2_lane", "place3_lane", "trifecta_result", "result_all")
         for v, vname, t in tasks:
-            payload = await t
-            rows = payload.get("rows", [])
-            error = payload.get("error")
-            if error:
-                venue_errors.setdefault(v, set()).add(error)
+            rows = await t
             for row in rows:
+                # 保存前の必須列チェック: 不完全な結果はupsertせずスキップ(可視化のためログ出力)
+                missing = [f for f in REQUIRED_RESULT_FIELDS if not row.get(f)]
+                if missing:
+                    print(f"[result-incomplete] race_key={row.get('race_key')} missing={missing}")
+                    continue
                 try:
                     sb.table("race_winner_log").upsert(row, on_conflict="race_key").execute()
                     venue_saved[v] = venue_saved.get(v, 0) + 1
                 except Exception as ue:
-                    err_s = str(ue)
-                    if any(c in err_s for c in [
-                        "place2_lane", "place3_lane", "trifecta_result", "exacta_result",
-                        "trifecta_payout", "exacta_payout", "trifecta_place_payout", "result_all"
-                    ]):
-                        old_row = {k: val for k, val in row.items()
-                                   if k in ("race_key","venue","date","race_no","winner_course","winner_lane")}
-                        try:
-                            sb.table("race_winner_log").upsert(old_row, on_conflict="race_key").execute()
-                            venue_saved[v] = venue_saved.get(v, 0) + 1
-                        except Exception:
-                            pass
-                    else:
-                        print(f"upsert err {row.get('race_key')}: {ue}")
+                    # フォールバック廃止: 1着のみの不完全保存はしない。race_key単位でエラーを記録し可視化。
+                    print(f"[result-save-error] race_key={row.get('race_key')} err={ue}")
 
     for v in venues:
-        if v in [r["venue"] for r in results]:
-            continue
-        saved_count = venue_saved.get(v, 0)
-        errors = sorted(venue_errors.get(v, set()))
-        if saved_count == 0 and errors:
-            results.append({
-                "venue": v,
-                "item": "results",
-                "status": "error",
-                "message": ",".join(errors),
-                "saved": 0,
-            })
-        else:
+        if v not in [r["venue"] for r in results]:
             results.append({"venue": v, "item": "results", "status": "ok",
-                            "saved": saved_count})
+                            "saved": venue_saved.get(v, 0)})
     return results
 
 
@@ -1276,7 +1344,16 @@ async def migrate(req: dict = None):
           ADD COLUMN IF NOT EXISTS c5_place2_rate FLOAT,
           ADD COLUMN IF NOT EXISTS c6_place2_rate FLOAT,
           ADD COLUMN IF NOT EXISTS gen_rate FLOAT DEFAULT 0,
-          ADD COLUMN IF NOT EXISTS hit_rate FLOAT DEFAULT 0
+          ADD COLUMN IF NOT EXISTS hit_rate FLOAT DEFAULT 0,
+          ADD COLUMN IF NOT EXISTS branch TEXT,
+          ADD COLUMN IF NOT EXISTS c1_avg_st FLOAT,
+          ADD COLUMN IF NOT EXISTS c2_avg_st FLOAT,
+          ADD COLUMN IF NOT EXISTS c3_avg_st FLOAT,
+          ADD COLUMN IF NOT EXISTS c4_avg_st FLOAT,
+          ADD COLUMN IF NOT EXISTS c5_avg_st FLOAT,
+          ADD COLUMN IF NOT EXISTS c6_avg_st FLOAT,
+          ADD COLUMN IF NOT EXISTS ippan_top3_rate FLOAT,
+          ADD COLUMN IF NOT EXISTS ippan_starts INTEGER
         """
         await conn.execute(sql)
         # race_winner_log: 逃げ成立度較正(改正46/48)用の実着順テーブル

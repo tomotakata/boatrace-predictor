@@ -4,41 +4,47 @@
 -- ============================================================
 -- 1. boats テーブル: コース別決まり手カウント (n=1-6)
 --    握り率④、捲り負け率⑮に必須
+--    NOTE: c{n}_makuri, c{n}_sashi, c{n}_makurizashi は既存マイグレーション
+--          (server.py /migrate) で追加済み。ここでは c{n}_nige のみ追加。
+--          dashgenロジックでは既存カラム名 c{n}_makurizashi を使用すること。
 -- ============================================================
+-- 既存カラム（IF NOT EXISTS で安全に再実行可能）:
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c1_makuri INTEGER;
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c1_sashi INTEGER;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c1_makuri_sashi INTEGER;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c1_makurizashi INTEGER;
 
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c2_makuri INTEGER;
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c2_sashi INTEGER;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c2_makuri_sashi INTEGER;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c2_makurizashi INTEGER;
 
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c3_makuri INTEGER;
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c3_sashi INTEGER;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c3_makuri_sashi INTEGER;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c3_makurizashi INTEGER;
 
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c4_makuri INTEGER;
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c4_sashi INTEGER;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c4_makuri_sashi INTEGER;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c4_makurizashi INTEGER;
 
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c5_makuri INTEGER;
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c5_sashi INTEGER;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c5_makuri_sashi INTEGER;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c5_makurizashi INTEGER;
 
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c6_makuri INTEGER;
 ALTER TABLE boats ADD COLUMN IF NOT EXISTS c6_sashi INTEGER;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c6_makuri_sashi INTEGER;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c6_makurizashi INTEGER;
 
 -- ============================================================
 -- 2. boats テーブル: コース別2連率 (n=1-6)
 --    TI⑬、着内率⑭に必須
+--    NOTE: 既存カラム名は c{n}_place2_rate（server.py で使用中）。
+--          dashgenロジックでは c{n}_place2_rate を使用すること。
 -- ============================================================
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c1_top2_rate FLOAT;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c2_top2_rate FLOAT;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c3_top2_rate FLOAT;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c4_top2_rate FLOAT;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c5_top2_rate FLOAT;
-ALTER TABLE boats ADD COLUMN IF NOT EXISTS c6_top2_rate FLOAT;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c1_place2_rate FLOAT;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c2_place2_rate FLOAT;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c3_place2_rate FLOAT;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c4_place2_rate FLOAT;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c5_place2_rate FLOAT;
+ALTER TABLE boats ADD COLUMN IF NOT EXISTS c6_place2_rate FLOAT;
 
 -- ============================================================
 -- 3. boats テーブル: コース別平均ST (n=1-6)
