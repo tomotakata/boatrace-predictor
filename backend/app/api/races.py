@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict
 from datetime import date
 from fastapi import APIRouter, Query, HTTPException
 import httpx
@@ -10,10 +10,6 @@ from backend.app.prediction.engine import run_system_prediction
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-# イベント情報のメモリキャッシュ: (date_str) -> (events_dict)
-# 同日中は外部サイトへの再取得を行わない
-_events_cache: Dict[str, Dict[str, dict]] = {}
 
 VENUE_CODE_TO_NAME = {
     "01": "桐生", "02": "戸田", "03": "江戸川", "04": "平和島", "05": "多摩川", "06": "浜名湖",
@@ -172,23 +168,50 @@ async def _fetch_events_from_boatrace(query_date: str) -> Dict[str, dict]:
 
 @router.get("/events/today")
 async def get_today_events(target_date: Optional[str] = Query(None)):
-    """boatrace.jp公式トップからその日の開催イベント名・日次を取得（メモリキャッシュ付き）"""
+    """イベント名をDBから取得。未保存の場合のみboatrace.jpから取得してDBに永続保存"""
     query_date = target_date or date.today().isoformat()
+    sb = get_supabase()
 
-    # キャッシュにあればそのまま返す（同日中は再取得しない）
-    if query_date in _events_cache:
-        return {"date": query_date, "events": _events_cache[query_date]}
+    # 1. DBから取得を試みる
+    try:
+        db_resp = sb.table("venue_events").select("venue, event_name, grade, period, day") \
+            .eq("date", query_date).execute()
+        db_rows = db_resp.data or []
+    except Exception:
+        db_rows = []
 
-    events: Dict[str, dict] = {}
+    if db_rows:
+        events: Dict[str, dict] = {}
+        for row in db_rows:
+            events[row["venue"]] = {
+                "event_name": row["event_name"],
+                "grade": row.get("grade"),
+                "period": row.get("period", ""),
+                "day": row.get("day", ""),
+            }
+        return {"date": query_date, "events": events}
+
+    # 2. DBに無い場合: boatrace.jpからスクレイピングしてDBに永続保存
+    events = {}
     try:
         events = await _fetch_events_from_boatrace(query_date)
-        # 取得成功時のみキャッシュに保存（古い日付のキャッシュは最大5件まで保持）
         if events:
-            _events_cache[query_date] = events
-            # メモリ節約: 古いエントリを削除（最新5件のみ保持）
-            if len(_events_cache) > 5:
-                oldest_key = min(_events_cache.keys())
-                del _events_cache[oldest_key]
+            rows_to_upsert = []
+            for venue_name, ev in events.items():
+                rows_to_upsert.append({
+                    "date": query_date,
+                    "venue": venue_name,
+                    "event_name": ev["event_name"],
+                    "grade": ev.get("grade"),
+                    "period": ev.get("period", ""),
+                    "day": ev.get("day", ""),
+                })
+            try:
+                sb.table("venue_events").upsert(
+                    rows_to_upsert, on_conflict="date,venue"
+                ).execute()
+            except Exception as e:
+                logger.warning(f"Failed to save venue events to DB: {e}")
     except Exception as e:
         logger.warning(f"Failed to fetch event info from boatrace.jp: {e}")
 
