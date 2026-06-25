@@ -334,8 +334,7 @@ html, body {
 /* Venue accordion toggle */
 .venue-header-toggle {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: stretch;
   width: 100%;
   padding: 8px 12px;
   background: rgba(59, 130, 246, 0.08);
@@ -345,10 +344,22 @@ html, body {
   cursor: pointer;
   transition: background 0.15s;
   margin-bottom: 10px;
+  text-align: left;
 }
 
 .venue-header-toggle:hover {
   background: rgba(59, 130, 246, 0.14);
+}
+
+.venue-header-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.venue-header-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .venue-header-name {
@@ -368,6 +379,38 @@ html, body {
   font-size: 11px;
   color: var(--text-muted);
   transition: transform 0.2s;
+}
+
+.venue-header-event {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f59e0b;
+  line-height: 1.3;
+}
+
+.venue-header-event.grade-sg {
+  color: #f59e0b;
+}
+
+.venue-header-event.grade-g1 {
+  color: #ef4444;
+}
+
+.venue-header-event.grade-g2 {
+  color: #3b82f6;
+}
+
+.venue-header-event.grade-g3 {
+  color: #22c55e;
+}
+
+.venue-header-notes {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+  opacity: 0.85;
 }
 
 /* Race grid */

@@ -1,13 +1,22 @@
 import logging
-from typing import Optional, List
+import re
+from typing import Optional, List, Dict
 from datetime import date
 from fastapi import APIRouter, Query, HTTPException
+import httpx
 from backend.app.config import get_supabase
 from backend.app.llm.predictor import run_prediction
 from backend.app.prediction.engine import run_system_prediction
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+VENUE_CODE_TO_NAME = {
+    "01": "桐生", "02": "戸田", "03": "江戸川", "04": "平和島", "05": "多摩川", "06": "浜名湖",
+    "07": "蒲郡", "08": "常滑", "09": "津", "10": "三国", "11": "びわこ", "12": "住之江",
+    "13": "尼崎", "14": "鳴門", "15": "丸亀", "16": "児島", "17": "宮島", "18": "徳山",
+    "19": "下関", "20": "若松", "21": "芦屋", "22": "福岡", "23": "唐津", "24": "大村",
+}
 
 
 def _compute_escape_calibration(race: dict, sb) -> dict:
@@ -119,6 +128,51 @@ async def get_races(target_date: Optional[str] = Query(None)):
             race["predictions_count"] = 0
 
     return races
+
+
+@router.get("/events/today")
+async def get_today_events(target_date: Optional[str] = Query(None)):
+    """boatrace.jp公式トップからその日の開催イベント名・日次を取得"""
+    query_date = target_date or date.today().isoformat()
+    date_str = query_date.replace("-", "")
+    url = f"https://www.boatrace.jp/owpc/pc/race/index?hd={date_str}"
+    events: Dict[str, dict] = {}
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(url, headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            })
+            resp.raise_for_status()
+            html = resp.text
+
+        # Extract event title, period, and day for each venue
+        # HTML structure: <a href="...raceindex?jcd=XX&amp;hd=...">TITLE</a></td><td>PERIOD<br>DAY</td>
+        rows = re.findall(
+            r'raceindex\?jcd=(\d{2})&amp;hd=\d+["\']>([^<]+)</a>\s*</td>\s*<td[^>]*>'
+            r'(\d{1,2}/\d{1,2}-\d{1,2}/\d{1,2})\s*<br\s*/?>([^<]+)</td>',
+            html, re.DOTALL
+        )
+        # Extract grade classes (SG/G1/G2/G3) per venue code
+        grade_map: Dict[str, str] = {}
+        for m in re.finditer(r'class="is-(SG|G1|G2|G3)[a-z]*\s*".*?raceindex\?jcd=(\d{2})', html, re.DOTALL):
+            grade_map[m.group(2)] = m.group(1)
+
+        for jcd, title, period, day_info in rows:
+            venue_name = VENUE_CODE_TO_NAME.get(jcd, jcd)
+            grade = grade_map.get(jcd)
+            event_name = title.strip()
+            if grade:
+                event_name = f"[{grade}] {event_name}"
+            events[venue_name] = {
+                "event_name": event_name,
+                "grade": grade,
+                "period": period.strip(),
+                "day": day_info.strip(),
+            }
+    except Exception as e:
+        logger.warning(f"Failed to fetch event info from boatrace.jp: {e}")
+
+    return {"date": query_date, "events": events}
 
 
 @router.get("/{race_id}")

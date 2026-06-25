@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format, addDays, subDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import { getRaces, getLatestDate, scrapeRaces, type Race } from '../lib/api'
+import { getRaces, getLatestDate, scrapeRaces, listVenueConfigs, getVenueEvents, type Race, type VenueConfig, type VenueEvent } from '../lib/api'
 
 const STATUS_CONFIG = {
   scheduled: { label: '発売中', cls: 'status-scheduled' },
@@ -34,8 +34,23 @@ export default function RaceList() {
   const [loading, setLoading] = useState(true)
   const [scraping, setScraping] = useState(false)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const [venueConfigs, setVenueConfigs] = useState<Record<string, VenueConfig>>({})
+  const [venueEvents, setVenueEvents] = useState<Record<string, VenueEvent>>({})
   const dateInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
+
+  // 会場設定を一度だけ取得
+  useEffect(() => {
+    listVenueConfigs()
+      .then(res => {
+        const map: Record<string, VenueConfig> = {}
+        for (const vc of res.data) {
+          map[vc.venue_name] = vc
+        }
+        setVenueConfigs(map)
+      })
+      .catch(() => {})
+  }, [])
 
   // 起動時: データがある最新日付を自動取得
   useEffect(() => {
@@ -58,6 +73,10 @@ export default function RaceList() {
     } finally {
       setLoading(false)
     }
+    // イベント情報を並行取得（失敗しても問題なし）
+    getVenueEvents(d)
+      .then(res => setVenueEvents(res.data.events || {}))
+      .catch(() => setVenueEvents({}))
   }
 
   async function handleScrape() {
@@ -155,16 +174,30 @@ export default function RaceList() {
         </div>
       ) : (
         Object.entries(grouped).map(([venue, venueRaces]) => {
-          const isCollapsed = collapsed[venue] ?? false
+          const isCollapsed = collapsed[venue] ?? true
+          const vc = venueConfigs[venue]
+          const ev = venueEvents[venue]
           return (
             <div key={venue} className="venue-group">
               <button
                 className={`venue-header-toggle ${isCollapsed ? 'collapsed' : ''}`}
                 onClick={() => toggleVenue(venue)}
               >
-                <span className="venue-header-name">{venue}</span>
-                <span className="venue-header-count">{venueRaces.length}R</span>
-                <span className="venue-header-chevron">{isCollapsed ? '▶' : '▼'}</span>
+                <div className="venue-header-main">
+                  <div className="venue-header-top-row">
+                    <span className="venue-header-name">{venue}</span>
+                    <span className="venue-header-count">{venueRaces.length}R</span>
+                    <span className="venue-header-chevron">{isCollapsed ? '▶' : '▼'}</span>
+                  </div>
+                  {ev && (
+                    <div className={`venue-header-event ${ev.grade ? `grade-${ev.grade.toLowerCase()}` : ''}`}>
+                      {ev.event_name} {ev.day}
+                    </div>
+                  )}
+                  {vc?.notes && (
+                    <div className="venue-header-notes">{vc.notes}</div>
+                  )}
+                </div>
               </button>
               {!isCollapsed && (
                 <div className="race-grid">

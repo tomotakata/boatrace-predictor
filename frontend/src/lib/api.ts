@@ -253,6 +253,16 @@ export const predictRaceSystem = (id: number) =>
 export const scrapeRaces = (date?: string) =>
   api.post('/races/scrape', null, { params: date ? { target_date: date } : {} })
 
+export interface VenueEvent {
+  event_name: string
+  grade?: string | null
+  period: string
+  day: string
+}
+
+export const getVenueEvents = (date?: string) =>
+  api.get<{ date: string; events: Record<string, VenueEvent> }>('/races/events/today', { params: date ? { target_date: date } : {} })
+
 // Analytics API
 export const getAccuracy = (params?: { from_date?: string; to_date?: string }) =>
   api.get<AccuracyData>('/analytics/accuracy', { params })
