@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Tuple
 from datetime import date
 from fastapi import APIRouter, Query, HTTPException
 import httpx
@@ -10,6 +10,10 @@ from backend.app.prediction.engine import run_system_prediction
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# イベント情報のメモリキャッシュ: (date_str) -> (events_dict)
+# 同日中は外部サイトへの再取得を行わない
+_events_cache: Dict[str, Dict[str, dict]] = {}
 
 VENUE_CODE_TO_NAME = {
     "01": "桐生", "02": "戸田", "03": "江戸川", "04": "平和島", "05": "多摩川", "06": "浜名湖",
@@ -130,45 +134,61 @@ async def get_races(target_date: Optional[str] = Query(None)):
     return races
 
 
-@router.get("/events/today")
-async def get_today_events(target_date: Optional[str] = Query(None)):
-    """boatrace.jp公式トップからその日の開催イベント名・日次を取得"""
-    query_date = target_date or date.today().isoformat()
+async def _fetch_events_from_boatrace(query_date: str) -> Dict[str, dict]:
+    """boatrace.jpからイベント情報をスクレイピングして返す（内部用）"""
     date_str = query_date.replace("-", "")
     url = f"https://www.boatrace.jp/owpc/pc/race/index?hd={date_str}"
     events: Dict[str, dict] = {}
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        })
+        resp.raise_for_status()
+        html = resp.text
+
+    rows = re.findall(
+        r'raceindex\?jcd=(\d{2})&amp;hd=\d+["\']>([^<]+)</a>\s*</td>\s*<td[^>]*>'
+        r'(\d{1,2}/\d{1,2}-\d{1,2}/\d{1,2})\s*<br\s*/?>([^<]+)</td>',
+        html, re.DOTALL
+    )
+    grade_map: Dict[str, str] = {}
+    for m in re.finditer(r'class="is-(SG|G1|G2|G3)[a-z]*\s*".*?raceindex\?jcd=(\d{2})', html, re.DOTALL):
+        grade_map[m.group(2)] = m.group(1)
+
+    for jcd, title, period, day_info in rows:
+        venue_name = VENUE_CODE_TO_NAME.get(jcd, jcd)
+        grade = grade_map.get(jcd)
+        event_name = title.strip()
+        if grade:
+            event_name = f"[{grade}] {event_name}"
+        events[venue_name] = {
+            "event_name": event_name,
+            "grade": grade,
+            "period": period.strip(),
+            "day": day_info.strip(),
+        }
+    return events
+
+
+@router.get("/events/today")
+async def get_today_events(target_date: Optional[str] = Query(None)):
+    """boatrace.jp公式トップからその日の開催イベント名・日次を取得（メモリキャッシュ付き）"""
+    query_date = target_date or date.today().isoformat()
+
+    # キャッシュにあればそのまま返す（同日中は再取得しない）
+    if query_date in _events_cache:
+        return {"date": query_date, "events": _events_cache[query_date]}
+
+    events: Dict[str, dict] = {}
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(url, headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            })
-            resp.raise_for_status()
-            html = resp.text
-
-        # Extract event title, period, and day for each venue
-        # HTML structure: <a href="...raceindex?jcd=XX&amp;hd=...">TITLE</a></td><td>PERIOD<br>DAY</td>
-        rows = re.findall(
-            r'raceindex\?jcd=(\d{2})&amp;hd=\d+["\']>([^<]+)</a>\s*</td>\s*<td[^>]*>'
-            r'(\d{1,2}/\d{1,2}-\d{1,2}/\d{1,2})\s*<br\s*/?>([^<]+)</td>',
-            html, re.DOTALL
-        )
-        # Extract grade classes (SG/G1/G2/G3) per venue code
-        grade_map: Dict[str, str] = {}
-        for m in re.finditer(r'class="is-(SG|G1|G2|G3)[a-z]*\s*".*?raceindex\?jcd=(\d{2})', html, re.DOTALL):
-            grade_map[m.group(2)] = m.group(1)
-
-        for jcd, title, period, day_info in rows:
-            venue_name = VENUE_CODE_TO_NAME.get(jcd, jcd)
-            grade = grade_map.get(jcd)
-            event_name = title.strip()
-            if grade:
-                event_name = f"[{grade}] {event_name}"
-            events[venue_name] = {
-                "event_name": event_name,
-                "grade": grade,
-                "period": period.strip(),
-                "day": day_info.strip(),
-            }
+        events = await _fetch_events_from_boatrace(query_date)
+        # 取得成功時のみキャッシュに保存（古い日付のキャッシュは最大5件まで保持）
+        if events:
+            _events_cache[query_date] = events
+            # メモリ節約: 古いエントリを削除（最新5件のみ保持）
+            if len(_events_cache) > 5:
+                oldest_key = min(_events_cache.keys())
+                del _events_cache[oldest_key]
     except Exception as e:
         logger.warning(f"Failed to fetch event info from boatrace.jp: {e}")
 

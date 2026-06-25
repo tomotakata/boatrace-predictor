@@ -260,8 +260,21 @@ export interface VenueEvent {
   day: string
 }
 
-export const getVenueEvents = (date?: string) =>
-  api.get<{ date: string; events: Record<string, VenueEvent> }>('/races/events/today', { params: date ? { target_date: date } : {} })
+export const getVenueEvents = (date?: string) => {
+  const cacheKey = `venue_events_${date || 'today'}`
+  const cached = sessionStorage.getItem(cacheKey)
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached)
+      return Promise.resolve({ data: parsed } as { data: { date: string; events: Record<string, VenueEvent> } })
+    } catch { /* ignore parse error, fetch fresh */ }
+  }
+  return api.get<{ date: string; events: Record<string, VenueEvent> }>('/races/events/today', { params: date ? { target_date: date } : {} })
+    .then(res => {
+      try { sessionStorage.setItem(cacheKey, JSON.stringify(res.data)) } catch { /* quota exceeded */ }
+      return res
+    })
+}
 
 // Analytics API
 export const getAccuracy = (params?: { from_date?: string; to_date?: string }) =>
