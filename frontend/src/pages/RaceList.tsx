@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { format } from 'date-fns'
+import { format, addDays, subDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { getRaces, getLatestDate, scrapeRaces, type Race } from '../lib/api'
 
@@ -33,6 +33,7 @@ export default function RaceList() {
   const [races, setRaces] = useState<Race[]>([])
   const [loading, setLoading] = useState(true)
   const [scraping, setScraping] = useState(false)
+  const dateInputRef = useRef<HTMLInputElement>(null)
 
   // 起動時: データがある最新日付を自動取得
   useEffect(() => {
@@ -67,6 +68,28 @@ export default function RaceList() {
     }
   }
 
+  function changeDate(newDate: string) {
+    setDate(newDate)
+    fetchRaces(newDate)
+  }
+
+  function goPrev() {
+    const prev = format(subDays(new Date(date + 'T00:00:00'), 1), 'yyyy-MM-dd')
+    changeDate(prev)
+  }
+
+  function goNext() {
+    const next = format(addDays(new Date(date + 'T00:00:00'), 1), 'yyyy-MM-dd')
+    changeDate(next)
+  }
+
+  function goToday() {
+    const t = new Date().toISOString().slice(0, 10)
+    changeDate(t)
+  }
+
+  const isToday = date === new Date().toISOString().slice(0, 10)
+
   const grouped = groupByVenue(races)
 
   return (
@@ -74,18 +97,31 @@ export default function RaceList() {
       <h2 className="page-title">レース一覧</h2>
 
       <div className="controls-row">
-        <input
-          type="date"
-          className="date-input"
-          value={date}
-          onChange={e => {
-            setDate(e.target.value)
-            fetchRaces(e.target.value)
-          }}
-        />
-        <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-          {formatDate(date)}
-        </span>
+        <div className="date-nav">
+          <button className="date-nav-arrow" onClick={goPrev} title="前日">◀</button>
+          <button
+            className="date-nav-display"
+            onClick={() => dateInputRef.current?.showPicker()}
+            title="カレンダーを開く"
+          >
+            <span className="date-nav-main">{formatDate(date)}</span>
+            <span className="date-nav-sub">{date.replace(/-/g, '/')}</span>
+          </button>
+          <button className="date-nav-arrow" onClick={goNext} title="翌日">▶</button>
+          <input
+            ref={dateInputRef}
+            type="date"
+            className="date-input-hidden"
+            value={date}
+            onChange={e => {
+              if (e.target.value) changeDate(e.target.value)
+            }}
+            tabIndex={-1}
+          />
+        </div>
+        {!isToday && (
+          <button className="btn btn-today" onClick={goToday}>今日</button>
+        )}
         <button className="btn btn-secondary" onClick={() => fetchRaces(date)} disabled={loading}>
           {loading ? '読み込み中…' : '更新'}
         </button>
