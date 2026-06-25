@@ -191,6 +191,7 @@ export default function RaceList() {
                   </div>
                   {ev && (
                     <div className={`venue-header-event ${ev.grade ? `grade-${ev.grade.toLowerCase()}` : ''}`}>
+                      {ev.grade && <span className="grade-badge">{ev.grade}</span>}
                       {ev.event_name} {ev.day}
                     </div>
                   )}
