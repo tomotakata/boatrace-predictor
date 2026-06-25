@@ -1,10 +1,19 @@
 """
 Exhibition time scraper from boatrace.jp and boaters.com
-Scrapes: 展示タイム・ST・1周・回り足
+Scrapes: 展示タイム・ST・1周・回り足・天候情報
 """
+import re
 import httpx
 from bs4 import BeautifulSoup
 from backend.app.config import get_supabase
+
+WIND_DIRECTION_MAP = {
+    1: "北", 2: "北北東", 3: "北東", 4: "東北東",
+    5: "東", 6: "東南東", 7: "南東", 8: "南南東",
+    9: "南", 10: "南南西", 11: "南西", 12: "西南西",
+    13: "西", 14: "西北西", 15: "北西", 16: "北北西",
+    17: "無風",
+}
 
 BOATRACE_BASE_URL = "https://www.boatrace.jp"
 
@@ -18,8 +27,57 @@ VENUE_CODE_MAP = {
 }
 
 
+def _parse_weather(soup: BeautifulSoup) -> dict:
+    """Extract weather info from the 水面気象情報 section."""
+    weather_data: dict = {}
+    weather_div = soup.select_one(".weather1")
+    if not weather_div:
+        return weather_data
+
+    # 天候 (Weather condition) — text in is-weather unit's LabelTitle
+    weather_el = weather_div.select_one(".weather1_bodyUnit.is-weather .weather1_bodyUnitLabelTitle")
+    if weather_el:
+        weather_data["weather"] = weather_el.text.strip()
+
+    # 気温 (Air temperature) — in is-direction unit's LabelData
+    temp_el = weather_div.select_one(".weather1_bodyUnit.is-direction .weather1_bodyUnitLabelData")
+    if temp_el:
+        try:
+            weather_data["temperature"] = float(temp_el.text.strip().replace("℃", ""))
+        except ValueError:
+            pass
+
+    # 風速 (Wind speed) — in is-wind unit's LabelData
+    wind_el = weather_div.select_one(".weather1_bodyUnit.is-wind .weather1_bodyUnitLabelData")
+    if wind_el:
+        try:
+            weather_data["wind_speed"] = int(wind_el.text.strip().replace("m", ""))
+        except ValueError:
+            pass
+
+    # 風向 (Wind direction) — extracted from class name on the image element
+    wind_dir_img = weather_div.select_one(".weather1_bodyUnit.is-windDirection .weather1_bodyUnitImage")
+    if wind_dir_img:
+        for cls in wind_dir_img.get("class", []):
+            m = re.match(r"is-wind(\d+)", cls)
+            if m:
+                idx = int(m.group(1))
+                weather_data["wind_direction"] = WIND_DIRECTION_MAP.get(idx, "")
+                break
+
+    # 波高 (Wave height) — in is-wave unit's LabelData
+    wave_el = weather_div.select_one(".weather1_bodyUnit.is-wave .weather1_bodyUnitLabelData")
+    if wave_el:
+        try:
+            weather_data["wave_height"] = int(wave_el.text.strip().replace("cm", ""))
+        except ValueError:
+            pass
+
+    return weather_data
+
+
 async def scrape_exhibition_data(venue: str, target_date: str) -> None:
-    """Scrape exhibition times from boatrace.jp."""
+    """Scrape exhibition times and weather info from boatrace.jp."""
     sb = get_supabase()
     code = VENUE_CODE_MAP.get(venue)
     if not code:
@@ -49,6 +107,13 @@ async def scrape_exhibition_data(venue: str, target_date: str) -> None:
                     continue
 
                 soup = BeautifulSoup(resp.text, "html.parser")
+
+                # --- 天候情報を抽出してracesテーブルに保存 ---
+                weather_data = _parse_weather(soup)
+                if weather_data:
+                    sb.table("races").update(weather_data).eq("id", race_id).execute()
+
+                # --- 展示タイム ---
                 rows = soup.select(".is-fs12.is-lineH2 tbody tr, .table1 tbody tr")
 
                 for row in rows:
