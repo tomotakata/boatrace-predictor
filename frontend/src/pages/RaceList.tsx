@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format, addDays, subDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import { getRaces, getLatestDate, scrapeRaces, listVenueConfigs, getVenueEvents, type Race, type VenueConfig, type VenueEvent } from '../lib/api'
+import { getRaces, getLatestDate, listVenueConfigs, getVenueEvents, type Race, type VenueConfig, type VenueEvent } from '../lib/api'
 
 const STATUS_CONFIG = {
   scheduled: { label: '発売中', cls: 'status-scheduled' },
@@ -32,7 +32,6 @@ export default function RaceList() {
   const [date, setDate] = useState(today)
   const [races, setRaces] = useState<Race[]>([])
   const [loading, setLoading] = useState(true)
-  const [scraping, setScraping] = useState(false)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const [venueConfigs, setVenueConfigs] = useState<Record<string, VenueConfig>>({})
   const [venueEvents, setVenueEvents] = useState<Record<string, VenueEvent>>({})
@@ -77,16 +76,6 @@ export default function RaceList() {
     getVenueEvents(d)
       .then(res => setVenueEvents(res.data.events || {}))
       .catch(() => setVenueEvents({}))
-  }
-
-  async function handleScrape() {
-    setScraping(true)
-    try {
-      await scrapeRaces(date)
-      await fetchRaces(date)
-    } finally {
-      setScraping(false)
-    }
   }
 
   function changeDate(newDate: string) {
@@ -147,11 +136,8 @@ export default function RaceList() {
         {!isToday && (
           <button className="btn btn-today" onClick={goToday}>今日</button>
         )}
-        <button className="btn btn-secondary" onClick={() => fetchRaces(date)} disabled={loading}>
-          {loading ? '読み込み中…' : '更新'}
-        </button>
-        <button className="btn btn-primary" onClick={handleScrape} disabled={scraping || loading}>
-          {scraping ? '取得中…' : 'スクレイピング実行'}
+        <button className="btn btn-primary" onClick={() => navigate('/scraping')}>
+          データ取得
         </button>
       </div>
 
@@ -167,8 +153,8 @@ export default function RaceList() {
             {formatDate(date)} のレースデータがありません
           </div>
           <div style={{ marginTop: 12 }}>
-            <button className="btn btn-primary" onClick={handleScrape} disabled={scraping}>
-              {scraping ? '取得中…' : 'データを取得する'}
+            <button className="btn btn-primary" onClick={() => navigate('/scraping')}>
+              データを取得する
             </button>
           </div>
         </div>
