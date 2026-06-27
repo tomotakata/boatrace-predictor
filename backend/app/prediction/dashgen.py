@@ -5,10 +5,13 @@ data/dashgen_logic_full.md の計算ロジックを忠実に実装。
 同じ出走表からは毎回同一のダッシュボードが出る（乱数・時刻依存なし）。
 
 Step 1-1: 基盤モジュール + ステップ①-⑤
+Step 1-2: ステップ⑥-⑧ EI計算ロジック
+Step 1-3: ステップ⑨-⑫ P1・被弾分析・減衰・逃げ成立度
 """
 
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Optional, Tuple
 
 # ═══════════════════════════════════════════════════════════
@@ -1276,4 +1279,562 @@ def compute_ei_pipeline(
         "pre_rank": pre_rank,
         "hassei_values": hassei_values,
         "components": all_components,
+    }
+
+
+# ═══════════════════════════════════════════════════════════
+# P1 定数
+# ═══════════════════════════════════════════════════════════
+
+MOT_M: Dict[str, float] = {
+    "S": 1.10, "A": 1.10, "B": 1.05, "C": 1.00, "D": 0.90,
+}
+
+# 季節係数 SEASON（蒲郡核。他会場は全1.00）
+# summer: 夏は3-4号↑/1号↓  autumn: 秋は1号↑/外↓  winter: 冬は1号微↑
+SEASON: Dict[str, Dict[int, float]] = {
+    "summer": {1: 0.92, 2: 1.10, 3: 1.15, 4: 1.18, 5: 0.95, 6: 0.90},
+    "autumn": {1: 1.18, 2: 0.95, 3: 0.92, 4: 0.88, 5: 0.85, 6: 0.80},
+    "winter": {1: 1.05, 2: 1.00, 3: 0.98, 4: 0.95, 5: 0.92, 6: 0.88},
+    "spring": {1: 1.00, 2: 1.00, 3: 1.00, 4: 1.00, 5: 1.00, 6: 1.00},
+}
+
+# R番号補正 RNUM（蒲郡核。use_rnum=True の会場のみ適用）
+RNUM: Dict[str, Dict[int, float]] = {
+    "1-4": {1: 0.82, 3: 1.10, 4: 1.15},
+    "12":  {1: 1.30, 3: 0.90, 4: 0.90, 5: 0.85, 6: 0.80},
+}
+
+# GENSHU_FLOOR（R帯別の減衰下限。蒲郡核）
+GENSHU_FLOOR: Dict[str, float] = {
+    "1-4": 0.62,
+    "12": 0.85,
+    "_": 0.70,
+}
+
+# 被弾分析のモーター偏差
+MOT_DEV: Dict[str, float] = {
+    "S": 1.15, "A": 1.15, "B": 1.05, "C": 0.95, "D": 0.80,
+}
+
+
+# ═══════════════════════════════════════════════════════════
+# ⑨ P1（1着率%）— p1_calc
+# ═══════════════════════════════════════════════════════════
+
+def _st_hosei(base_st: float, avg_st: float) -> float:
+    """ST補正。base_st が平均より速い(小さい)ほど有利。"""
+    d = base_st - avg_st
+    if d <= -0.03:
+        return 1.15
+    if d <= -0.01:
+        return 1.08
+    if d < 0.01:
+        return 1.00
+    if d < 0.03:
+        return 0.90
+    return 0.78
+
+
+def _hidari(course: int, base_sts: List[float], avg_st: float) -> float:
+    """内艇(前艇)のSTが速いと自分が有利。1号は1.00。"""
+    if course == 1:
+        return 1.00
+    d = base_sts[course - 2] - avg_st  # 前艇(course-1)のST偏差
+    if d <= -0.03:
+        return 1.05
+    if d <= -0.01:
+        return 1.02
+    if d < 0.02:
+        return 1.00
+    return 0.97
+
+
+def p1_calc(
+    base_sts: List[float],
+    course_win_rates: List[float],
+    local_win_rates: List[float],
+    local_race_counts: List[int],
+    motor_labels: List[str],
+    genshu1: float,
+    venue_name: str,
+    month: int,
+    race_no: int,
+) -> List[float]:
+    """各艇のP1(1着率%)を算出する。合計100%に正規化。
+
+    Args:
+        base_sts: 各艇(6)の基準ST
+        course_win_rates: 各艇(6)のコース別勝率(%)
+        local_win_rates: 各艇(6)の当地勝率(%)
+        local_race_counts: 各艇(6)の当地出走数
+        motor_labels: 各艇(6)のモーターランク ("S"/"A"/"B"/"C"/"D")
+        genshu1: 1号の減衰係数 (⑪で算出、初期はGENSHU_FLOOR)
+        venue_name: 会場名
+        month: 月
+        race_no: R番号
+
+    Returns:
+        各艇(6)のP1(%) — 合計≈100
+    """
+    venue = get_venue(venue_name)
+    use_rnum = venue.get("use_rnum", False)
+    season = season_of(month)
+    band = rnum_band(race_no)
+    avg_st = sum(base_sts) / 6.0
+
+    pres: List[float] = []
+    for i in range(6):
+        course = i + 1
+
+        # p1raw: コース勝率と当地勝率のブレンド
+        lrc = local_race_counts[i]
+        if lrc < 5:
+            p1raw = course_win_rates[i]
+        elif lrc <= 9:
+            p1raw = course_win_rates[i] * 0.6 + local_win_rates[i] * 0.4
+        else:
+            p1raw = course_win_rates[i] * 0.4 + local_win_rates[i] * 0.6
+
+        # 減衰係数 g: 1号のみ genshu1、他は1.0
+        g = genshu1 if i == 0 else 1.0
+
+        # ST補正
+        st_h = _st_hosei(base_sts[i], avg_st)
+
+        # 左隣補正
+        hid = _hidari(course, base_sts, avg_st)
+
+        # モーター乗算
+        mm = MOT_M.get(motor_labels[i], 1.00)
+
+        # 季節係数
+        season_coef = SEASON.get(season, SEASON["spring"]).get(course, 1.00)
+
+        # wind_mult / wave_mult: 未適用（既定1.0）
+        wind_m = 1.00
+        wave_m = 1.00
+
+        # R番号補正 (use_rnum時のみ)
+        rnum_coef = 1.00
+        if use_rnum:
+            rnum_coef = RNUM.get(band, {}).get(course, 1.00)
+
+        pre = p1raw * g * st_h * hid * mm * season_coef * wind_m * rnum_coef * wave_m
+        pres.append(max(pre, 0.001))  # ゼロ除算防止
+
+    # 正規化: P1[i] = pre[i] / Σpre × 100
+    total = sum(pres)
+    return [pre / total * 100.0 for pre in pres]
+
+
+# ═══════════════════════════════════════════════════════════
+# ⑩ 1号被弾分析 — higaki_analysis
+# ═══════════════════════════════════════════════════════════
+
+def higaki_analysis(
+    racer_course_others: Optional[Dict[int, Dict[str, Any]]],
+    ei_values: List[int],
+    course_win_rates: List[float],
+    motor_labels: List[str],
+    venue_name: str,
+    month: int,
+    race_no: int,
+    race_count_1: int,
+    is_local: List[bool],
+) -> Dict[str, Any]:
+    """1号がインのとき、他艇がどれだけ食うかを分析する。
+
+    Args:
+        racer_course_others: 1号がインのとき各外艇cの成績。
+            {c(2-6): {"hit": float, "hit2r": float, "main": str}} or None
+        ei_values: 各艇(6)の最終EI
+        course_win_rates: 各艇(6)のコース別勝率(%)
+        motor_labels: 各艇(6)のモーターランク
+        venue_name: 会場名
+        month: 月
+        race_no: R番号
+        race_count_1: 1号のコース出走数
+        is_local: 各艇(6)が地元かどうか
+
+    Returns:
+        {
+            "hit_adj": Dict[int, float],   # コース(2-6) → 補正被弾
+            "hit2r_adj": Dict[int, float],  # コース(2-6) → 補正2連
+            "coefs": Dict[int, float],      # コース(2-6) → 乗艇係数
+        }
+    """
+    venue = get_venue(venue_name)
+    base_ei = venue.get("base_ei", {})
+    base_wr = venue.get("base_wr", {})
+    rider_max = venue.get("rider_max", 2.0)
+    use_rnum = venue.get("use_rnum", False)
+    season = season_of(month)
+    band = rnum_band(race_no)
+
+    nin = min(race_count_1 / 15.0, 1.0)
+
+    hit_adj: Dict[int, float] = {}
+    hit2r_adj: Dict[int, float] = {}
+    coefs: Dict[int, float] = {}
+
+    for c in range(2, 7):
+        idx = c - 1  # 0-indexed
+
+        # データがない場合のフォールバック
+        if racer_course_others is None or c not in racer_course_others:
+            # デフォルト: 会場基準勝率をhitに、hit*1.5をhit2rに
+            hit = base_wr.get(c, 10.0)
+            hit2r = hit * 1.5
+            main = "差" if c == 2 else ("捲差" if c in (3, 5) else "捲")
+        else:
+            others = racer_course_others[c]
+            hit = others.get("hit", base_wr.get(c, 10.0))
+            hit2r = others.get("hit2r", hit * 1.5)
+            main = others.get("main", "差")
+
+        # 乗艇係数 coef
+        ei_dev = ei_values[idx] / base_ei.get(c, 50.0) if base_ei.get(c, 50.0) > 0 else 1.0
+        wr_dev = course_win_rates[idx] / base_wr.get(c, 10.0) if base_wr.get(c, 10.0) > 0 else 1.0
+        mot_dev = MOT_DEV.get(motor_labels[idx], 1.00)
+
+        coef = ei_dev * 0.5 + wr_dev * 0.3 + mot_dev * 0.2
+
+        # 決め手×コースの相性補正
+        if c == 4 and main == "捲":
+            coef *= 1.20
+        elif c == 3 and main == "捲差":
+            coef *= 1.12
+        elif c == 5 and main == "捲差":
+            coef *= 1.08
+        elif c == 2 and main == "差":
+            coef *= 1.05
+
+        # 季節補正
+        if season == "summer" and c in (3, 4):
+            coef *= 1.10
+
+        # R帯補正
+        if use_rnum:
+            if band == "1-4" and c in (3, 4):
+                coef *= 1.15
+            elif band == "12" and c in (3, 4):
+                coef *= 0.85
+
+        # 地元補正
+        if is_local[idx]:
+            coef *= 1.05
+
+        coef = max(0.50, min(rider_max, coef))
+        coefs[c] = coef
+
+        # 補正被弾・補正2連
+        hit_adj[c] = hit * coef * nin
+        hit2r_adj[c] = hit2r * math.sqrt(coef) * nin
+
+    return {
+        "hit_adj": hit_adj,
+        "hit2r_adj": hit2r_adj,
+        "coefs": coefs,
+    }
+
+
+# ═══════════════════════════════════════════════════════════
+# ⑪ 減衰係数 — damping_1c
+# ═══════════════════════════════════════════════════════════
+
+def damping_1c(
+    hit_adj: Dict[int, float],
+    race_no: int,
+) -> float:
+    """1号の減衰係数 genshu1 を算出する。
+
+    Args:
+        hit_adj: コース(2-6) → 補正被弾 (⑩の出力)
+        race_no: R番号
+
+    Returns:
+        genshu1 (0〜1)
+    """
+    s = sum(hit_adj.get(c, 0.0) for c in range(2, 7))
+    g = 1.0 - (s / 100.0) * 0.5
+
+    # R帯別の下限 GENSHU_FLOOR で底上げ
+    band = rnum_band(race_no)
+    floor = GENSHU_FLOOR.get(band, GENSHU_FLOOR.get("_", 0.70))
+    return max(g, floor)
+
+
+# ═══════════════════════════════════════════════════════════
+# ⑫ 逃げ成立度 — nige_seiritsu
+# ═══════════════════════════════════════════════════════════
+
+def nige_seiritsu(
+    hassei_values: List[Optional[float]],
+    g_values: List[Optional[float]],
+    hit_adj: Dict[int, float],
+    hit2r_adj: Dict[int, float],
+    coefs: Dict[int, float],
+    venue_name: str,
+    month: int,
+    race_no: int,
+    race_count_1: int,
+    higaki_mains: Optional[Dict[int, str]] = None,
+) -> float:
+    """1号の逃げ成立度を算出する。
+
+    Args:
+        hassei_values: 各艇(6)の握り発生率(%) (1号はNone)
+        g_values: 各艇(6)の捲り完遂力差g (1号はNone) — ⑤の出力
+        hit_adj: コース(2-6) → 補正被弾
+        hit2r_adj: コース(2-6) → 補正2連
+        coefs: コース(2-6) → 乗艇係数
+        venue_name: 会場名
+        month: 月
+        race_no: R番号
+        race_count_1: 1号のコース出走数
+        higaki_mains: コース(2-6) → 決め手 (被弾分析の主決め手)
+
+    Returns:
+        逃げ成立度 (0〜1)
+    """
+    venue = get_venue(venue_name)
+    kado_map = venue.get("kado", {})
+    nige_floor_map = venue.get("nige_floor", {"_": 0.45})
+    floor_basis = venue.get("floor_basis", "season")
+    season = season_of(month)
+    band = rnum_band(race_no)
+
+    nin = min(race_count_1 / 15.0, 1.0)
+
+    # 攻め圧力 ap_nig
+    ap_nig = 0.0
+
+    # 各 c=3,4,5,6 のカド攻め
+    for c in (3, 4, 5, 6):
+        idx = c - 1
+        h2adj_val = hit2r_adj.get(c, 0.0)
+        coef_c = coefs.get(c, 1.0)
+        # h2adj は既に計算済み（⑩で hit2r × √coef × nin）
+        # ここでは threat 判定に使う
+        threat = 1.15 if h2adj_val >= 30.0 else 1.00
+
+        g_c = g_values[idx] if g_values[idx] is not None else 0.5
+        kado_c = kado_map.get(c, 1.0)
+
+        seiritsu = g_c * kado_c * threat
+
+        hassei_c = hassei_values[idx] if hassei_values[idx] is not None else 0.0
+        ap_nig += (hassei_c / 100.0) * seiritsu
+
+    # 2号の差し/まくり圧
+    hassei_2 = hassei_values[1] if hassei_values[1] is not None else 0.0
+    ap_nig += (hassei_2 / 100.0) * 1.00
+
+    # 場固有脅威 ba
+    ba = 0.0
+    mains = higaki_mains or {}
+
+    # 4号
+    h4 = hit_adj.get(4, 0.0)
+    m4 = mains.get(4, "")
+    if h4 >= 10.0 and m4 == "捲":
+        ba += 0.20
+    elif h4 >= 5.0:
+        ba += 0.10
+    else:
+        ba += 0.03
+
+    # 3号
+    h3 = hit_adj.get(3, 0.0)
+    m3 = mains.get(3, "")
+    if h3 >= 10.0 and m3 == "捲":
+        ba += 0.10
+    elif h3 >= 5.0:
+        ba += 0.06
+    else:
+        ba += 0.02
+
+    # 5号
+    h5 = hit_adj.get(5, 0.0)
+    m5 = mains.get(5, "")
+    if h5 >= 10.0 and m5 == "捲差":
+        ba += 0.06
+    else:
+        ba += 0.02
+
+    # 2号
+    h2 = hit_adj.get(2, 0.0)
+    m2 = mains.get(2, "")
+    if h2 >= 10.0 and m2 == "差":
+        ba += 0.08
+    elif h2 >= 5.0:
+        ba += 0.04
+    else:
+        ba += 0.02
+
+    # ベース加算
+    ba += 0.02
+
+    # 条件加算 cond
+    cond = 0.0
+    if band == "1-4":
+        cond += 0.06
+    if season == "summer":
+        cond += 0.03
+
+    # 脅威合計
+    threat_total = ba + cond
+    ap = ap_nig + threat_total
+
+    # 逃げ成立度
+    raw_nige = 1.0 - min(ap * 0.5, 0.85)
+
+    # floor 決定
+    if floor_basis == "rnum":
+        floor = nige_floor_map.get(band, nige_floor_map.get("_", 0.45))
+    else:
+        floor = nige_floor_map.get(season, nige_floor_map.get("_", 0.45))
+
+    nige = max(floor, min(0.85, raw_nige))
+    nige = max(nige, 0.15)  # 最低保証
+
+    return round(nige, 4)
+
+
+# ═══════════════════════════════════════════════════════════
+# P1 + 被弾分析 + 減衰 統合パイプライン
+# ═══════════════════════════════════════════════════════════
+
+def compute_p1_pipeline(
+    entries: List[Dict[str, Any]],
+    venue_name: str,
+    month: int,
+    race_no: int,
+    base_sts: List[float],
+    motor_labels: List[str],
+    ei_values: List[int],
+    g_values: List[Optional[float]],
+    hassei_values: List[Optional[float]],
+    racer_course_others: Optional[Dict[int, Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    """⑨⑩⑪⑫の依存チェーンを統合する。
+
+    P1は被弾分析→減衰のループがある:
+      初期genshu1(GENSHU_FLOOR) → P1計算 → 被弾分析 → genshu1更新 → P1再計算
+
+    Args:
+        entries: 各艇(6)のデータ辞書リスト
+        venue_name: 会場名
+        month: 月
+        race_no: R番号
+        base_sts: 各艇(6)の基準ST
+        motor_labels: 各艇(6)のモーターランク
+        ei_values: 各艇(6)の最終EI
+        g_values: 各艇(6)の捲り完遂力差g (⑤の出力)
+        hassei_values: 各艇(6)の握り発生率(%) (⑦の出力)
+        racer_course_others: 1号がインのとき各外艇cの成績 (Noneならフォールバック)
+
+    Returns:
+        {
+            "p1": List[float],              # 各艇(6)のP1(%) — 合計≈100
+            "genshu1": float,               # 1号の減衰係数
+            "hit_adj": Dict[int, float],    # 補正被弾
+            "hit2r_adj": Dict[int, float],  # 補正2連
+            "coefs": Dict[int, float],      # 乗艇係数
+            "nige": float,                  # 逃げ成立度
+        }
+    """
+    course_win_rates = [e.get("course_win_rate", 10.0) for e in entries]
+    local_win_rates = [e.get("local_win_rate", 10.0) for e in entries]
+    local_race_counts = [e.get("local_race_count", 0) for e in entries]
+    is_local = [e.get("is_local", False) for e in entries]
+    race_count_1 = entries[0].get("race_count", 0)
+
+    # --- Phase 1: 初期 genshu1 (GENSHU_FLOOR) ---
+    band = rnum_band(race_no)
+    initial_genshu1 = GENSHU_FLOOR.get(band, GENSHU_FLOOR.get("_", 0.70))
+
+    # --- Phase 2: 初期 P1 ---
+    p1_initial = p1_calc(
+        base_sts=base_sts,
+        course_win_rates=course_win_rates,
+        local_win_rates=local_win_rates,
+        local_race_counts=local_race_counts,
+        motor_labels=motor_labels,
+        genshu1=initial_genshu1,
+        venue_name=venue_name,
+        month=month,
+        race_no=race_no,
+    )
+
+    # --- Phase 3: 被弾分析 (⑩) ---
+    higaki = higaki_analysis(
+        racer_course_others=racer_course_others,
+        ei_values=ei_values,
+        course_win_rates=course_win_rates,
+        motor_labels=motor_labels,
+        venue_name=venue_name,
+        month=month,
+        race_no=race_no,
+        race_count_1=race_count_1,
+        is_local=is_local,
+    )
+
+    # --- Phase 4: 減衰係数 (⑪) ---
+    genshu1 = damping_1c(
+        hit_adj=higaki["hit_adj"],
+        race_no=race_no,
+    )
+
+    # --- Phase 5: P1 再計算 (genshu1 更新後) ---
+    p1_final = p1_calc(
+        base_sts=base_sts,
+        course_win_rates=course_win_rates,
+        local_win_rates=local_win_rates,
+        local_race_counts=local_race_counts,
+        motor_labels=motor_labels,
+        genshu1=genshu1,
+        venue_name=venue_name,
+        month=month,
+        race_no=race_no,
+    )
+
+    # --- Phase 6: 逃げ成立度 (⑫) ---
+    # 決め手情報の取得
+    higaki_mains: Optional[Dict[int, str]] = None
+    if racer_course_others is not None:
+        higaki_mains = {}
+        for c in range(2, 7):
+            if c in racer_course_others:
+                higaki_mains[c] = racer_course_others[c].get("main", "")
+            else:
+                # フォールバック決め手
+                higaki_mains[c] = "差" if c == 2 else ("捲差" if c in (3, 5) else "捲")
+    else:
+        # フォールバック決め手
+        higaki_mains = {
+            2: "差", 3: "捲差", 4: "捲", 5: "捲差", 6: "捲",
+        }
+
+    nige = nige_seiritsu(
+        hassei_values=hassei_values,
+        g_values=g_values,
+        hit_adj=higaki["hit_adj"],
+        hit2r_adj=higaki["hit2r_adj"],
+        coefs=higaki["coefs"],
+        venue_name=venue_name,
+        month=month,
+        race_no=race_no,
+        race_count_1=race_count_1,
+        higaki_mains=higaki_mains,
+    )
+
+    return {
+        "p1": p1_final,
+        "genshu1": genshu1,
+        "hit_adj": higaki["hit_adj"],
+        "hit2r_adj": higaki["hit2r_adj"],
+        "coefs": higaki["coefs"],
+        "nige": nige,
     }
