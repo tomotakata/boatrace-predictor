@@ -637,3 +637,643 @@ def makuri_g(
         result.append(round(g, 4))
 
     return result
+
+
+# ═══════════════════════════════════════════════════════════
+# EI 定数
+# ═══════════════════════════════════════════════════════════
+
+EI_W: Dict[str, float] = {
+    "A": 1.05, "B": 0.95, "C": 0.85,
+    "D": 1.55, "F": 1.65, "G": 1.20, "H": 0.90,
+}
+
+# コース係数 J (0-indexed: コース1→index 0)
+_J_COEF: List[float] = [1.08, 1.04, 1.02, 1.00, 0.95, 0.89]
+
+# 枠補正テーブル I: (級別, コース1-indexed) → 補正値
+# 仕様書「級別×枠の枠補正テーブル（例 A1の4枠 −4 / B1の1枠 +12 …）」
+# 典型的な競艇EI枠補正テーブルを仕様例から構成
+_FRAME_BONUS: Dict[str, Dict[int, int]] = {
+    "A1": {1: 8, 2: 2, 3: 0, 4: -4, 5: -6, 6: -8},
+    "A2": {1: 10, 2: 3, 3: 0, 4: -3, 5: -5, 6: -7},
+    "B1": {1: 12, 2: 4, 3: 1, 4: -2, 5: -4, 6: -6},
+    "B2": {1: 10, 2: 3, 3: 0, 4: -2, 5: -4, 6: -5},
+}
+
+# 捲り加算 M: コース(1-indexed) → 加算値 (4-6号のみ)
+_M_BONUS: Dict[int, int] = {4: 6, 5: 6, 6: 8}
+
+
+# ═══════════════════════════════════════════════════════════
+# f_keisu3: 事故F×ST乖離の追加ペナルティ
+# ═══════════════════════════════════════════════════════════
+# 仕様書に明示的な段階値定義がないため、以下のように推定実装:
+# - F事故なし → 1.00 (ペナルティなし)
+# - F事故あり かつ ST乖離(base_st - average_st)が大きい → 追加ペナルティ
+#   ST乖離 = base_st - 全艇平均base_st (正=遅い=乖離大)
+# 根拠: f_keisu1がF事故の基本ペナルティ、f_keisu3はSTが不安定な
+#        F持ち選手への追加減衰。乖離が大きいほどスタート不安定。
+
+def f_keisu3(f_status: Optional[str], st_deviation: float) -> float:
+    """事故F×ST乖離の追加ペナルティ係数。
+
+    Args:
+        f_status: F事故ステータス ("F2"/"F1未"/"F1済"/None)
+        st_deviation: ST乖離 (base_st - 全艇平均base_st)。正=遅い。
+
+    Returns:
+        補正係数 (0.80〜1.00)
+    """
+    if not f_status:
+        return 1.00
+    s = str(f_status).upper().strip()
+    if not s.startswith("F"):
+        return 1.00
+    # F事故ありの場合、ST乖離に応じた追加ペナルティ
+    # 乖離が 0.05秒以上遅い → 0.90、0.10秒以上 → 0.85、0.15秒以上 → 0.80
+    # 乖離が小さい/速い → ペナルティ軽微
+    if st_deviation >= 0.15:
+        return 0.80
+    if st_deviation >= 0.10:
+        return 0.85
+    if st_deviation >= 0.05:
+        return 0.90
+    if st_deviation >= 0.02:
+        return 0.95
+    return 1.00
+
+
+# ═══════════════════════════════════════════════════════════
+# ⑥ pre_EI / ei_components
+# ═══════════════════════════════════════════════════════════
+
+def ei_components(
+    course: int,
+    course_top3_rate: float,
+    course_race_count: int,
+    local_top3_rate: float,
+    local_race_count: int,
+    general_top3_rate: Optional[float],
+    general_race_count: Optional[int],
+    yusei_rank_d: int,
+    deashi_list: List[float],
+    nobi_list: List[float],
+    is_seasonal_motor: bool,
+    nigiri_rate_val: Optional[float],
+    nigiri_hassei_val: Optional[float],
+    class_label: str,
+    age: int,
+) -> Dict[str, float]:
+    """EI成分 A-H を算出する。
+
+    Args:
+        course: コース番号 (1-6)
+        course_top3_rate: コース3連率(%)
+        course_race_count: コース出走数
+        local_top3_rate: 当地3連率(%)
+        local_race_count: 当地出走数
+        general_top3_rate: 一般戦3連率(%) (Noneなら A で代替)
+        general_race_count: 一般戦出走数
+        yusei_rank_d: 優勢順位D (1-6)
+        deashi_list: 全6艇の出足評価値
+        nobi_list: 全6艇の伸び足評価値
+        is_seasonal_motor: 季節モーター時か
+        nigiri_rate_val: 握り率(%) (1号はNone)
+        nigiri_hassei_val: 握り発生率(%) (1号はNone, pre_EI時はNone)
+        class_label: 級別 ("A1"/"A2"/"B1"/"B2")
+        age: 年齢
+
+    Returns:
+        {"A": ..., "B": ..., ..., "H": ...}
+    """
+    # A: コース3連率のシュリンク
+    a = _shrink(course_top3_rate, course_race_count)
+
+    # B: 当地3連率のシュリンク
+    b = _shrink(local_top3_rate, local_race_count)
+
+    # C: 一般戦3連率のシュリンク (無ければAで代替)
+    if general_top3_rate is not None and general_race_count is not None:
+        c = _shrink(general_top3_rate, general_race_count)
+    else:
+        c = a
+
+    # D: 優勢順位Dのスコア化
+    d_idx = min(yusei_rank_d - 1, len(SCORE_MAP) - 1)
+    d = float(SCORE_MAP[d_idx])
+
+    # F: モーター (desc_score)
+    de_scores = desc_score(deashi_list)
+    no_scores = desc_score(nobi_list)
+    idx = course - 1
+    f_val = de_scores[idx] * 0.45 + no_scores[idx] * 0.55
+    if is_seasonal_motor:
+        f_val *= 0.85
+
+    # G: 攻め力
+    if course == 1:
+        g = 0.0
+    else:
+        nr = nigiri_rate_val if nigiri_rate_val is not None else 0.0
+        nh = nigiri_hassei_val if nigiri_hassei_val is not None else 0.0
+        g = min(nr * 0.45 + nh * 0.55, 90.0)
+
+    # H: 級別/年齢
+    cl = class_label.upper().strip()
+    if cl == "A1":
+        h = 95.0
+    elif cl == "A2":
+        h = 75.0
+    elif cl == "B1":
+        h = 55.0
+    else:  # B2
+        h = 45.0 if age <= 30 else 40.0
+
+    return {"A": a, "B": b, "C": c, "D": d, "F": f_val, "G": g, "H": h}
+
+
+def ei_full(
+    components: Dict[str, float],
+    include_g: bool,
+    course: int,
+    current_result: float,
+    f_status: Optional[str],
+    base_sts: List[float],
+    local_top3_rate: float,
+    course_top3_rate: float,
+    local_race_count: int,
+    class_label: str,
+    is_local_aichi: bool,
+    nobi_desc_score: float,
+    nigiri_hassei_val: Optional[float],
+) -> int:
+    """EI最終値を算出する。
+
+    Args:
+        components: ei_components の出力
+        include_g: Gを含めるか (False=pre_EI, True=最終EI)
+        course: コース番号 (1-6)
+        current_result: 今節着順（平均着順）
+        f_status: F事故ステータス
+        base_sts: 全6艇の基準ST
+        local_top3_rate: 当地3連率(%)
+        course_top3_rate: コース3連率(%)
+        local_race_count: 当地出走数
+        class_label: 級別
+        is_local_aichi: 地元(愛知)か
+        nobi_desc_score: 伸び足のdesc_score値
+        nigiri_hassei_val: 握り発生率(%) (pre_EI時はNone)
+
+    Returns:
+        EI値 (整数)
+    """
+    # base = 加重平均
+    keys = ["A", "B", "C", "D", "F", "G", "H"]
+    if not include_g:
+        keys = [k for k in keys if k != "G"]
+
+    numerator = sum(components[k] * EI_W[k] for k in keys)
+    denominator = sum(EI_W[k] for k in keys)
+    base = numerator / denominator
+
+    # J: コース係数
+    j = _J_COEF[course - 1]
+
+    # K: 着順安定
+    k = max(0.80, min(1.00, 1.0 - (current_result - 1) * 0.04))
+
+    # L: 事故F補正 (f_keisu1 × f_keisu3)
+    avg_st = sum(base_sts) / len(base_sts)
+    st_dev = base_sts[course - 1] - avg_st
+    l_val = f_keisu1(f_status) * f_keisu3(f_status, st_dev)
+
+    # N: 当地補正
+    if local_race_count < 5:
+        n = 1.00
+    else:
+        if course_top3_rate > 0:
+            raw_n = local_top3_rate / course_top3_rate
+        else:
+            raw_n = 1.00
+        raw_n = max(0.75, min(1.30, raw_n))
+        if local_race_count <= 9:
+            # 半量ブレンド: 1.00 と raw_n の中間
+            n = 1.00 * 0.5 + raw_n * 0.5
+        else:
+            n = raw_n
+
+    prod = min(j * k * l_val * n, 1.30)
+
+    # I: 枠補正テーブル
+    cl = class_label.upper().strip()
+    frame_tbl = _FRAME_BONUS.get(cl, _FRAME_BONUS["B1"])
+    i_val = frame_tbl.get(course, 0)
+
+    # Il: 地元(愛知)かつ当地出走≥10で+5
+    il = 5 if (is_local_aichi and local_race_count >= 10) else 0
+
+    # M: 4-6号 かつ 伸び足desc≥60 かつ 握り発生率≥10
+    m = 0
+    if course >= 4 and nobi_desc_score >= 60:
+        nh = nigiri_hassei_val if nigiri_hassei_val is not None else 0.0
+        if nh >= 10:
+            m = _M_BONUS.get(course, 0)
+
+    return round(base * prod + i_val + il + m)
+
+
+# ═══════════════════════════════════════════════════════════
+# ⑦ 握り発生率 hassei (nigiri_hassei)
+# ═══════════════════════════════════════════════════════════
+
+def _wind_hassei(wind_dir: str, wind_speed: float) -> float:
+    """風係数。
+
+    Args:
+        wind_dir: 風向 ("追い風"/"向かい風"/"横風"/"無風" 等)
+        wind_speed: 風速(m)
+
+    Returns:
+        風係数 w
+    """
+    if "追" in wind_dir:
+        if wind_speed > 5:
+            return 1.20
+        if wind_speed >= 3:
+            return 1.10
+        return 1.00
+    if "向" in wind_dir or "逆" in wind_dir:
+        if wind_speed >= 3:
+            return 1.15
+        return 1.05
+    # 無風・横風
+    return 0.95
+
+
+def _stdom(delta_st: float, scale: str = "normal") -> float:
+    """ST優勢度の段階値。
+
+    ΔST = base_自分 - base_相手。負(自分が速い)ほど大きい値。
+
+    Args:
+        delta_st: ST差 (自分 - 相手)。負=自分が速い。
+        scale: "normal" or "4号" (4号は別スケール)
+
+    Returns:
+        段階値 (0.05〜1.00)
+    """
+    if scale == "4号":
+        # 4号スケール: やや緩い段階
+        if delta_st <= -0.10:
+            return 1.00
+        if delta_st <= -0.06:
+            return 0.85
+        if delta_st <= -0.03:
+            return 0.70
+        if delta_st <= 0.0:
+            return 0.55
+        if delta_st <= 0.03:
+            return 0.35
+        if delta_st <= 0.06:
+            return 0.20
+        return 0.10
+
+    # normal スケール
+    if delta_st <= -0.10:
+        return 1.00
+    if delta_st <= -0.06:
+        return 0.80
+    if delta_st <= -0.03:
+        return 0.60
+    if delta_st <= 0.0:
+        return 0.45
+    if delta_st <= 0.03:
+        return 0.25
+    if delta_st <= 0.06:
+        return 0.15
+    return 0.05
+
+
+def nigiri_hassei(
+    base_sts: List[float],
+    nigiri_rates: List[Optional[float]],
+    sashi_rate_2: float,
+    pre_ranks: List[int],
+    current_results: List[float],
+    f_statuses: List[Optional[str]],
+    race_counts: List[int],
+    wind_dir: str,
+    wind_speed: float,
+    core_mult: Dict[int, float],
+) -> List[Optional[float]]:
+    """各外艇の握り発生率を算出する。
+
+    Args:
+        base_sts: 各艇(6)の基準ST
+        nigiri_rates: 各艇(6)の握り率(%) (1号はNone)
+        sashi_rate_2: 2号の差し率(%)
+        pre_ranks: 各艇(6)のpre_EI降順順位 (1=最高)
+        current_results: 各艇(6)の今節着順
+        f_statuses: 各艇(6)のF事故ステータス
+        race_counts: 各艇(6)のコース出走数
+        wind_dir: 風向
+        wind_speed: 風速(m)
+        core_mult: 会場の核補正 {course(1-indexed): 係数}
+
+    Returns:
+        各艇(6)の握り発生率(%)。1号はNone。
+    """
+    w = _wind_hassei(wind_dir, wind_speed)
+    result: List[Optional[float]] = [None]  # 1号
+
+    # --- 2号 ---
+    nr2 = (nigiri_rates[1] or 0.0) / 100.0
+    stdom2 = _stdom(base_sts[1] - base_sts[0])
+    cm2 = core_mult.get(2, 1.0)
+    h2 = nr2 * stdom2 * w * 100.0 * cm2
+    result.append(max(0.0, h2))
+
+    # --- 3号: 2段階連鎖 ---
+    nr3 = (nigiri_rates[2] or 0.0) / 100.0
+    hikinami = 1.0 - (sashi_rate_2 / 100.0) * 0.3
+    h_a = nr3 * _stdom(base_sts[2] - base_sts[1]) * 1.20  # 2号が握った世界
+    h_b = nr3 * _stdom(base_sts[2] - base_sts[0]) * hikinami  # 2号が握らない世界
+    nig2 = h2 / 100.0 if h2 > 0 else 0.0
+    nig2 = min(nig2, 1.0)
+    cm3 = core_mult.get(3, 1.0)
+    h3 = (h_a * nig2 + h_b * (1.0 - nig2)) * w * 100.0 * cm3
+    result.append(max(0.0, h3))
+
+    # --- 4号: スリット絞り ---
+    pr4 = pre_ranks[3]  # 4号のpre_rank
+    shibori_map = {1: 1.00, 2: 0.85, 3: 0.70}
+    shibori = shibori_map.get(pr4, 0.55)
+
+    # kabe: 2号のpre_rankとbase_stで壁効果
+    pr2 = pre_ranks[1]
+    # 2号が速い壁(pre_rank上位かつST速い)なら抑制、遅い壁なら増幅
+    if pr2 <= 2 and base_sts[1] <= base_sts[0]:
+        kabe = 0.75  # 強い壁 → 4号抑制
+    elif pr2 <= 3:
+        kabe = 0.90
+    elif pr2 >= 5 and base_sts[1] > base_sts[0] + 0.03:
+        kabe = 1.30  # 弱い壁 → 4号増幅
+    elif pr2 >= 4:
+        kabe = 1.10
+    else:
+        kabe = 1.00
+
+    # tenkai: 2号3号の握り発生率合計で展開判定
+    h2h3_sum = h2 + h3
+    if h2h3_sum > 40:
+        tenkai = 1.15
+    elif h2h3_sum >= 20:
+        tenkai = 1.00
+    else:
+        tenkai = 0.85
+
+    stdom4 = _stdom(base_sts[3] - base_sts[2], "4号")
+    cm4 = core_mult.get(4, 1.0)
+    h4 = stdom4 * shibori * kabe * tenkai * w * 0.90 * 100.0 * cm4
+    result.append(max(0.0, h4))
+
+    # --- 5号・6号 ---
+    for c_idx in (4, 5):  # 0-indexed: 5号=4, 6号=5
+        course_1indexed = c_idx + 1
+        # hakka: ΔST(base_c - base_{c-1})の段階値
+        delta_st = base_sts[c_idx] - base_sts[c_idx - 1]
+        if delta_st <= -0.04:
+            hakka = 0.85
+        elif delta_st <= -0.02:
+            hakka = 0.65
+        elif delta_st <= 0.0:
+            hakka = 0.40
+        elif delta_st <= 0.02:
+            hakka = 0.20
+        else:
+            hakka = 0.05
+
+        # teki: min(握り率/30, 1) (出走≥5、未満は0.50)
+        nr_c = nigiri_rates[c_idx]
+        rc = race_counts[c_idx]
+        if rc >= 5 and nr_c is not None:
+            teki = min(nr_c / 30.0, 1.0)
+        else:
+            teki = 0.50
+
+        # antei: 1 - (今節着順-1)*0.05
+        antei = 1.0 - (current_results[c_idx] - 1) * 0.05
+
+        f_coef = f_keisu1(f_statuses[c_idx])
+        cm_c = core_mult.get(course_1indexed, 1.0)
+        h_c = hakka * teki * antei * f_coef * 0.90 * w * 100.0 * cm_c
+        result.append(max(0.0, h_c))
+
+    return result
+
+
+# ═══════════════════════════════════════════════════════════
+# ⑧ 最終EI (依存チェーン統合)
+# ═══════════════════════════════════════════════════════════
+
+def compute_ei_pipeline(
+    entries: List[Dict[str, Any]],
+    venue_name: str,
+    day_no: int,
+    month: int,
+    wind_dir: str,
+    wind_speed: float,
+    is_seasonal_motor: bool,
+) -> Dict[str, Any]:
+    """⑥⑦⑧の依存チェーンを統合して最終EIを算出する。
+
+    依存チェーン:
+        pre_EI(G除外) → pre_rank → hassei → 最終EI(G加算)
+
+    Args:
+        entries: 各艇(6)のデータ辞書リスト。各辞書に以下のキーが必要:
+            - course: int (1-6)
+            - average_st: float
+            - course_average_st: float
+            - current_st: float
+            - current_result: float (今節着順)
+            - f_status: Optional[str]
+            - class_label: str ("A1"/"A2"/"B1"/"B2")
+            - age: int
+            - deashi: float (出足評価値)
+            - nobi: float (伸び足評価値)
+            - course_top3_rate: float (コース3連率%)
+            - course_race_count: int
+            - local_top3_rate: float (当地3連率%)
+            - local_race_count: int
+            - general_top3_rate: Optional[float] (一般戦3連率%)
+            - general_race_count: Optional[int]
+            - makuri: int
+            - makurizashi: int
+            - race_count: int (コース出走数)
+            - sashi_rate: float (差し率%, 2号用)
+            - is_local_aichi: bool
+            - base_st: float (①の出力)
+        venue_name: 会場名
+        day_no: 節の日目
+        month: 月
+        wind_dir: 風向
+        wind_speed: 風速(m)
+        is_seasonal_motor: 季節モーター時か
+
+    Returns:
+        {
+            "ei_values": List[int],        # 各艇(6)の最終EI
+            "ei_order": List[int],         # 降順順位
+            "pre_ei_values": List[int],    # pre_EI値
+            "pre_rank": List[int],         # pre_EI降順順位
+            "hassei_values": List[Optional[float]],  # 握り発生率
+            "components": List[Dict],      # 各艇のEI成分
+        }
+    """
+    venue = get_venue(venue_name)
+    cm = venue.get("core_mult", {})
+
+    deashi_list = [e["deashi"] for e in entries]
+    nobi_list = [e["nobi"] for e in entries]
+    base_sts = [e["base_st"] for e in entries]
+    f_statuses = [e.get("f_status") for e in entries]
+    current_results = [e["current_result"] for e in entries]
+    class_labels = [e["class_label"] for e in entries]
+
+    # 握り率
+    nigiri_rates: List[Optional[float]] = []
+    for e in entries:
+        nr = nigiri_rate(e["course"], e.get("makuri", 0),
+                         e.get("makurizashi", 0), e.get("race_count", 0))
+        nigiri_rates.append(nr)
+
+    # desc_score for nobi (M判定用)
+    nobi_desc = desc_score(nobi_list)
+
+    # ── Phase 1: pre_EI (G除外) ──
+    all_components: List[Dict[str, float]] = []
+    pre_ei_values: List[int] = []
+
+    # 優勢順位D (②の出力が必要)
+    current_sts = [e.get("current_st", e.get("average_st", 0.15)) for e in entries]
+    average_sts = [e.get("average_st", 0.15) for e in entries]
+    yusei_ranks = yusei_rank(current_sts, average_sts, current_results, f_statuses)
+
+    for i, e in enumerate(entries):
+        course = e["course"]
+        comp = ei_components(
+            course=course,
+            course_top3_rate=e["course_top3_rate"],
+            course_race_count=e["course_race_count"],
+            local_top3_rate=e["local_top3_rate"],
+            local_race_count=e["local_race_count"],
+            general_top3_rate=e.get("general_top3_rate"),
+            general_race_count=e.get("general_race_count"),
+            yusei_rank_d=yusei_ranks[i],
+            deashi_list=deashi_list,
+            nobi_list=nobi_list,
+            is_seasonal_motor=is_seasonal_motor,
+            nigiri_rate_val=nigiri_rates[i],
+            nigiri_hassei_val=None,  # pre_EI時はhassei未算出
+            class_label=e["class_label"],
+            age=e["age"],
+        )
+        all_components.append(comp)
+
+        pre_ei = ei_full(
+            components=comp,
+            include_g=False,  # G除外
+            course=course,
+            current_result=e["current_result"],
+            f_status=e.get("f_status"),
+            base_sts=base_sts,
+            local_top3_rate=e["local_top3_rate"],
+            course_top3_rate=e["course_top3_rate"],
+            local_race_count=e["local_race_count"],
+            class_label=e["class_label"],
+            is_local_aichi=e.get("is_local_aichi", False),
+            nobi_desc_score=float(nobi_desc[i]),
+            nigiri_hassei_val=None,
+        )
+        pre_ei_values.append(pre_ei)
+
+    # pre_rank: pre_EIの降順順位 (大きい=1位)
+    pre_rank: List[int] = []
+    for i in range(6):
+        rank = sum(1 for j in range(6) if pre_ei_values[j] > pre_ei_values[i]) + 1
+        pre_rank.append(rank)
+
+    # ── Phase 2: 握り発生率 (⑦) ──
+    sashi_rate_2 = entries[1].get("sashi_rate", 0.0) if len(entries) > 1 else 0.0
+    race_counts = [e.get("race_count", 0) for e in entries]
+
+    hassei_values = nigiri_hassei(
+        base_sts=base_sts,
+        nigiri_rates=nigiri_rates,
+        sashi_rate_2=sashi_rate_2,
+        pre_ranks=pre_rank,
+        current_results=current_results,
+        f_statuses=f_statuses,
+        race_counts=race_counts,
+        wind_dir=wind_dir,
+        wind_speed=wind_speed,
+        core_mult=cm,
+    )
+
+    # ── Phase 3: 最終EI (G加算, ⑧) ──
+    # 成分を再計算 (G にhassei値を反映)
+    final_ei_values: List[int] = []
+    for i, e in enumerate(entries):
+        course = e["course"]
+        comp = ei_components(
+            course=course,
+            course_top3_rate=e["course_top3_rate"],
+            course_race_count=e["course_race_count"],
+            local_top3_rate=e["local_top3_rate"],
+            local_race_count=e["local_race_count"],
+            general_top3_rate=e.get("general_top3_rate"),
+            general_race_count=e.get("general_race_count"),
+            yusei_rank_d=yusei_ranks[i],
+            deashi_list=deashi_list,
+            nobi_list=nobi_list,
+            is_seasonal_motor=is_seasonal_motor,
+            nigiri_rate_val=nigiri_rates[i],
+            nigiri_hassei_val=hassei_values[i],  # hassei反映
+            class_label=e["class_label"],
+            age=e["age"],
+        )
+        all_components[i] = comp  # 更新
+
+        final_ei = ei_full(
+            components=comp,
+            include_g=True,  # G加算
+            course=course,
+            current_result=e["current_result"],
+            f_status=e.get("f_status"),
+            base_sts=base_sts,
+            local_top3_rate=e["local_top3_rate"],
+            course_top3_rate=e["course_top3_rate"],
+            local_race_count=e["local_race_count"],
+            class_label=e["class_label"],
+            is_local_aichi=e.get("is_local_aichi", False),
+            nobi_desc_score=float(nobi_desc[i]),
+            nigiri_hassei_val=hassei_values[i],
+        )
+        final_ei_values.append(final_ei)
+
+    # ei_order: 最終EIの降順順位
+    ei_order: List[int] = []
+    for i in range(6):
+        rank = sum(1 for j in range(6) if final_ei_values[j] > final_ei_values[i]) + 1
+        ei_order.append(rank)
+
+    return {
+        "ei_values": final_ei_values,
+        "ei_order": ei_order,
+        "pre_ei_values": pre_ei_values,
+        "pre_rank": pre_rank,
+        "hassei_values": hassei_values,
+        "components": all_components,
+    }
