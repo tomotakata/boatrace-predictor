@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction, type ShishidoCalculationSteps } from '../lib/api'
+import { getRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, getDashgen, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction, type ShishidoCalculationSteps, type DashgenResult, type DashgenBoat } from '../lib/api'
 
 // ───── タイピングアニメーション ─────
 function TypingText({ text, speed = 60, pauseMs = 2000 }: { text: string; speed?: number; pauseMs?: number }) {
@@ -2188,6 +2188,115 @@ function ShishidoCalcStepsPanel({ steps }: { steps: ShishidoCalculationSteps }) 
   )
 }
 
+// ───── dashgen ダッシュボード ─────
+function DashgenDashboard({ result }: { result: DashgenResult }) {
+  const boats = [...result.boats].sort((a, b) => a.lane - b.lane)
+  const lanes = [1, 2, 3, 4, 5, 6]
+  const get = (lane: number) => boats.find(b => b.lane === lane)
+
+  // カラーコーディング用ヘルパー
+  const maxOf = (fn: (b: DashgenBoat) => number | null | undefined) => {
+    const vals = boats.map(fn).filter((v): v is number => v != null)
+    return vals.length > 0 ? Math.max(...vals) : null
+  }
+
+  const maxEI = maxOf(b => b.EI)
+  const maxTI = maxOf(b => b.TI)
+  const maxP1 = maxOf(b => b.P1)
+  const maxCalWin = maxOf(b => b.cal_win)
+  const maxPlace = maxOf(b => b.place_prob)
+  const maxSecond = maxOf(b => b.second_expect)
+
+  const valColor = (v: number | null | undefined, max: number | null, thresholdHigh?: number) => {
+    if (v == null) return '#94a3b8'
+    if (max != null && v === max) return '#f87171'
+    if (thresholdHigh != null && v >= thresholdHigh) return '#fcd34d'
+    return '#e2e8f0'
+  }
+
+  const nigeBoat = get(1)
+  const nigeSeiritsu = nigeBoat?.nige_seiritsu
+
+  return (
+    <div style={{ marginTop: 20, background: '#0d1b2e', borderRadius: 10, padding: '18px 20px', border: '1px solid #0e7490' }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#22d3ee', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+        dashgen v58.7 ダッシュボード
+        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 400 }}>{result.venue} {result.race_number}R</span>
+      </div>
+
+      {/* GAP / 1号非信用 / 逃げ成立度 */}
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 14, fontSize: 12 }}>
+        <span style={{ color: '#94a3b8' }}>GAP: <span style={{ color: result.gap > 15 ? '#f87171' : result.gap > 8 ? '#fcd34d' : '#22c55e', fontWeight: 700 }}>{result.gap.toFixed(1)}</span></span>
+        <span style={{ color: '#94a3b8' }}>1号非信用: <span style={{ color: result.distrust_1 ? '#f87171' : '#22c55e', fontWeight: 700 }}>{result.distrust_1 ? 'YES' : 'NO'}</span></span>
+        {nigeSeiritsu != null && (
+          <span style={{ color: '#94a3b8' }}>逃げ成立度: <span style={{ color: nigeSeiritsu >= 0.7 ? '#22c55e' : nigeSeiritsu >= 0.4 ? '#fcd34d' : '#f87171', fontWeight: 700 }}>{(nigeSeiritsu * 100).toFixed(1)}%</span></span>
+        )}
+      </div>
+
+      {/* メインテーブル */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#081427', tableLayout: 'fixed', minWidth: 700 }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid #0e7490' }}>
+              {['枠', '選手名', 'EI', 'TI', 'P1(%)', 'cal_win(%)', '着内率', '2着期待', '逃げ成立度', '基準ST', 'モーター', '捲りG'].map(h => (
+                <th key={h} style={{ padding: '8px 6px', color: '#67e8f9', fontWeight: 700, fontSize: 11, textAlign: 'center', whiteSpace: 'nowrap', background: '#0c1e35' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {lanes.map(lane => {
+              const b = get(lane)
+              if (!b) return null
+              return (
+                <tr key={lane} style={{ borderBottom: '1px solid #0f1d30' }}>
+                  {/* 枠番 */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                    <span style={{ display: 'inline-block', width: 24, height: 24, lineHeight: '24px', textAlign: 'center', borderRadius: 4, fontSize: 13, fontWeight: 700, color: '#fff', background: LANE_BG[lane] || '#1e2a40' }}>{lane}</span>
+                  </td>
+                  {/* 選手名 */}
+                  <td style={{ padding: '6px 6px', fontSize: 12, color: '#e2e8f0', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 90 }}>{b.racer_name || '—'}</td>
+                  {/* EI */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 16, fontWeight: 700, color: valColor(b.EI, maxEI) }}>{Math.round(b.EI)}</td>
+                  {/* TI */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 14, fontWeight: 700, color: valColor(b.TI, maxTI) }}>{b.TI.toFixed(2)}</td>
+                  {/* P1 */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.P1, maxP1, 20) }}>{b.P1.toFixed(1)}</td>
+                  {/* cal_win */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.cal_win, maxCalWin, 20) }}>{b.cal_win.toFixed(1)}</td>
+                  {/* 着内率 */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.place_prob, maxPlace, 60) }}>{b.place_prob.toFixed(1)}</td>
+                  {/* 2着期待 */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.second_expect, maxSecond, 25) }}>{b.second_expect.toFixed(1)}</td>
+                  {/* 逃げ成立度 */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, color: lane === 1 && b.nige_seiritsu != null ? (b.nige_seiritsu >= 0.7 ? '#22c55e' : b.nige_seiritsu >= 0.4 ? '#fcd34d' : '#f87171') : '#64748b' }}>
+                    {lane === 1 && b.nige_seiritsu != null ? `${(b.nige_seiritsu * 100).toFixed(1)}%` : '—'}
+                  </td>
+                  {/* 基準ST */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, color: b.kijun_st <= 0.14 ? '#fcd34d' : b.kijun_st >= 0.19 ? '#f87171' : '#e2e8f0' }}>{b.kijun_st.toFixed(2)}</td>
+                  {/* モーター */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, fontWeight: 600, color: b.motor_label === 'S' || b.motor_label === 'A' ? '#22c55e' : b.motor_label === 'D' ? '#f87171' : '#e2e8f0' }}>{b.motor_label} ({b.motor_rank})</td>
+                  {/* 捲りG */}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, color: b.makuri_g >= 0.5 ? '#fcd34d' : '#94a3b8' }}>{b.makuri_g.toFixed(2)}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 補足情報 */}
+      <div style={{ marginTop: 10, display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 11, color: '#64748b' }}>
+        <span>赤=最大値</span>
+        <span>黄=高値</span>
+        <span>EI=期待指数</span>
+        <span>TI=総合指数</span>
+        <span>P1=1着率</span>
+        <span>cal_win=較正勝率</span>
+      </div>
+    </div>
+  )
+}
+
 // ───── メインページ ─────
 export default function RaceDetail() {
   const { id } = useParams<{ id: string }>()
@@ -2200,6 +2309,9 @@ export default function RaceDetail() {
   const [shishidoResult, setShishidoResult] = useState<ShishidoPrediction | null>(null)
   const [shishidoLoading, setShishidoLoading] = useState(false)
   const [shishidoError, setShishidoError] = useState<string | null>(null)
+  const [dashgenResult, setDashgenResult] = useState<DashgenResult | null>(null)
+  const [dashgenLoading, setDashgenLoading] = useState(false)
+  const [dashgenError, setDashgenError] = useState<string | null>(null)
 
   async function fetchRace() {
     if (!id) return
@@ -2241,6 +2353,21 @@ export default function RaceDetail() {
       setShishidoError(e.response?.data?.detail || e.message || '宍戸予想の実行に失敗しました')
     } finally {
       setShishidoLoading(false)
+    }
+  }
+
+  async function handleDashgen() {
+    if (!race?.id) return
+    setDashgenLoading(true)
+    setDashgenResult(null)
+    setDashgenError(null)
+    try {
+      const res = await getDashgen(race.id)
+      setDashgenResult(res.data)
+    } catch (e: any) {
+      setDashgenError(e.response?.data?.detail || e.message || 'dashgen計算に失敗しました')
+    } finally {
+      setDashgenLoading(false)
     }
   }
 
@@ -2292,6 +2419,10 @@ export default function RaceDetail() {
             <button onClick={handleShishidoPredict} disabled={shishidoLoading}
               style={{ padding: '8px 16px', background: 'rgba(167,139,250,0.15)', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
               {shishidoLoading ? '宍戸予想中…' : '宍戸予想 v58.7'}
+            </button>
+            <button onClick={handleDashgen} disabled={dashgenLoading}
+              style={{ padding: '8px 16px', background: 'rgba(34,211,238,0.12)', color: '#22d3ee', border: '1px solid #0e7490', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+              {dashgenLoading ? 'dashgen計算中…' : 'dashgen計算'}
             </button>
 
           </div>
@@ -2358,6 +2489,19 @@ export default function RaceDetail() {
 
       {/* オッズ */}
       <OddsSection race={race} />
+
+      {/* dashgen ダッシュボード */}
+      {dashgenLoading && (
+        <div style={{ marginTop: 20, padding: '16px 20px', background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.2)', borderRadius: 10 }}>
+          <div className="loading-spinner"><div className="spinner" />dashgen計算を実行中…</div>
+        </div>
+      )}
+      {dashgenError && (
+        <div style={{ marginTop: 20, padding: '14px 18px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, fontSize: 13, color: '#ef4444' }}>
+          dashgenエラー: {dashgenError}
+        </div>
+      )}
+      {dashgenResult && <DashgenDashboard result={dashgenResult} />}
 
       {/* 宍戸予想結果 */}
       {shishidoLoading && (

@@ -436,3 +436,46 @@ export const runShishidoPredict = (date: string, venue: string, raceNo?: number)
     { date, venue, race_no: raceNo || null },
     { timeout: 600000 }  // 10分タイムアウト（全12レース分）
   )
+
+// Dashgen API
+export interface DashgenBoat {
+  lane: number
+  racer_name: string
+  EI: number
+  ei_order: number
+  TI: number
+  ti_order: number
+  P1: number
+  cal_win: number
+  place_prob: number
+  second_expect: number
+  nige_seiritsu: number | null
+  kijun_st: number
+  yusei_rank: number
+  motor_rank: number
+  motor_label: string
+  motor_deashi: number
+  motor_nobi: number
+  start_average_st: number
+  start_current_st: number
+  start_base_st: number
+  attack_profile_nigiri_rate: number | null
+  attack_profile_occurrence_rate: number | null
+  makuri_g: number
+  genshu1: number | null
+  makuri_make_rate: number
+  resist_type: string
+  rentai_partner: number[] | null
+}
+
+export interface DashgenResult {
+  race_id: number
+  venue: string
+  race_number: number
+  gap: number
+  distrust_1: boolean
+  boats: DashgenBoat[]
+}
+
+export const getDashgen = (raceId: number) =>
+  api.get<DashgenResult>(`/dashgen/${raceId}`, { timeout: 120000 })
