@@ -1,0 +1,397 @@
+{
+  "step": "3-1",
+  "target": "is_win",
+  "extra_features": false,
+  "data_inventory": {
+    "n_races": 6408,
+    "n_boats": 38448,
+    "n_rwl": 4620,
+    "n_rwl_valid": 4618,
+    "date_min": "2025-06-25",
+    "date_max": "2026-06-27",
+    "months": {
+      "2025-06": 12,
+      "2026-04": 2592,
+      "2026-05": 1032,
+      "2026-06": 2772
+    },
+    "n_venues": 24,
+    "venues": [
+      "びわこ",
+      "三国",
+      "下関",
+      "丸亀",
+      "住之江",
+      "児島",
+      "唐津",
+      "多摩川",
+      "大村",
+      "宮島",
+      "尼崎",
+      "常滑",
+      "平和島",
+      "徳山",
+      "戸田",
+      "桐生",
+      "江戸川",
+      "津",
+      "浜名湖",
+      "福岡",
+      "芦屋",
+      "若松",
+      "蒲郡",
+      "鳴門"
+    ]
+  },
+  "holdout": {
+    "train_months": [
+      "2026-04",
+      "2026-05"
+    ],
+    "test_month": "2026-06",
+    "n_train_races": 3193,
+    "n_test_races": 1425
+  },
+  "classification": {
+    "logloss": 0.34113056375714385,
+    "auc": 0.8269912957833181,
+    "top1_hit_rate": 0.5473684210526316,
+    "top1_hit": 780,
+    "n_races": 1425,
+    "top3_exact_rate": 0.22105263157894736,
+    "top3_hit": 315
+  },
+  "baseline_lane1": {
+    "top1_hit_rate": 0.5375438596491228,
+    "top1_hit": 766,
+    "n_races": 1425,
+    "trifecta_roi": 0.7616842105263157,
+    "trifecta_hit_rate": 0.07017543859649122,
+    "trio_box4_roi": 0.6784736842105263,
+    "trio_box4_hit_rate": 0.42947368421052634
+  },
+  "strategy_E_full": {
+    "n_races": 1425,
+    "wagered_races": 1425,
+    "roi": 0.7914210526315789,
+    "hit_rate": 0.5221052631578947,
+    "avg_points_per_race": 4.0,
+    "spent": 570000.0,
+    "returned": 451110.0,
+    "net": -118890.0,
+    "profit_std_per_race": 571.1965401014108,
+    "profit_mean_per_race": -83.43157894736842
+  },
+  "selective_voting": [
+    {
+      "coverage": 1.0,
+      "n_target": 1425,
+      "wagered_races": 1425,
+      "skip_rate": 0.0,
+      "hit_rate": 0.5221052631578947,
+      "roi": 0.7914210526315789,
+      "net": -118890.0,
+      "spent": 570000.0,
+      "returned": 451110.0
+    },
+    {
+      "coverage": 0.8,
+      "n_target": 1140,
+      "wagered_races": 1140,
+      "skip_rate": 0.19999999999999996,
+      "hit_rate": 0.5236842105263158,
+      "roi": 0.7874780701754386,
+      "net": -96910.0,
+      "spent": 456000.0,
+      "returned": 359090.0
+    },
+    {
+      "coverage": 0.6,
+      "n_target": 855,
+      "wagered_races": 855,
+      "skip_rate": 0.4,
+      "hit_rate": 0.5356725146198831,
+      "roi": 0.808625730994152,
+      "net": -65450.0,
+      "spent": 342000.0,
+      "returned": 276550.0
+    },
+    {
+      "coverage": 0.5,
+      "n_target": 712,
+      "wagered_races": 712,
+      "skip_rate": 0.5003508771929824,
+      "hit_rate": 0.5365168539325843,
+      "roi": 0.8164325842696629,
+      "net": -52280.0,
+      "spent": 284800.0,
+      "returned": 232520.0
+    },
+    {
+      "coverage": 0.4,
+      "n_target": 570,
+      "wagered_races": 570,
+      "skip_rate": 0.6,
+      "hit_rate": 0.5298245614035088,
+      "roi": 0.783640350877193,
+      "net": -49330.0,
+      "spent": 228000.0,
+      "returned": 178670.0
+    },
+    {
+      "coverage": 0.3,
+      "n_target": 428,
+      "wagered_races": 428,
+      "skip_rate": 0.6996491228070175,
+      "hit_rate": 0.530373831775701,
+      "roi": 0.7798481308411215,
+      "net": -37690.0,
+      "spent": 171200.0,
+      "returned": 133510.0
+    },
+    {
+      "coverage": 0.2,
+      "n_target": 285,
+      "wagered_races": 285,
+      "skip_rate": 0.8,
+      "hit_rate": 0.5368421052631579,
+      "roi": 0.8316666666666667,
+      "net": -19190.0,
+      "spent": 114000.0,
+      "returned": 94810.0
+    }
+  ],
+  "venue_analysis": [
+    {
+      "venue": "びわこ",
+      "n_races": 108,
+      "top1_hit_rate": 0.5648148148148148,
+      "lane1_top1": 0.5462962962962963,
+      "lane1_win_rate": 0.5462962962962963,
+      "strat_E_roi": 0.6912037037037037,
+      "strat_E_hit_rate": 0.5648148148148148,
+      "model_vs_lane1": 0.01851851851851849
+    },
+    {
+      "venue": "尼崎",
+      "n_races": 107,
+      "top1_hit_rate": 0.6635514018691588,
+      "lane1_top1": 0.6728971962616822,
+      "lane1_win_rate": 0.6728971962616822,
+      "strat_E_roi": 0.6443925233644859,
+      "strat_E_hit_rate": 0.4672897196261682,
+      "model_vs_lane1": -0.009345794392523366
+    },
+    {
+      "venue": "三国",
+      "n_races": 84,
+      "top1_hit_rate": 0.5,
+      "lane1_top1": 0.4880952380952381,
+      "lane1_win_rate": 0.4880952380952381,
+      "strat_E_roi": 1.1181547619047618,
+      "strat_E_hit_rate": 0.5595238095238095,
+      "model_vs_lane1": 0.011904761904761918
+    },
+    {
+      "venue": "丸亀",
+      "n_races": 84,
+      "top1_hit_rate": 0.4880952380952381,
+      "lane1_top1": 0.47619047619047616,
+      "lane1_win_rate": 0.47619047619047616,
+      "strat_E_roi": 0.8044642857142857,
+      "strat_E_hit_rate": 0.5,
+      "model_vs_lane1": 0.011904761904761918
+    },
+    {
+      "venue": "蒲郡",
+      "n_races": 84,
+      "top1_hit_rate": 0.4880952380952381,
+      "lane1_top1": 0.4523809523809524,
+      "lane1_win_rate": 0.4523809523809524,
+      "strat_E_roi": 0.986904761904762,
+      "strat_E_hit_rate": 0.6428571428571429,
+      "model_vs_lane1": 0.0357142857142857
+    },
+    {
+      "venue": "宮島",
+      "n_races": 72,
+      "top1_hit_rate": 0.6388888888888888,
+      "lane1_top1": 0.6388888888888888,
+      "lane1_win_rate": 0.6388888888888888,
+      "strat_E_roi": 0.8930555555555556,
+      "strat_E_hit_rate": 0.5416666666666666,
+      "model_vs_lane1": 0.0
+    },
+    {
+      "venue": "徳山",
+      "n_races": 72,
+      "top1_hit_rate": 0.5277777777777778,
+      "lane1_top1": 0.5277777777777778,
+      "lane1_win_rate": 0.5277777777777778,
+      "strat_E_roi": 1.1819444444444445,
+      "strat_E_hit_rate": 0.5,
+      "model_vs_lane1": 0.0
+    },
+    {
+      "venue": "桐生",
+      "n_races": 72,
+      "top1_hit_rate": 0.4583333333333333,
+      "lane1_top1": 0.5138888888888888,
+      "lane1_win_rate": 0.5138888888888888,
+      "strat_E_roi": 0.7121527777777777,
+      "strat_E_hit_rate": 0.4861111111111111,
+      "model_vs_lane1": -0.055555555555555525
+    },
+    {
+      "venue": "若松",
+      "n_races": 72,
+      "top1_hit_rate": 0.4166666666666667,
+      "lane1_top1": 0.4444444444444444,
+      "lane1_win_rate": 0.4444444444444444,
+      "strat_E_roi": 0.7190972222222223,
+      "strat_E_hit_rate": 0.4444444444444444,
+      "model_vs_lane1": -0.027777777777777735
+    },
+    {
+      "venue": "鳴門",
+      "n_races": 72,
+      "top1_hit_rate": 0.5277777777777778,
+      "lane1_top1": 0.5,
+      "lane1_win_rate": 0.5,
+      "strat_E_roi": 0.69375,
+      "strat_E_hit_rate": 0.4722222222222222,
+      "model_vs_lane1": 0.02777777777777779
+    },
+    {
+      "venue": "芦屋",
+      "n_races": 71,
+      "top1_hit_rate": 0.6197183098591549,
+      "lane1_top1": 0.5633802816901409,
+      "lane1_win_rate": 0.5633802816901409,
+      "strat_E_roi": 0.6992957746478873,
+      "strat_E_hit_rate": 0.4647887323943662,
+      "model_vs_lane1": 0.05633802816901401
+    },
+    {
+      "venue": "下関",
+      "n_races": 60,
+      "top1_hit_rate": 0.5666666666666667,
+      "lane1_top1": 0.5333333333333333,
+      "lane1_win_rate": 0.5333333333333333,
+      "strat_E_roi": 0.9425,
+      "strat_E_hit_rate": 0.55,
+      "model_vs_lane1": 0.033333333333333326
+    },
+    {
+      "venue": "唐津",
+      "n_races": 60,
+      "top1_hit_rate": 0.5666666666666667,
+      "lane1_top1": 0.6,
+      "lane1_win_rate": 0.6,
+      "strat_E_roi": 0.8504166666666667,
+      "strat_E_hit_rate": 0.6333333333333333,
+      "model_vs_lane1": -0.033333333333333326
+    },
+    {
+      "venue": "多摩川",
+      "n_races": 60,
+      "top1_hit_rate": 0.6333333333333333,
+      "lane1_top1": 0.6166666666666667,
+      "lane1_win_rate": 0.6166666666666667,
+      "strat_E_roi": 0.7816666666666666,
+      "strat_E_hit_rate": 0.6,
+      "model_vs_lane1": 0.016666666666666607
+    },
+    {
+      "venue": "大村",
+      "n_races": 60,
+      "top1_hit_rate": 0.6,
+      "lane1_top1": 0.5333333333333333,
+      "lane1_win_rate": 0.5333333333333333,
+      "strat_E_roi": 0.6808333333333333,
+      "strat_E_hit_rate": 0.4666666666666667,
+      "model_vs_lane1": 0.06666666666666665
+    },
+    {
+      "venue": "常滑",
+      "n_races": 60,
+      "top1_hit_rate": 0.55,
+      "lane1_top1": 0.5333333333333333,
+      "lane1_win_rate": 0.5333333333333333,
+      "strat_E_roi": 0.6591666666666667,
+      "strat_E_hit_rate": 0.55,
+      "model_vs_lane1": 0.01666666666666672
+    },
+    {
+      "venue": "津",
+      "n_races": 60,
+      "top1_hit_rate": 0.5666666666666667,
+      "lane1_top1": 0.55,
+      "lane1_win_rate": 0.55,
+      "strat_E_roi": 0.62,
+      "strat_E_hit_rate": 0.5333333333333333,
+      "model_vs_lane1": 0.016666666666666607
+    },
+    {
+      "venue": "浜名湖",
+      "n_races": 60,
+      "top1_hit_rate": 0.5666666666666667,
+      "lane1_top1": 0.5666666666666667,
+      "lane1_win_rate": 0.5666666666666667,
+      "strat_E_roi": 0.6266666666666667,
+      "strat_E_hit_rate": 0.4666666666666667,
+      "model_vs_lane1": 0.0
+    },
+    {
+      "venue": "江戸川",
+      "n_races": 59,
+      "top1_hit_rate": 0.4576271186440678,
+      "lane1_top1": 0.4576271186440678,
+      "lane1_win_rate": 0.4576271186440678,
+      "strat_E_roi": 0.6466101694915254,
+      "strat_E_hit_rate": 0.4406779661016949,
+      "model_vs_lane1": 0.0
+    },
+    {
+      "venue": "住之江",
+      "n_races": 36,
+      "top1_hit_rate": 0.5277777777777778,
+      "lane1_top1": 0.5,
+      "lane1_win_rate": 0.5,
+      "strat_E_roi": 0.8701388888888889,
+      "strat_E_hit_rate": 0.5555555555555556,
+      "model_vs_lane1": 0.02777777777777779
+    },
+    {
+      "venue": "児島",
+      "n_races": 12,
+      "top1_hit_rate": 0.5,
+      "lane1_top1": 0.5,
+      "lane1_win_rate": 0.5,
+      "strat_E_roi": 0.7145833333333333,
+      "strat_E_hit_rate": 0.5833333333333334,
+      "model_vs_lane1": 0.0
+    }
+  ],
+  "incourse_analysis": {
+    "median_lane1_win_rate": 0.5333333333333333,
+    "high_incourse": {
+      "n_venues": 11,
+      "avg_top1": 0.5942703104938197,
+      "avg_lane1_top1": 0.5777087269518492,
+      "avg_strat_E_roi": 0.7353815961156029,
+      "avg_lane1_win_rate": 0.5777087269518492,
+      "avg_model_vs_lane1": 0.01656158354197052
+    },
+    "low_incourse": {
+      "n_venues": 10,
+      "avg_top1": 0.48921509281678777,
+      "avg_lane1_top1": 0.4860404896421845,
+      "avg_strat_E_roi": 0.8447800645682001,
+      "avg_lane1_win_rate": 0.4860404896421845,
+      "avg_model_vs_lane1": 0.0031746031746031854
+    }
+  },
+  "leak_free": true,
+  "report_path": "tmp/dot_backtest_report.md"
+}
