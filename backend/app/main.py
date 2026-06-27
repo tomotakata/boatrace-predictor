@@ -5,6 +5,7 @@ from backend.app.api.analytics import router as analytics_router
 from backend.app.api.scraping import router as scraping_router
 from backend.app.api.venues import router as venues_router
 from backend.app.api.shishido import router as shishido_router
+from backend.app.api.dashgen_router import router as dashgen_router
 
 app = FastAPI(title="Boatrace Predictor API")
 
@@ -21,6 +22,7 @@ app.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
 app.include_router(scraping_router, prefix="/scrape", tags=["scraping"])
 app.include_router(venues_router, prefix="/venues", tags=["venues"])
 app.include_router(shishido_router, prefix="/shishido", tags=["shishido"])
+app.include_router(dashgen_router, prefix="/api/dashgen", tags=["dashgen"])
 
 @app.get("/")
 async def root():
