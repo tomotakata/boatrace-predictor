@@ -7,6 +7,7 @@ data/dashgen_logic_full.md の計算ロジックを忠実に実装。
 Step 1-1: 基盤モジュール + ステップ①-⑤
 Step 1-2: ステップ⑥-⑧ EI計算ロジック
 Step 1-3: ステップ⑨-⑫ P1・被弾分析・減衰・逃げ成立度
+Step 1-4: ステップ⑬-⑮ TI・着内率・捲り負け率 + cal_win + 統合関数
 """
 
 from __future__ import annotations
@@ -1837,4 +1838,679 @@ def compute_p1_pipeline(
         "hit2r_adj": higaki["hit2r_adj"],
         "coefs": higaki["coefs"],
         "nige": nige,
+    }
+
+
+# ═══════════════════════════════════════════════════════════
+# ⑬ TI（信頼指数）— ti_calc
+# ═══════════════════════════════════════════════════════════
+
+def _desc_rank(values: List[float]) -> List[int]:
+    """降順順位。大きいほど1位。"""
+    n = len(values)
+    ranks: List[int] = []
+    for i in range(n):
+        rank = sum(1 for j in range(n) if values[j] > values[i]) + 1
+        ranks.append(rank)
+    return ranks
+
+
+def ti_calc(
+    p1: List[float],
+    nige: float,
+    venue_name: str,
+    month: int,
+    race_counts: List[int],
+    racer_course_others: Optional[Dict[int, Dict[str, Any]]],
+    hit2r_adj: Dict[int, float],
+    hit_adj: Dict[int, float],
+) -> Tuple[List[float], List[int]]:
+    """各艇のTI（信頼指数）を算出する。
+
+    1号TI: 逃げ成立度 × 100 × (P1raw[1] / コース基準1C勝率) × min(1号出走数/20, 1)
+    2-6号TI: P2マトリクスから算出。
+      P2[i|j] = 他艇2連率 − 他艇1着率 (j≠1)
+      P2[i|1] = hit2r(i) − hit(i)
+      TI[i] = Σ_j (P1[j]小数 × P2[i|j]) × min(i号出走数/20, 1)
+
+    Args:
+        p1: 各艇(6)のP1(%) — 合計≈100
+        nige: 逃げ成立度 (0〜1)
+        venue_name: 会場名
+        month: 月
+        race_counts: 各艇(6)のコース出走数
+        racer_course_others: 1号がインのとき各外艇cの成績
+        hit2r_adj: コース(2-6) → 補正2連
+        hit_adj: コース(2-6) → 補正被弾
+
+    Returns:
+        (ti_values, ti_order):
+            ti_values: 各艇(6)のTI
+            ti_order: TI降順順位
+    """
+    venue = get_venue(venue_name)
+    season = season_of(month)
+    base_1c_wr_map = venue.get("base_1c_wr", {"_": 50.0})
+    base_1c_wr = base_1c_wr_map.get(season, base_1c_wr_map.get("_", 50.0))
+
+    ti_values: List[float] = []
+
+    # --- 1号 TI ---
+    nin_1 = min(race_counts[0] / 20.0, 1.0)
+    ti_1 = nige * 100.0 * (p1[0] / base_1c_wr) * nin_1
+    ti_values.append(round(ti_1, 1))
+
+    # --- 2-6号 TI (P2マトリクス) ---
+    # P2[i|j]: i号が2着に来る率 (j号が1着のとき)
+    # j=1号列: P2[i|1] = hit2r_adj(i) - hit_adj(i)
+    # j≠1号列: P2[i|j] = 他艇2連率 - 他艇1着率 (racer_course_others[i].others[j])
+    #   → 簡略化: コース勝率ベースで推定
+
+    for i in range(1, 6):  # 2-6号 (0-indexed: 1-5)
+        c = i + 1  # コース番号 (2-6)
+        nin_i = min(race_counts[i] / 20.0, 1.0)
+
+        ti_sum = 0.0
+        for j in range(6):  # j号が1着のとき
+            if j == i:
+                continue
+            p1_j = p1[j] / 100.0  # 小数化
+
+            if j == 0:
+                # j=1号列: P2[i|1] = hit2r_adj(c) - hit_adj(c)
+                p2_ij = hit2r_adj.get(c, 0.0) - hit_adj.get(c, 0.0)
+            else:
+                # j≠1号列: 他艇の2連率 - 1着率の推定
+                # racer_course_othersは1号視点のみなので、
+                # 他コース間はP1ベースで推定
+                j_c = j + 1
+                # i号がj号の後ろに来る確率 ≈ P1[i] の相対比
+                other_p1_sum = sum(p1[k] for k in range(6) if k != j)
+                if other_p1_sum > 0:
+                    p2_ij = (p1[i] / other_p1_sum) * 100.0 * 0.5
+                else:
+                    p2_ij = 0.0
+
+            ti_sum += p1_j * max(p2_ij, 0.0)
+
+        ti_i = ti_sum * nin_i
+        ti_values.append(round(ti_i, 1))
+
+    ti_order = _desc_rank(ti_values)
+    return ti_values, ti_order
+
+
+# ═══════════════════════════════════════════════════════════
+# ⑭ 着内率 (place_prob) + 2着期待 (second_expect)
+# ═══════════════════════════════════════════════════════════
+
+def kachu_2nd_expect(
+    ei_values: List[int],
+    ti_values: List[float],
+    p1: List[float],
+    nige: float,
+    course_top3_rates: List[float],
+    local_top3_rates: List[float],
+    local_race_counts: List[int],
+    course_win_rates: List[float],
+    course_top2_rates: List[float],
+    hassei_values: List[Optional[float]],
+    hit2r_adj: Dict[int, float],
+    venue_name: str,
+) -> Tuple[List[float], List[float]]:
+    """着内率(Σ=300)と2着期待(Σ=100)を算出する。
+
+    Args:
+        ei_values: 各艇(6)の最終EI
+        ti_values: 各艇(6)のTI
+        p1: 各艇(6)のP1(%)
+        nige: 逃げ成立度
+        course_top3_rates: 各艇(6)のコース3連率(%)
+        local_top3_rates: 各艇(6)の当地3連率(%)
+        local_race_counts: 各艇(6)の当地出走数
+        course_win_rates: 各艇(6)のコース勝率(%)
+        course_top2_rates: 各艇(6)のコース2連率(%)
+        hassei_values: 各艇(6)の握り発生率(%)
+        hit2r_adj: コース(2-6) → 補正2連
+        venue_name: 会場名
+
+    Returns:
+        (place_prob, second_expect):
+            place_prob: 各艇(6)の着内率(%) — 合計≈300
+            second_expect: 各艇(6)の2着期待(%) — 合計≈100
+    """
+    venue = get_venue(venue_name)
+    k_b = venue.get("k_b", 0.45)
+    exploit_kado = venue.get("exploit_kado", {})
+
+    # --- 着内率 ---
+    # w3: 加重3連率
+    w3: List[float] = []
+    for i in range(6):
+        lrc = local_race_counts[i]
+        if lrc < 5:
+            w3_i = course_top3_rates[i]
+        elif lrc <= 9:
+            w3_i = course_top3_rates[i] * 0.6 + local_top3_rates[i] * 0.4
+        else:
+            w3_i = course_top3_rates[i] * 0.4 + local_top3_rates[i] * 0.6
+        w3.append(w3_i)
+
+    # ability
+    ability: List[float] = []
+    for i in range(6):
+        ab = max(0.80, min(1.25, 0.80 + 0.40 * ei_values[i] / 100.0))
+        ability.append(ab)
+
+    # 上流攻めの恩恵 (up) — 内側の握り発生率を距離重みで加重和
+    # 距離重み: 1差=1.0, 2差=0.8, 3差=0.6, 4差=0.5
+    dist_w = {1: 1.0, 2: 0.8, 3: 0.6, 4: 0.5, 5: 0.4}
+
+    raw_place: List[float] = []
+    for i in range(6):
+        course = i + 1
+        if i == 0:
+            # 1号: 残存 × (0.95+0.05×EI/100) × (1 − 崩壊率×0.4)
+            # 崩壊率 = 4号/3号の補正2連率(hit2r_adj)の大きい方
+            houkai_4 = hit2r_adj.get(4, 0.0)
+            houkai_3 = hit2r_adj.get(3, 0.0)
+            houkai = max(houkai_4, houkai_3) / 100.0  # 正規化
+            ei_factor = 0.95 + 0.05 * ei_values[0] / 100.0
+            raw_i = w3[0] * ei_factor * (1.0 - houkai * 0.4)
+        else:
+            # 他艇: w3 × ability × benefit
+            # up: 内側の握り発生率の加重和
+            up = 0.0
+            for inner in range(i):
+                diff = i - inner  # コース差
+                w_d = dist_w.get(diff, 0.3)
+                h_inner = hassei_values[inner] if hassei_values[inner] is not None else 0.0
+                ek = exploit_kado.get(inner + 1, 1.0)
+                up += h_inner * w_d * ek
+
+            # 2号は差し主体補正 (差し率ベースの底上げ)
+            # → 簡略化: 2号のupに最低保証
+            if course == 2:
+                up = max(up, 10.0)
+
+            exploit = 0.5 + 0.5 * ei_values[i] / 100.0
+            benefit = 1.0 + k_b * (up / 100.0) * exploit
+            raw_i = w3[i] * ability[i] * benefit
+
+        raw_place.append(max(raw_i, 0.001))
+
+    # 正規化: Σ=300, 各艇99%上限
+    total_raw = sum(raw_place)
+    place_prob: List[float] = []
+    for rp in raw_place:
+        pp = min(rp / total_raw * 300.0, 99.0)
+        place_prob.append(round(pp, 1))
+
+    # 再正規化 (上限クリップ後にΣ=300を保証)
+    pp_sum = sum(place_prob)
+    if pp_sum > 0 and abs(pp_sum - 300.0) > 0.1:
+        place_prob = [round(pp / pp_sum * 300.0, 1) for pp in place_prob]
+
+    # --- 2着期待 ---
+    e2: List[float] = []
+    for i in range(6):
+        course = i + 1
+        win_rate = course_win_rates[i]
+        top2_rate = course_top2_rates[i]
+        top3_rate = course_top3_rates[i]
+
+        if i == 0:
+            # 1号: 純2着率 + 3着保険
+            pure_2nd = max(top2_rate - win_rate, 0.0)
+            insurance_3rd = max((top3_rate - top2_rate) * 0.3, 0.0)
+            e2_i = pure_2nd + insurance_3rd
+        else:
+            # 他艇: 純2着率 + drive寄与
+            pure_2nd = max(top2_rate - win_rate, 0.0)
+            drive = ti_values[i] * ei_values[i] / 100.0
+            if pure_2nd > 0:
+                e2_i = pure_2nd + drive * 0.5
+            else:
+                e2_i = top3_rate * 0.15
+
+        e2.append(max(e2_i, 0.001))
+
+    # 正規化: Σ=100
+    e2_sum = sum(e2)
+    second_expect: List[float] = []
+    for e in e2:
+        se = e / e2_sum * 100.0
+        second_expect.append(round(se, 1))
+
+    return place_prob, second_expect
+
+
+# ═══════════════════════════════════════════════════════════
+# ⑮ 捲り負け率・抵抗・連帯艇 — resist_partner
+# ═══════════════════════════════════════════════════════════
+
+def resist_partner(
+    entries: List[Dict[str, Any]],
+) -> Tuple[List[Optional[float]], List[Optional[str]], List[Optional[int]]]:
+    """捲り負け率・抵抗ラベル・連帯艇を算出する。
+
+    捲り負け率[c] = (自コースより外の艇の まくり+まくり差し の合計) / 自コース出走数 × 100
+    抵抗ラベル: <5→壁◎ / <12→壁○ / <20→壁△ / それ以上→割られ易
+    連帯艇[c] = 自コース進入時、2連対率が最大の相手コース
+
+    Args:
+        entries: 各艇(6)のデータ辞書リスト。各辞書に以下のキーが必要:
+            - course: int (1-6)
+            - race_count: int (コース出走数)
+            - makuri: int (まくり回数)
+            - makurizashi: int (まくり差し回数)
+            - course_top2_rate: float (コース2連率%)
+
+    Returns:
+        (makuri_make_rates, resist_labels, rentai_partners):
+            makuri_make_rates: 各艇(6)の捲り負け率(%) (6号はNone)
+            resist_labels: 各艇(6)の抵抗ラベル (6号はNone)
+            rentai_partners: 各艇(6)の連帯艇コース番号
+    """
+    makuri_make_rates: List[Optional[float]] = []
+    resist_labels: List[Optional[str]] = []
+    rentai_partners: List[Optional[int]] = []
+
+    for i in range(6):
+        course = i + 1
+        rc = entries[i].get("race_count", 0)
+
+        # 捲り負け率: 外艇のまくり+まくり差しの合計
+        if course >= 6:
+            # 6号は外がいないのでNone
+            makuri_make_rates.append(None)
+            resist_labels.append(None)
+        else:
+            outer_attack = 0
+            for j in range(i + 1, 6):
+                outer_attack += entries[j].get("makuri", 0) + entries[j].get("makurizashi", 0)
+
+            if rc > 0:
+                mm_rate = outer_attack / rc * 100.0
+            else:
+                mm_rate = 0.0
+            makuri_make_rates.append(round(mm_rate, 1))
+
+            # 抵抗ラベル
+            if mm_rate < 5:
+                resist_labels.append("壁◎")
+            elif mm_rate < 12:
+                resist_labels.append("壁○")
+            elif mm_rate < 20:
+                resist_labels.append("壁△")
+            else:
+                resist_labels.append("割られ易")
+
+        # 連帯艇: 2連対率が最大の相手コース
+        best_partner: Optional[int] = None
+        best_rate = -1.0
+        for j in range(6):
+            if j == i:
+                continue
+            t2r = entries[j].get("course_top2_rate", 0.0)
+            if t2r > best_rate:
+                best_rate = t2r
+                best_partner = j + 1  # コース番号
+        rentai_partners.append(best_partner)
+
+    return makuri_make_rates, resist_labels, rentai_partners
+
+
+# ═══════════════════════════════════════════════════════════
+# cal_win（較正1着率）— calibrate_win
+# ═══════════════════════════════════════════════════════════
+
+# 較正定数
+N_CAL = 10          # 較正に必要な最低標本数
+DEC1_GAP = 5.0      # 弱い減衰の閾値ギャップ
+DEC2_GAP = 10.0     # 強い減衰の閾値ギャップ
+DEC1 = 0.92         # 弱い減衰係数
+DEC2 = 0.82         # 強い減衰係数
+DISTRUST_WIN = 35.0  # 1号非信用の閾値(%)
+
+
+def _outer_agrade_boost(
+    cal: List[float],
+    class_labels: List[str],
+    ei_values: List[int],
+) -> List[float]:
+    """改正74: 外枠A級補正。5/6号がA級で相対的に強いとき加点。
+
+    Args:
+        cal: 各艇(6)の較正値
+        class_labels: 各艇(6)の級別
+        ei_values: 各艇(6)のEI
+
+    Returns:
+        補正後の cal (合計100%維持)
+    """
+    result = list(cal)
+    avg_ei = sum(ei_values) / 6.0
+
+    for i in (4, 5):  # 5号, 6号 (0-indexed)
+        cl = class_labels[i].upper().strip()
+        if cl in ("A1", "A2") and ei_values[i] > avg_ei:
+            # 加点: EI偏差に応じた小さなブースト
+            boost = (ei_values[i] - avg_ei) / avg_ei * 3.0 if avg_ei > 0 else 0.0
+            result[i] += boost
+
+    # 再正規化 (合計100%維持)
+    total = sum(result)
+    if total > 0:
+        result = [r / total * 100.0 for r in result]
+
+    return result
+
+
+def calibrate_win(
+    p1: List[float],
+    class_labels: List[str],
+    ei_values: List[int],
+    venue_calibration: Optional[Dict[str, float]] = None,
+    course_win_rate_1: float = 0.0,
+    race_count_1: int = 0,
+) -> Dict[str, Any]:
+    """P1にTIベースの補正をかけた較正版1着率を算出する。
+
+    Args:
+        p1: 各艇(6)のP1(%) — 合計≈100
+        class_labels: 各艇(6)の級別
+        ei_values: 各艇(6)のEI
+        venue_calibration: 当節較正データ
+            {"actual_1c_rate": float, "venue_avg": float, "sample_n": int}
+            Noneなら較正なし
+        course_win_rate_1: 1号のコース実勝率(%)
+        race_count_1: 1号のコース出走数
+
+    Returns:
+        {
+            "cal_win": List[float],     # 較正1着率(%) — 合計≈100
+            "gap": float,               # 頭の抜け具合
+            "distrust_1": bool,         # 1号非信用フラグ
+        }
+    """
+    cal = list(p1)
+
+    # 1) 当節較正
+    if venue_calibration is not None:
+        r = venue_calibration.get("actual_1c_rate", 0.0)
+        p0 = venue_calibration.get("venue_avg", 50.0)
+        n = venue_calibration.get("sample_n", 0)
+
+        if n >= N_CAL:
+            if r < p0 - DEC2_GAP:
+                # 強い減衰
+                delta = cal[0] * (1.0 - DEC2)
+                cal[0] *= DEC2
+            elif r < p0 - DEC1_GAP:
+                # 弱い減衰
+                delta = cal[0] * (1.0 - DEC1)
+                cal[0] *= DEC1
+            else:
+                delta = 0.0
+
+            # 減った分を他コースへP1比で再配分
+            if delta > 0:
+                other_sum = sum(p1[i] for i in range(1, 6))
+                if other_sum > 0:
+                    for i in range(1, 6):
+                        cal[i] += delta * (p1[i] / other_sum)
+
+    # 2) 正規化
+    total = sum(cal)
+    if total > 0:
+        cal = [c / total * 100.0 for c in cal]
+
+    # 3) 改正74: 外枠A級補正
+    cal = _outer_agrade_boost(cal, class_labels, ei_values)
+
+    # 4) gap = 最大 / 2番手
+    sorted_cal = sorted(cal, reverse=True)
+    if len(sorted_cal) >= 2 and sorted_cal[1] > 0:
+        gap = sorted_cal[0] / sorted_cal[1]
+    else:
+        gap = 99.0
+
+    # 5) 1号非信用判定
+    distrust_1 = (cal[0] < DISTRUST_WIN) or (
+        course_win_rate_1 == 0.0 and race_count_1 >= 2
+    )
+
+    return {
+        "cal_win": [round(c, 1) for c in cal],
+        "gap": round(gap, 2),
+        "distrust_1": distrust_1,
+    }
+
+
+# ═══════════════════════════════════════════════════════════
+# 統合関数 — generate_dashboard
+# ═══════════════════════════════════════════════════════════
+
+def generate_dashboard(
+    entries: List[Dict[str, Any]],
+    environment: Dict[str, Any],
+) -> Dict[str, Any]:
+    """全ステップ①-⑮+cal_winを順に呼び出し、ダッシュボードJSONを生成する。
+
+    Args:
+        entries: 6艇分のレーサー・モーター・成績データ (dict)。
+            各辞書に以下のキーが必要:
+            - course: int (1-6)
+            - racer_name: str
+            - average_st: float
+            - course_average_st: float
+            - current_st: float
+            - current_result: float (今節着順)
+            - f_status: Optional[str]
+            - class_label: str ("A1"/"A2"/"B1"/"B2")
+            - age: int
+            - deashi: float (出足評価値)
+            - nobi: float (伸び足評価値)
+            - course_top3_rate: float (コース3連率%)
+            - course_race_count: int
+            - local_top3_rate: float (当地3連率%)
+            - local_race_count: int
+            - general_top3_rate: Optional[float]
+            - general_race_count: Optional[int]
+            - makuri: int
+            - makurizashi: int
+            - race_count: int (コース出走数)
+            - sashi_rate: float (差し率%, 2号用)
+            - is_local_aichi: bool
+            - is_local: bool
+            - course_win_rate: float (コース勝率%)
+            - local_win_rate: float (当地勝率%)
+            - course_top2_rate: float (コース2連率%)
+            - racer_course_others: Optional[Dict] (1号のみ)
+
+        environment: 場/風/波/天候/R番号/節の日数等
+            - venue: str (会場名)
+            - wind_dir: str (風向)
+            - wind_speed: float (風速m)
+            - race_number: int (R番号)
+            - day_no: int (節の日目)
+            - month: int (月)
+            - is_seasonal_motor: bool
+            - venue_calibration: Optional[Dict] (当節較正データ)
+
+    Returns:
+        ダッシュボードJSON
+    """
+    venue_name = environment.get("venue", DEFAULT_VENUE)
+    wind_dir = environment.get("wind_dir", "無風")
+    wind_speed = environment.get("wind_speed", 0.0)
+    race_no = environment.get("race_number", 7)
+    day_no = environment.get("day_no", 1)
+    month = environment.get("month", 4)
+    is_seasonal_motor = environment.get("is_seasonal_motor", False)
+    venue_calibration = environment.get("venue_calibration")
+
+    venue = get_venue(venue_name)
+    mot_w = venue.get("mot_w", (0.5, 0.5))
+
+    # ═══ ① 基準ST ═══
+    base_sts: List[float] = []
+    for e in entries:
+        bs = kijun_st(
+            average_st=e["average_st"],
+            course_average_st=e["course_average_st"],
+            current_st=e.get("current_st", e["average_st"]),
+            day_no=day_no,
+        )
+        e["base_st"] = bs
+        base_sts.append(bs)
+
+    # ═══ ② 優勢順位D ═══
+    current_sts = [e.get("current_st", e.get("average_st", 0.15)) for e in entries]
+    average_sts = [e.get("average_st", 0.15) for e in entries]
+    current_results = [e["current_result"] for e in entries]
+    f_statuses = [e.get("f_status") for e in entries]
+    yusei_ranks = yusei_rank(current_sts, average_sts, current_results, f_statuses)
+
+    # ═══ ③ モーター順位 ═══
+    deashi_list = [e["deashi"] for e in entries]
+    nobi_list = [e["nobi"] for e in entries]
+    mot_ranks, mot_labels = motor_rank(deashi_list, nobi_list)
+
+    # ═══ ④ 握り率 ═══
+    nigiri_rates: List[Optional[float]] = []
+    for e in entries:
+        nr = nigiri_rate(e["course"], e.get("makuri", 0),
+                         e.get("makurizashi", 0), e.get("race_count", 0))
+        nigiri_rates.append(nr)
+
+    # ═══ ⑤ 捲り完遂力差 g ═══
+    class_labels = [e["class_label"] for e in entries]
+    g_values = makuri_g(base_sts, deashi_list, nobi_list, class_labels, mot_w)
+
+    # ═══ ⑥⑦⑧ EI パイプライン ═══
+    ei_result = compute_ei_pipeline(
+        entries=entries,
+        venue_name=venue_name,
+        day_no=day_no,
+        month=month,
+        wind_dir=wind_dir,
+        wind_speed=wind_speed,
+        is_seasonal_motor=is_seasonal_motor,
+    )
+    ei_values = ei_result["ei_values"]
+    ei_order = ei_result["ei_order"]
+    hassei_values = ei_result["hassei_values"]
+
+    # ═══ ⑨⑩⑪⑫ P1 パイプライン ═══
+    racer_course_others = entries[0].get("racer_course_others")
+    p1_result = compute_p1_pipeline(
+        entries=entries,
+        venue_name=venue_name,
+        month=month,
+        race_no=race_no,
+        base_sts=base_sts,
+        motor_labels=mot_labels,
+        ei_values=ei_values,
+        g_values=g_values,
+        hassei_values=hassei_values,
+        racer_course_others=racer_course_others,
+    )
+    p1 = p1_result["p1"]
+    genshu1 = p1_result["genshu1"]
+    nige = p1_result["nige"]
+    hit_adj = p1_result["hit_adj"]
+    hit2r_adj = p1_result["hit2r_adj"]
+    coefs = p1_result["coefs"]
+
+    # ═══ ⑬ TI ═══
+    race_counts = [e.get("race_count", 0) for e in entries]
+    ti_values, ti_order = ti_calc(
+        p1=p1,
+        nige=nige,
+        venue_name=venue_name,
+        month=month,
+        race_counts=race_counts,
+        racer_course_others=racer_course_others,
+        hit2r_adj=hit2r_adj,
+        hit_adj=hit_adj,
+    )
+
+    # ═══ ⑭ 着内率 + 2着期待 ═══
+    course_top3_rates = [e.get("course_top3_rate", 30.0) for e in entries]
+    local_top3_rates = [e.get("local_top3_rate", 30.0) for e in entries]
+    local_race_counts = [e.get("local_race_count", 0) for e in entries]
+    course_win_rates = [e.get("course_win_rate", 10.0) for e in entries]
+    course_top2_rates = [e.get("course_top2_rate", 20.0) for e in entries]
+
+    place_prob, second_expect = kachu_2nd_expect(
+        ei_values=ei_values,
+        ti_values=ti_values,
+        p1=p1,
+        nige=nige,
+        course_top3_rates=course_top3_rates,
+        local_top3_rates=local_top3_rates,
+        local_race_counts=local_race_counts,
+        course_win_rates=course_win_rates,
+        course_top2_rates=course_top2_rates,
+        hassei_values=hassei_values,
+        hit2r_adj=hit2r_adj,
+        venue_name=venue_name,
+    )
+
+    # ═══ ⑮ 捲り負け率・抵抗・連帯艇 ═══
+    makuri_make_rates, resist_labels, rentai_partners = resist_partner(entries)
+
+    # ═══ cal_win ═══
+    cal_result = calibrate_win(
+        p1=p1,
+        class_labels=class_labels,
+        ei_values=ei_values,
+        venue_calibration=venue_calibration,
+        course_win_rate_1=course_win_rates[0],
+        race_count_1=race_counts[0],
+    )
+    cal_win = cal_result["cal_win"]
+
+    # ═══ ダッシュボードJSON組み立て ═══
+    boats: List[Dict[str, Any]] = []
+    for i in range(6):
+        boat: Dict[str, Any] = {
+            "lane": entries[i]["course"],
+            "racer_name": entries[i].get("racer_name", ""),
+            "EI": ei_values[i],
+            "ei_order": ei_order[i],
+            "TI": ti_values[i],
+            "ti_order": ti_order[i],
+            "P1": round(p1[i], 1),
+            "cal_win": cal_win[i],
+            "place_prob": place_prob[i],
+            "second_expect": second_expect[i],
+            "nige_seiritsu": round(nige, 4) if i == 0 else None,
+            "kijun_st": base_sts[i],
+            "yusei_rank": yusei_ranks[i],
+            "motor_rank": mot_ranks[i],
+            "motor_label": mot_labels[i],
+            "motor_deashi": deashi_list[i],
+            "motor_nobi": nobi_list[i],
+            "start_average_st": entries[i].get("average_st", 0.0),
+            "start_current_st": entries[i].get("current_st", 0.0),
+            "start_base_st": base_sts[i],
+            "attack_profile_nigiri_rate": nigiri_rates[i],
+            "attack_profile_occurrence_rate": hassei_values[i],
+            "makuri_g": g_values[i],
+            "genshu1": genshu1 if i == 0 else None,
+            "makuri_make_rate": makuri_make_rates[i],
+            "resist_type": resist_labels[i],
+            "rentai_partner": rentai_partners[i],
+        }
+        boats.append(boat)
+
+    return {
+        "venue": venue_name,
+        "race_number": race_no,
+        "gap": cal_result["gap"],
+        "distrust_1": cal_result["distrust_1"],
+        "boats": boats,
     }
