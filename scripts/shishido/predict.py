@@ -67,6 +67,15 @@ def _load_system_prompt() -> str:
         "あなたは競艇予想AI v58.7 のエンジンです。\n"
         "以下の全計算式ドキュメントに厳密に従って、与えられた出走データから予想を実行してください。\n"
         "計算式の省略や独自解釈は禁止です。ドキュメントに記載された手順を忠実に再現してください。\n\n"
+        "【重要: Python計算済み指標（dashgen）について】\n"
+        "入力データに「Python計算済み指標（dashgen）」セクションが含まれる場合、\n"
+        "そこに記載された EI / TI / P1 / cal_win / 着内率 / 2着期待 / 逃げ成立度 / 基準ST / "
+        "モーター順位 / 捲りG / GAP / distrust_1 等の数値は、\n"
+        "Python側で会場別パラメータ（VENUES辞書の k_b, mot_w, nige_floor 等）を正確に適用して\n"
+        "決定論的に計算された結果です。\n"
+        "これらの数値を優先して使用し、自分で再計算しないでください。\n"
+        "dashgen の数値を dashboard / calculation_steps にそのまま転記してください。\n"
+        "ただし、攻め主体判定（α/β/γ/ε/δ）・本線生成・買い目選定は引き続きドキュメントに従って実行してください。\n\n"
         "────────────────────────────────────────\n"
         f"{text}"
     )
@@ -76,10 +85,73 @@ def _load_system_prompt() -> str:
 # ユーザーメッセージ構成
 # ---------------------------------------------------------------------------
 
+def _format_dashgen_section(dashgen: dict) -> str:
+    """dashgen 計算結果を Claude に渡すテキストセクションに整形"""
+    lines = []
+    lines.append("【Python計算済み指標（dashgen）】")
+    lines.append("以下はPython側で会場別パラメータ（VENUES辞書のk_b, mot_w, nige_floor等）を適用して")
+    lines.append("決定論的に計算済みの指標です。この数値を信頼して予想に使ってください。")
+    lines.append("自分で再計算する必要はありません。")
+    lines.append("")
+
+    # レース全体の指標
+    lines.append(f"会場: {dashgen.get('venue', '不明')}")
+    lines.append(f"GAP: {dashgen.get('gap', 'N/A')}")
+    lines.append(f"distrust_1: {dashgen.get('distrust_1', 'N/A')}")
+    lines.append("")
+
+    # 各艇の指標
+    boats = dashgen.get("boats", [])
+    if boats:
+        lines.append("各艇の計算済み指標:")
+        lines.append("コース | 選手名 | EI | EI順 | TI | TI順 | P1 | cal_win | 着内率 | 2着期待 | 逃げ成立度 | 基準ST | 優勢順 | モーター順 | 捲りG")
+        for b in boats:
+            nige_val = b.get('nige_seiritsu')
+            nige_str = f"{nige_val:.4f}" if nige_val is not None else "-"
+            ei = b.get('EI', 0) or 0
+            ti = b.get('TI', 0) or 0
+            p1 = b.get('P1', 0) or 0
+            cal_win = b.get('cal_win', 0) or 0
+            place_prob = b.get('place_prob', 0) or 0
+            second_expect = b.get('second_expect', 0) or 0
+            kijun_st = b.get('kijun_st', 0) or 0
+            makuri_g = b.get('makuri_g', 0) or 0
+            lines.append(
+                f"{b.get('lane', '?')} | {b.get('racer_name', '')} | "
+                f"{ei} | {b.get('ei_order', 0)} | "
+                f"{ti} | {b.get('ti_order', 0)} | "
+                f"{p1} | {cal_win} | "
+                f"{place_prob} | {second_expect} | "
+                f"{nige_str} | "
+                f"{kijun_st:.3f} | {b.get('yusei_rank', 0)} | "
+                f"{b.get('motor_rank', 0)} | {makuri_g}"
+            )
+        lines.append("")
+
+        # 詳細データ（JSON形式）
+        lines.append("dashgen 全計算結果（JSON）:")
+        lines.append("```json")
+        lines.append(json.dumps(dashgen, ensure_ascii=False, indent=2))
+        lines.append("```")
+
+    return "\n".join(lines)
+
+
 def _build_user_message(race_data: dict) -> str:
-    """V-4 JSON データからユーザーメッセージを構成"""
-    race_json = json.dumps(race_data, ensure_ascii=False, indent=2)
+    """V-4 JSON データからユーザーメッセージを構成（dashgen結果含む）"""
+
+    # dashgen セクション
+    dashgen_section = ""
+    dashgen = race_data.get("dashgen")
+    if dashgen:
+        dashgen_section = _format_dashgen_section(dashgen) + "\n\n"
+
+    # 出走データ（dashgen キーは除外して渡す）
+    race_data_clean = {k: v for k, v in race_data.items() if k != "dashgen"}
+    race_json = json.dumps(race_data_clean, ensure_ascii=False, indent=2)
+
     return (
+        f"{dashgen_section}"
         "以下の出走データについて、v58.7の全計算式に従って予想を実行してください。\n\n"
         "【出力形式】以下のJSON形式で出力してください：\n"
         "```json\n"
