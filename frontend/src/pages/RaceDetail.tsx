@@ -1,6 +1,30 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Component, type ReactNode, type ErrorInfo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, getDashgen, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction, type ShishidoCalculationSteps, type DashgenResult, type DashgenBoat } from '../lib/api'
+
+// ───── エラーバウンダリ ─────
+class SectionErrorBoundary extends Component<{ label: string; children: ReactNode }, { hasError: boolean; error: string }> {
+  constructor(props: { label: string; children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false, error: '' }
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message || 'Unknown error' }
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`[${this.props.label}] render error:`, error, info)
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ marginTop: 20, padding: '14px 18px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, fontSize: 13, color: '#ef4444' }}>
+          {this.props.label}の表示中にエラーが発生しました: {this.state.error}
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 // ───── タイピングアニメーション ─────
 function TypingText({ text, speed = 60, pauseMs = 2000 }: { text: string; speed?: number; pauseMs?: number }) {
@@ -2190,13 +2214,31 @@ function ShishidoCalcStepsPanel({ steps }: { steps: ShishidoCalculationSteps }) 
 
 // ───── dashgen ダッシュボード ─────
 function DashgenDashboard({ result }: { result: DashgenResult }) {
-  const boats = [...result.boats].sort((a, b) => a.lane - b.lane)
+  // 安全なnumber表示ヘルパー
+  const safeNum = (v: number | null | undefined, d = 1): string => {
+    if (v == null || !Number.isFinite(v)) return '—'
+    return v.toFixed(d)
+  }
+  const safeRound = (v: number | null | undefined): string => {
+    if (v == null || !Number.isFinite(v)) return '—'
+    return String(Math.round(v))
+  }
+
+  if (!result?.boats || !Array.isArray(result.boats) || result.boats.length === 0) {
+    return (
+      <div style={{ marginTop: 20, padding: '14px 18px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, fontSize: 13, color: '#ef4444' }}>
+        dashgenデータが不正です（boats配列が空または存在しません）
+      </div>
+    )
+  }
+
+  const boats = [...result.boats].sort((a, b) => (a?.lane ?? 0) - (b?.lane ?? 0))
   const lanes = [1, 2, 3, 4, 5, 6]
-  const get = (lane: number) => boats.find(b => b.lane === lane)
+  const get = (lane: number) => boats.find(b => b?.lane === lane)
 
   // カラーコーディング用ヘルパー
   const maxOf = (fn: (b: DashgenBoat) => number | null | undefined) => {
-    const vals = boats.map(fn).filter((v): v is number => v != null)
+    const vals = boats.map(fn).filter((v): v is number => v != null && Number.isFinite(v))
     return vals.length > 0 ? Math.max(...vals) : null
   }
 
@@ -2208,7 +2250,7 @@ function DashgenDashboard({ result }: { result: DashgenResult }) {
   const maxSecond = maxOf(b => b.second_expect)
 
   const valColor = (v: number | null | undefined, max: number | null, thresholdHigh?: number) => {
-    if (v == null) return '#94a3b8'
+    if (v == null || !Number.isFinite(v)) return '#94a3b8'
     if (max != null && v === max) return '#f87171'
     if (thresholdHigh != null && v >= thresholdHigh) return '#fcd34d'
     return '#e2e8f0'
@@ -2216,19 +2258,20 @@ function DashgenDashboard({ result }: { result: DashgenResult }) {
 
   const nigeBoat = get(1)
   const nigeSeiritsu = nigeBoat?.nige_seiritsu
+  const gap = result.gap ?? 0
 
   return (
     <div style={{ marginTop: 20, background: '#0d1b2e', borderRadius: 10, padding: '18px 20px', border: '1px solid #0e7490' }}>
       <div style={{ fontSize: 15, fontWeight: 700, color: '#22d3ee', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
         dashgen v58.7 ダッシュボード
-        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 400 }}>{result.venue} {result.race_number}R</span>
+        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 400 }}>{result.venue ?? ''} {result.race_number ?? ''}R</span>
       </div>
 
       {/* GAP / 1号非信用 / 逃げ成立度 */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 14, fontSize: 12 }}>
-        <span style={{ color: '#94a3b8' }}>GAP: <span style={{ color: result.gap > 15 ? '#f87171' : result.gap > 8 ? '#fcd34d' : '#22c55e', fontWeight: 700 }}>{result.gap.toFixed(1)}</span></span>
+        <span style={{ color: '#94a3b8' }}>GAP: <span style={{ color: gap > 15 ? '#f87171' : gap > 8 ? '#fcd34d' : '#22c55e', fontWeight: 700 }}>{safeNum(gap, 1)}</span></span>
         <span style={{ color: '#94a3b8' }}>1号非信用: <span style={{ color: result.distrust_1 ? '#f87171' : '#22c55e', fontWeight: 700 }}>{result.distrust_1 ? 'YES' : 'NO'}</span></span>
-        {nigeSeiritsu != null && (
+        {nigeSeiritsu != null && Number.isFinite(nigeSeiritsu) && (
           <span style={{ color: '#94a3b8' }}>逃げ成立度: <span style={{ color: nigeSeiritsu >= 0.7 ? '#22c55e' : nigeSeiritsu >= 0.4 ? '#fcd34d' : '#f87171', fontWeight: 700 }}>{(nigeSeiritsu * 100).toFixed(1)}%</span></span>
         )}
       </div>
@@ -2256,27 +2299,27 @@ function DashgenDashboard({ result }: { result: DashgenResult }) {
                   {/* 選手名 */}
                   <td style={{ padding: '6px 6px', fontSize: 12, color: '#e2e8f0', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 90 }}>{b.racer_name || '—'}</td>
                   {/* EI */}
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 16, fontWeight: 700, color: valColor(b.EI, maxEI) }}>{Math.round(b.EI)}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 16, fontWeight: 700, color: valColor(b.EI, maxEI) }}>{safeRound(b.EI)}</td>
                   {/* TI */}
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 14, fontWeight: 700, color: valColor(b.TI, maxTI) }}>{b.TI.toFixed(2)}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 14, fontWeight: 700, color: valColor(b.TI, maxTI) }}>{safeNum(b.TI, 2)}</td>
                   {/* P1 */}
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.P1, maxP1, 20) }}>{b.P1.toFixed(1)}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.P1, maxP1, 20) }}>{safeNum(b.P1, 1)}</td>
                   {/* cal_win */}
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.cal_win, maxCalWin, 20) }}>{b.cal_win.toFixed(1)}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.cal_win, maxCalWin, 20) }}>{safeNum(b.cal_win, 1)}</td>
                   {/* 着内率 */}
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.place_prob, maxPlace, 60) }}>{b.place_prob.toFixed(1)}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.place_prob, maxPlace, 60) }}>{safeNum(b.place_prob, 1)}</td>
                   {/* 2着期待 */}
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.second_expect, maxSecond, 25) }}>{b.second_expect.toFixed(1)}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: valColor(b.second_expect, maxSecond, 25) }}>{safeNum(b.second_expect, 1)}</td>
                   {/* 逃げ成立度 */}
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, color: lane === 1 && b.nige_seiritsu != null ? (b.nige_seiritsu >= 0.7 ? '#22c55e' : b.nige_seiritsu >= 0.4 ? '#fcd34d' : '#f87171') : '#64748b' }}>
-                    {lane === 1 && b.nige_seiritsu != null ? `${(b.nige_seiritsu * 100).toFixed(1)}%` : '—'}
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, color: lane === 1 && b.nige_seiritsu != null && Number.isFinite(b.nige_seiritsu) ? (b.nige_seiritsu >= 0.7 ? '#22c55e' : b.nige_seiritsu >= 0.4 ? '#fcd34d' : '#f87171') : '#64748b' }}>
+                    {lane === 1 && b.nige_seiritsu != null && Number.isFinite(b.nige_seiritsu) ? `${(b.nige_seiritsu * 100).toFixed(1)}%` : '—'}
                   </td>
                   {/* 基準ST */}
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, color: b.kijun_st <= 0.14 ? '#fcd34d' : b.kijun_st >= 0.19 ? '#f87171' : '#e2e8f0' }}>{b.kijun_st.toFixed(2)}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, color: b.kijun_st != null && Number.isFinite(b.kijun_st) ? (b.kijun_st <= 0.14 ? '#fcd34d' : b.kijun_st >= 0.19 ? '#f87171' : '#e2e8f0') : '#94a3b8' }}>{safeNum(b.kijun_st, 2)}</td>
                   {/* モーター */}
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, fontWeight: 600, color: b.motor_label === 'S' || b.motor_label === 'A' ? '#22c55e' : b.motor_label === 'D' ? '#f87171' : '#e2e8f0' }}>{b.motor_label} ({b.motor_rank})</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, fontWeight: 600, color: b.motor_label === 'S' || b.motor_label === 'A' ? '#22c55e' : b.motor_label === 'D' ? '#f87171' : '#e2e8f0' }}>{b.motor_label ?? '—'} ({b.motor_rank ?? '—'})</td>
                   {/* 捲りG */}
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, color: b.makuri_g >= 0.5 ? '#fcd34d' : '#94a3b8' }}>{b.makuri_g.toFixed(2)}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: 12, color: b.makuri_g != null && Number.isFinite(b.makuri_g) && b.makuri_g >= 0.5 ? '#fcd34d' : '#94a3b8' }}>{safeNum(b.makuri_g, 2)}</td>
                 </tr>
               )
             })}
@@ -2501,7 +2544,11 @@ export default function RaceDetail() {
           dashgenエラー: {dashgenError}
         </div>
       )}
-      {dashgenResult && <DashgenDashboard result={dashgenResult} />}
+      {dashgenResult && (
+        <SectionErrorBoundary label="dashgenダッシュボード">
+          <DashgenDashboard result={dashgenResult} />
+        </SectionErrorBoundary>
+      )}
 
       {/* 宍戸予想結果 */}
       {shishidoLoading && (
