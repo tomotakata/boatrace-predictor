@@ -424,6 +424,7 @@ export interface ShishidoPrediction {
     }
     reasoning?: string
   }
+  dashgen?: DashgenResult
   raw_response?: string
 }
 

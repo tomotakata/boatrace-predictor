@@ -380,6 +380,9 @@ def predict_race(
             "status": "error",
         }
 
+    # dashgen 結果を抽出（fetch_race_v4 が内部で計算済み）
+    dashgen_data = race_data.get("dashgen")
+
     # ユーザーメッセージ構成
     user_message = _build_user_message(race_data)
 
@@ -390,7 +393,7 @@ def predict_race(
     parsed = _extract_json(raw_response)
 
     if parsed:
-        result = {
+        result: dict = {
             "venue": venue,
             "date": date,
             "race_no": race_no,
@@ -406,6 +409,10 @@ def predict_race(
             "status": "parse_error",
             "raw_response": raw_response,
         }
+
+    # dashgen 計算結果を結果に含める
+    if dashgen_data is not None:
+        result["dashgen"] = dashgen_data
 
     return result
 

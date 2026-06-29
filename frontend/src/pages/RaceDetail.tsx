@@ -1,6 +1,6 @@
 import { useState, useEffect, Component, type ReactNode, type ErrorInfo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, getDashgen, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction, type ShishidoCalculationSteps, type DashgenResult, type DashgenBoat } from '../lib/api'
+import { getRace, getVenueConfig, getRaceResult, savePredictionMemo, scrapeRaceResult, runShishidoPredict, type Race, type Boat, type SystemPredictionDetail, type VenueConfig, type RaceResult, type ShishidoPrediction, type ShishidoCalculationSteps, type DashgenResult, type DashgenBoat } from '../lib/api'
 
 // ───── エラーバウンダリ ─────
 class SectionErrorBoundary extends Component<{ label: string; children: ReactNode }, { hasError: boolean; error: string }> {
@@ -2352,9 +2352,8 @@ export default function RaceDetail() {
   const [shishidoResult, setShishidoResult] = useState<ShishidoPrediction | null>(null)
   const [shishidoLoading, setShishidoLoading] = useState(false)
   const [shishidoError, setShishidoError] = useState<string | null>(null)
+  const [shishidoStep, setShishidoStep] = useState<string>('')
   const [dashgenResult, setDashgenResult] = useState<DashgenResult | null>(null)
-  const [dashgenLoading, setDashgenLoading] = useState(false)
-  const [dashgenError, setDashgenError] = useState<string | null>(null)
 
   async function fetchRace() {
     if (!id) return
@@ -2383,12 +2382,22 @@ export default function RaceDetail() {
     setShishidoLoading(true)
     setShishidoResult(null)
     setShishidoError(null)
+    setDashgenResult(null)
+    setShishidoStep('dashgen計算中…')
     try {
       const raceNo = race.race_no || parseInt(String(race.race_name || '').match(/(\d+)R/)?.[1] || '0')
+      // ステップ表示: dashgen計算 → Claude予想 の進行を擬似的に表示
+      const stepTimer = setTimeout(() => setShishidoStep('Claude API予想中…（30秒〜1分程度）'), 5000)
       const res = await runShishidoPredict(race.date, race.venue, raceNo)
+      clearTimeout(stepTimer)
       const results = res.data.results
       if (results && results.length > 0) {
-        setShishidoResult(results[0])
+        const result = results[0]
+        setShishidoResult(result)
+        // dashgen結果を抽出して設定
+        if (result.dashgen) {
+          setDashgenResult(result.dashgen)
+        }
       } else {
         setShishidoError('予想結果が返されませんでした')
       }
@@ -2396,21 +2405,7 @@ export default function RaceDetail() {
       setShishidoError(e.response?.data?.detail || e.message || '宍戸予想の実行に失敗しました')
     } finally {
       setShishidoLoading(false)
-    }
-  }
-
-  async function handleDashgen() {
-    if (!race?.id) return
-    setDashgenLoading(true)
-    setDashgenResult(null)
-    setDashgenError(null)
-    try {
-      const res = await getDashgen(race.id)
-      setDashgenResult(res.data)
-    } catch (e: any) {
-      setDashgenError(e.response?.data?.detail || e.message || 'dashgen計算に失敗しました')
-    } finally {
-      setDashgenLoading(false)
+      setShishidoStep('')
     }
   }
 
@@ -2462,10 +2457,6 @@ export default function RaceDetail() {
             <button onClick={handleShishidoPredict} disabled={shishidoLoading}
               style={{ padding: '8px 16px', background: 'rgba(167,139,250,0.15)', color: '#a78bfa', border: '1px solid #4c3a9e', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
               {shishidoLoading ? '宍戸予想中…' : '宍戸予想 v58.7'}
-            </button>
-            <button onClick={handleDashgen} disabled={dashgenLoading}
-              style={{ padding: '8px 16px', background: 'rgba(34,211,238,0.12)', color: '#22d3ee', border: '1px solid #0e7490', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-              {dashgenLoading ? 'dashgen計算中…' : 'dashgen計算'}
             </button>
 
           </div>
@@ -2533,29 +2524,21 @@ export default function RaceDetail() {
       {/* オッズ */}
       <OddsSection race={race} />
 
-      {/* dashgen ダッシュボード */}
-      {dashgenLoading && (
-        <div style={{ marginTop: 20, padding: '16px 20px', background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.2)', borderRadius: 10 }}>
-          <div className="loading-spinner"><div className="spinner" />dashgen計算を実行中…</div>
+      {/* 宍戸予想 ローディング（dashgen + Claude 統合） */}
+      {shishidoLoading && (
+        <div style={{ marginTop: 20, padding: '16px 20px', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 10 }}>
+          <div className="loading-spinner"><div className="spinner" />{shishidoStep || '宍戸予想を実行中…'}</div>
         </div>
       )}
-      {dashgenError && (
-        <div style={{ marginTop: 20, padding: '14px 18px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, fontSize: 13, color: '#ef4444' }}>
-          dashgenエラー: {dashgenError}
-        </div>
-      )}
+
+      {/* dashgen ダッシュボード（宍戸予想から取得） */}
       {dashgenResult && (
         <SectionErrorBoundary label="dashgenダッシュボード">
           <DashgenDashboard result={dashgenResult} />
         </SectionErrorBoundary>
       )}
 
-      {/* 宍戸予想結果 */}
-      {shishidoLoading && (
-        <div style={{ marginTop: 20, padding: '16px 20px', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 10 }}>
-          <div className="loading-spinner"><div className="spinner" />宍戸予想を実行中… Claude APIで分析しています（30秒〜1分程度）</div>
-        </div>
-      )}
+      {/* 宍戸予想エラー */}
       {shishidoError && (
         <div style={{ marginTop: 20, padding: '14px 18px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, fontSize: 13, color: '#ef4444' }}>
           宍戸予想エラー: {shishidoError}
