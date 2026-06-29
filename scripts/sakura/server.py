@@ -1380,6 +1380,17 @@ async def migrate(req: dict = None):
         ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS trifecta_place_payout INTEGER;
         ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS result_all JSONB;
         """)
+        # dashgen_results テーブル: dashgen 計算結果キャッシュ
+        await conn.execute("""
+        CREATE TABLE IF NOT EXISTS dashgen_results (
+          id BIGSERIAL PRIMARY KEY,
+          race_id BIGINT NOT NULL UNIQUE,
+          result JSONB NOT NULL,
+          calculated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_dashgen_results_race_id
+          ON dashgen_results (race_id);
+        """)
         await conn.close()
         return {"status": "ok", "message": "Migration completed (gen_rate/hit_rate added)"}
     except Exception as e:
@@ -1396,6 +1407,13 @@ ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS trifecta_payout INTEGER;
 ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS exacta_payout INTEGER;
 ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS trifecta_place_payout INTEGER;
 ALTER TABLE race_winner_log ADD COLUMN IF NOT EXISTS result_all JSONB;
+CREATE TABLE IF NOT EXISTS dashgen_results (
+  id BIGSERIAL PRIMARY KEY,
+  race_id BIGINT NOT NULL UNIQUE,
+  result JSONB NOT NULL,
+  calculated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_dashgen_results_race_id ON dashgen_results (race_id);
 """
         return {"status": "error", "message": str(e),
                 "manual_migration_sql": manual_sql,

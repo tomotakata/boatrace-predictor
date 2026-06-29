@@ -37,6 +37,7 @@ if str(_project_root_for_import) not in sys.path:
     sys.path.insert(0, str(_project_root_for_import))
 
 from backend.app.prediction.dashgen import generate_dashboard  # noqa: E402
+from backend.app.prediction.dashgen_service import get_cached_dashgen  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -396,10 +397,24 @@ def _run_dashgen(
 ) -> dict | None:
     """DB の race/boats データから dashgen.generate_dashboard() を実行して結果を返す。
 
+    まず DB キャッシュ（dashgen_results テーブル）を確認し、
+    計算済みであればそれを返す。なければ計算して返す。
+
     Returns:
         dashgen の出力 dict、またはエラー時 None
     """
     from datetime import datetime
+
+    # DB キャッシュを確認
+    race_id = race.get("id")
+    if race_id:
+        cached = get_cached_dashgen(race_id)
+        if cached is not None:
+            # cached フラグを除去して返す
+            cached.pop("cached", None)
+            cached.pop("calculated_at", None)
+            cached.pop("race_id", None)
+            return cached
 
     try:
         # dashgen 用 entries 構築
